@@ -1,0 +1,13 @@
+function cat_testall()
+
+%   CAT_TESTALL -- Run all tests.
+
+cat_test_run( @cat_test_partcat );
+cat_test_run( @cat_test_keepeach );
+cat_test_run( @cat_test_append_resize );
+cat_test_run( @cat_test_append );
+cat_test_run( @cat_test_append_keep );
+cat_test_run( @cat_test_copy );
+cat_test_run( @cat_test_resize );
+
+end

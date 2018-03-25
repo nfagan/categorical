@@ -24,7 +24,15 @@ namespace util {
         static constexpr uint32_t HAS_LABEL = 17u;
         static constexpr uint32_t HAS_CATEGORY = 18u;
         static constexpr uint32_t IS_VALID = 19u;
+        static constexpr uint32_t FILL_CATEGORY = 20u;
+        static constexpr uint32_t REPEAT = 21u;
+        static constexpr uint32_t KEEP_EACH = 22u;
+        static constexpr uint32_t KEEP_EACHC = 23u;
+        static constexpr uint32_t COLLAPSE_CATEGORY = 24u;
+        static constexpr uint32_t ONE = 25u;
+        static constexpr uint32_t EQUALS = 26u;
+        static constexpr uint32_t PARTIAL_CATEGORY = 27u;
         //
-        static constexpr uint32_t N_OPS = 20u;
+        static constexpr uint32_t N_OPS = 28u;
     }
 }

@@ -2,17 +2,27 @@
 #include <iostream>
 #include <assert.h>
 
+void test_eq();
+void test_repeat();
+void test_keep_each();
 void test_instantiation();
+void test_fill_category();
 void test_require_category();
 void test_find_allc();
 void test_set_category();
 void test_append();
+void test_append_same_labels();
 
 int main(int argc, char* argv[])
 {
     std::cout << "BEGIN CATEGORICAL" << std::endl;
 
     test_append();
+    test_eq();
+    test_keep_each();
+    test_repeat();
+    test_fill_category();
+    test_append_same_labels();
 	test_instantiation();
     test_set_category();
     test_require_category();
@@ -21,6 +31,115 @@ int main(int argc, char* argv[])
     std::cout << "END CATEGORICAL" << std::endl;
 
 	return 0;
+}
+
+void test_eq()
+{
+    using util::categorical;
+    
+    categorical cat1;
+    categorical cat2;
+    
+    cat1.require_category("test1");
+    cat2.require_category("test2");
+    
+    assert(cat1 != cat2);
+    
+    cat1.require_category("test2");
+    cat2.require_category("test1");
+    
+    assert(cat1 == cat2);
+    
+    cat1.set_category("test1", {"hi", "hello", "sup"});
+    
+    assert(cat1 != cat2);
+    
+    cat2.set_category("test1", {"hi", "hello", "sup"});
+    
+    assert(cat2 == cat1);
+    
+    std::cout << "OK: test_eq" << std::endl;
+}
+
+void test_keep_each()
+{
+    using util::categorical;
+    
+    categorical cat1;
+    cat1.require_category("test1");
+    cat1.require_category("test2");
+    
+    std::vector<std::string> full_cat = {"hi", "hello", "hello"};
+    
+    cat1.set_category("test1", full_cat);
+    cat1.set_category("test2", {"no", "yes", "yes"});
+    
+    util::combinations_t res = cat1.keep_eachc({"test1", "test2"});
+    
+    assert(res.indices.size() == 2);
+    assert(cat1.size() == 2);
+    
+    std::cout << "OK: test_keep_each" << std::endl;
+}
+
+void test_repeat()
+{
+    using util::categorical;
+    
+    categorical cat1;
+    cat1.require_category("test1");
+    
+    std::vector<std::string> full_cat = {"hi", "hello", "sup"};
+    
+    cat1.set_category("test1", full_cat);
+    
+    cat1.repeat(2);
+    
+    assert(cat1.size() == full_cat.size() * 3);
+    
+    auto recreated_full_cat = cat1.full_category("test1");
+    
+    assert(recreated_full_cat.size() == full_cat.size() * 3);
+    
+    std::cout << "OK: test_repeat" << std::endl;
+}
+
+void test_fill_category()
+{
+    using util::categorical;
+    using util::u64;
+    using util::u32;
+    
+    std::vector<std::string> full_cat1 = { "1", "2", "4", "5" };
+    std::vector<std::string> full_cat2 = { "a", "b", "c", "d" };
+    
+    categorical cat1;
+    
+    cat1.require_category("test1");
+    cat1.require_category("test2");
+    
+    cat1.set_category("test1", full_cat1);
+    
+    assert(cat1.in_category("test1").size() == 4);
+    
+    cat1.fill_category("test1", "2");
+    
+    auto in_cat = cat1.in_category("test1");
+    assert(in_cat.size() == 1 && in_cat[0] == "2");
+    
+    cat1.fill_category("test1", "3");
+    
+    in_cat = cat1.in_category("test1");
+    
+    assert(in_cat.size() == 1 && in_cat[0] == "3");
+    
+    cat1.fill_category("test2", "another");
+    
+    u32 status = cat1.fill_category("test2", "<test1>");
+    
+    assert(status == util::categorical_status::COLLAPSED_EXPRESSION_IN_WRONG_CATEGORY);
+    
+    std::cout << "OK: test_fill_category" << std::endl;
 }
 
 void test_append()
@@ -65,6 +184,32 @@ void test_append()
     }
     
     std::cout << "OK: test_append" << std::endl;
+}
+
+void test_append_same_labels()
+{
+    using util::categorical;
+    using util::u64;
+    using util::u32;
+    
+    categorical cat1;
+    categorical cat2;
+    
+    cat1.require_category("test");
+    cat2.require_category("test");
+    
+    cat1.set_category("test", {"test1", "test2"});
+    cat2.set_category("test", {"test2", "test1"});
+    
+    u32 res = cat1.append(cat2);
+    
+    assert(res == util::categorical_status::OK);
+    
+    auto inds = cat1.find({"test1"});
+    
+    assert(inds.size() == 2 && inds[0] == 0 && inds[1] == 3);
+    
+    std::cout << "OK: test_append_same_labels" << std::endl;
 }
 
 void test_set_category()

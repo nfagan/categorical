@@ -9,13 +9,52 @@ classdef Categorical < handle
     function obj = Categorical(id)
       
       %   CATEGORICAL -- Create categorical object.
+      %
+      %     See also Categorical/findall, Categorical/from
       
       if ( nargin == 0 )
         obj.id = cat_api( 'create' );
       else
-        assert( cat_api('is_valid', id), 'Invalid ID given.' );
+        try
+          Categorical.validate_constructor_signature( dbstack() );
+        catch err
+          throwAsCaller( err );
+        end
         obj.id = id;
       end
+    end
+    
+    function tf = eq(obj, B)
+      
+      %   EQ -- True if two Categorical objects have equal contents.
+      %
+      %     See also Categorical/ne, Categorical/findall
+      %
+      %     IN:
+      %       - `B` (/any/)
+      %     OUT:
+      %       - `tf` (logical)
+      
+      if ( ~isa(obj, 'Categorical') || ~isa(B, 'Categorical') )
+        tf = false;
+        return;
+      end
+      
+      tf = cat_api( 'equals', obj.id, B.id );      
+    end
+    
+    function tf = ne(obj, B)
+      
+      %   NE -- True if objects are not Categoricals with equal contents.
+      %
+      %     See also Categorical/eq
+      %
+      %     IN:
+      %       - `B` (/any/)
+      %     OUT:
+      %       - `tf` (logical)
+      
+      tf = ~eq( obj, B );
     end
     
     function n = numel(obj)
@@ -33,6 +72,8 @@ classdef Categorical < handle
     function tf = isempty(obj)
       
       %   ISEMPTY -- True if the object is of size 0.
+      %
+      %     See also Categorical/numel
       %
       %     OUT:
       %       - `tf` (logical)
@@ -83,10 +124,30 @@ classdef Categorical < handle
       
       %   RESIZE -- Expand or contract object.
       %
+      %     See also Categorical/size
+      %
       %     IN:
       %       - `to` (uint64)
       
       cat_api( 'resize', obj.id, uint64(to) );      
+    end
+    
+    function obj = repeat(obj, n_times)
+      
+      %   REPEAT -- Repeat entire contents N times.
+      %
+      %     See also Categorical/resize, repmat
+      
+      cat_api( 'repeat', obj.id, uint64(n_times) );      
+    end
+    
+    function obj = only(obj, labels)
+      
+      %   ONLY -- Retain rows associated with labels.
+      %
+      %     See also Categorical/keep, Categorical/find
+      
+      keep( obj, find(obj, labels) );
     end
     
     function obj = keep(obj, indices)
@@ -101,13 +162,24 @@ classdef Categorical < handle
       cat_api( 'keep', obj.id, uint64(indices) );     
     end
     
-    function obj = only(obj, labels)
+    function [obj, I, C] = keepeach(obj, categories)
       
-      %   ONLY -- Retain rows associated with labels.
+      %   KEEPEACH -- Retain one row for each combination of labels.
       %
-      %     See also Categorical/keep, Categorical/find
+      %     See also Categorical/findall
+      %
+      %     IN:
+      %       - `categories` (char, cell array of strings)
+      %     OUT:
+      %       - `obj` (Categorical) -- Modified object.
+      %       - `I` (cell array of uint64)
+      %       - `C` (cell array of strings)
       
-      keep( obj, find(obj, labels) );
+      if ( nargout > 2 )
+        [I, C] = cat_api( 'keep_eachc', obj.id, categories );      
+      else
+        I = cat_api( 'keep_each', obj.id, categories );
+      end
     end
     
     function C = combs(obj, categories)
@@ -278,6 +350,17 @@ classdef Categorical < handle
       end
     end
     
+    function C = partcat(obj, category, indices)
+      
+      %   PARTCAT -- Get part of a category.
+      %
+      %     IN:
+      %       - `category` (char)
+      %       - `indices` (uint64)
+      
+      C = cat_api( 'partial_cat', obj.id, category, uint64(indices) );      
+    end
+    
     function C = incat(obj, category)
       
       %   INCAT -- Get labels in category.
@@ -296,12 +379,38 @@ classdef Categorical < handle
       
       %   REQUIRECAT -- Add category if it does not exist.
       %
-      %     See also Categorical/addcat
+      %     See also Categorical/findall
       %
       %     IN:
       %       - `category` (char, cell array of strings)
       
       cat_api( 'require_cat', obj.id, category );
+    end
+    
+    function obj = collapsecat(obj, category)
+      
+      %   COLLAPSECAT -- Collapse category to single label.
+      %
+      %     collapsecat( obj, 'test1' ) replaces all labels in the category
+      %     'test1' with the collapsed expression for that category, if
+      %     there is more than one label in the category.
+      %
+      %     collapsecat( obj, {'test1', 'test2'} ) works as above, but for
+      %     multiple categories at once.
+      %
+      %     See also Categorical/requirecat
+      %
+      %     IN:
+      %       - `category` (char, cell array of strings)
+      
+      cat_api( 'collapse_cat', obj.id, category );
+    end
+    
+    function obj = one(obj)
+      
+      %   ONE -- Collapse all categories, and retain a single row.
+      
+      cat_api( 'one', obj.id );
     end
     
     function obj = setcat(obj, category, to, at_indices)
@@ -313,8 +422,8 @@ classdef Categorical < handle
       %
       %     If the object was empty beforehand, it will become of size 3x1,
       %     and additional categories will be filled with the collapsed
-      %     expression for each category. Otherwise, it must be of size
-      %     3x1.
+      %     expression for each category. Otherwise, the object must be of 
+      %     size 3x1.
       %
       %     B) setcat( obj, 'hi', {'hello', 'hello'}, [1, 2] ) assigns
       %     {'hello', 'hello'} to rows [1, 2] of the object. If the object
@@ -327,7 +436,12 @@ classdef Categorical < handle
       %     that the single label 'hello' is implicitly expanded to a 10x1
       %     cell array of {'hello'}.
       %
-      %     See also Categorical/requirecat
+      %     D) setcat( obj, 'hi', 'hello' ) works as in A) if the object
+      %     was empty beforehand, implicitly transforming 'hello' into a 
+      %     1x1 cell array. Otherwise, the full contents of the category 
+      %     'hi' are set to 'hello'.
+      %
+      %     See also Categorical/requirecat, Categorical/fillcat
       %
       %     IN:
       %       - `category` (char)
@@ -338,6 +452,19 @@ classdef Categorical < handle
       else
         cat_api( 'set_partial_cat', obj.id, category, to, uint64(at_indices) );
       end
+    end
+    
+    function obj = fillcat(obj, cat, lab)
+      
+      %   FILLCAT -- Set entire contents of category to label.
+      %
+      %     See also Categorical/setcat
+      %
+      %     IN:
+      %       - `cat` (char)
+      %       - `lab` (char)
+      
+      cat_api( 'fill_cat', obj.id, cat, lab );      
     end
     
     function obj = append(obj, B)
@@ -362,6 +489,8 @@ classdef Categorical < handle
     function delete(obj)
       
       %   DELETE -- Delete object and free memory.
+      %
+      %     See also Categorical/Categorical
       %
       %     Calling `clear obj` also deletes the object.
       
@@ -388,11 +517,13 @@ classdef Categorical < handle
       
       desktop_exists = usejava( 'desktop' );
       
+      cls = class( obj );
+      
       if ( desktop_exists )
-        link_str = sprintf( '<a href="matlab:helpPopup %s">%s</a>' ...
-          , class(obj), class(obj) );
+        link_str = sprintf( '<a href="matlab:helpPopup %s/%s">%s</a>' ...
+          , cls, cls, cls );
       else
-        link_str = class( obj );
+        link_str = cls;
       end
       
       if ( ~isvalid(obj) )
@@ -493,7 +624,27 @@ classdef Categorical < handle
     end
   end
   
-  methods (Static = true)
+  methods (Static = true, Access = private)
+    
+    function validate_constructor_signature(stack)
+      
+      %   VALIDATE_CONSTRUCTOR_SIGNATURE -- Ensure constructor is 
+      %     appropriately called.
+      
+      if ( numel(stack) == 1 )
+        error( 'Invalid input to Categorical().' );
+      end
+      
+      if ( numel(stack) >= 2 )
+        if ( ~strcmp(stack(2).file, 'Categorical.m') || ...
+            ~strcmp(stack(2).name, 'Categorical.copy') )
+          error( 'Invalid input to Categorical().' );
+        end
+      end
+    end
+  end
+  
+  methods (Static = true, Access = public)
     
     function obj = from(varargin)
       

@@ -1,8 +1,8 @@
 #include "cat_api.hpp"
 
-void util::resize(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
+void util::repeat(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {
-    const char* func_id = "categorical:resize";
+    const char* func_id = "categorical:repeat";
     const char* sz_msg = "Size must be a uint64 scalar.";
   
     util::assert_nrhs(nrhs, 3, func_id);
@@ -13,7 +13,7 @@ void util::resize(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     
     util::categorical* cat = util::detail::mat_to_ptr<util::categorical>(prhs[1]);
     
-    util::u64 to_size = (util::u64) mxGetScalar(prhs[2]);
+    util::u64 n_times = (util::u64) mxGetScalar(prhs[2]);
     
-    cat->reserve(to_size);
+    cat->repeat(n_times);
 }

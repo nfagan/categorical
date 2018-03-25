@@ -20,6 +20,87 @@ util::categorical::~categorical()
     //
 }
 
+//  !=: Check for inequality.
+
+bool util::categorical::operator !=(const util::categorical &other) const
+{
+    return !(util::categorical::operator ==(other));
+}
+
+//  ==: Check for equality.
+
+bool util::categorical::operator ==(const util::categorical &other) const
+{
+    using util::u64;
+    using util::u32;
+    
+    if (this == &other)
+    {
+        return true;
+    }
+    
+    u64 own_sz = size();
+    u64 other_sz = other.size();
+    
+    if (own_sz != other_sz)
+    {
+        return false;
+    }
+    
+    if (m_label_ids.size() != other.m_label_ids.size())
+    {
+        return false;
+    }
+    
+    if (!categories_match(other))
+    {
+        return false;
+    }
+    
+    std::vector<std::string> labs = m_label_ids.keys();
+    u64 n_labs = labs.size();
+    
+    for (u64 i = 0; i < n_labs; i++)
+    {
+        const std::string& lab = labs[i];
+        
+        if (!other.m_label_ids.contains(lab))
+        {
+            return false;
+        }
+        
+        const std::string& own_cat = m_in_category.at(lab);
+        const std::string& other_cat = other.m_in_category.at(lab);
+        
+        if (own_cat != other_cat)
+        {
+            return false;
+        }
+        
+        u32 own_id = m_label_ids.at(lab);
+        u32 other_id = other.m_label_ids.at(lab);
+        
+        u64 own_cat_index = m_category_indices.at(own_cat);
+        u64 other_cat_index = other.m_category_indices.at(other_cat);
+        
+        const std::vector<u32>& own_labs = m_labels[own_cat_index];
+        const std::vector<u32>& other_labs = other.m_labels[other_cat_index];
+        
+        for (u64 j = 0; j < own_sz; j++)
+        {
+            bool eq_own = own_labs[j] == own_id;
+            bool eq_other = other_labs[j] == other_id;
+            
+            if (eq_own != eq_other)
+            {
+                return false;
+            }
+        }
+    }
+    
+    return true;
+}
+
 //  has_label: True if the label is present.
 
 bool util::categorical::has_label(const std::string &label) const
@@ -48,35 +129,22 @@ void util::categorical::resize(util::u64 rows)
     using util::u64;
     
     u64 n_labels = m_labels.size();
-    u64 orig_size = size();
     
     for (u64 i = 0; i < n_labels; i++)
     {
         m_labels[i].resize(rows, 0);
     }
-    
-    if (orig_size == 0)
-    {
-        set_all_collapsed_expressions();
-    }
-    
-    if (rows < orig_size)
-    {
-        prune();
-    }
 }
+
+//  reserve: Resize and add / remove labels as necessary.
 
 void util::categorical::reserve(util::u64 rows)
 {
     using util::u64;
     
-    u64 n_labels = m_labels.size();
     u64 orig_size = size();
     
-    for (u64 i = 0; i < n_labels; i++)
-    {
-        m_labels[i].resize(rows);
-    }
+    resize(rows);
     
     if (rows < orig_size)
     {
@@ -86,6 +154,44 @@ void util::categorical::reserve(util::u64 rows)
     {
         set_all_collapsed_expressions(orig_size);
     }
+}
+
+//  repeat: Repeat contents of label ids array N times.
+//
+//      TODO: This can overflow.
+
+void util::categorical::repeat(util::u64 times)
+{
+    using util::u64;
+    using util::u32;
+    
+    u64 sz = size();
+    
+    if (sz == 0 || times == 0)
+    {
+        return;
+    }
+    
+    u64 new_sz = sz + sz * times;
+    
+    resize(new_sz);
+    
+    u64 lab_sz = m_labels.size();
+    
+    size_t n_copy = sz * sizeof(u32);
+    
+    for (u64 i = 0; i < lab_sz; i++)
+    {
+        u32* src = m_labels[i].data();
+        u64 idx = sz;
+        
+        for (u64 j = 0; j < times; j++)
+        {
+            std::memcpy(src + idx, src, n_copy);
+            idx += sz;
+        }
+    }
+    
 }
 
 //  size: Get the current number of rows.
@@ -148,15 +254,15 @@ void util::categorical::unchecked_add_category(const std::string& category,
 {
     util::u64 sz = size();
     
+    std::vector<util::u32> new_labs(sz);
     m_category_indices[category] = n_categories();
-    m_labels.push_back(std::vector<util::u32>(sz));
+    m_labels.push_back(new_labs);
     m_collapsed_expressions.insert(collapsed_expression);
     
     //  fill the category with the collapsed expression for the category.
     if (sz > 0)
     {
-        std::vector<util::u32>& labs = m_labels[m_labels.size()-1];
-        set_collapsed_expressions(labs, category, collapsed_expression);
+        set_collapsed_expressions(new_labs, category, collapsed_expression);
     }
 }
 
@@ -175,7 +281,7 @@ void util::categorical::set_collapsed_expressions(std::vector<util::u32> &labs,
     }
     else
     {
-        util::u32 id = get_next_label_id();
+        id = get_next_label_id();
         m_label_ids.insert(collapsed_expression, id);
     }
     
@@ -190,8 +296,8 @@ void util::categorical::set_all_collapsed_expressions(util::u64 start_offset)
 {
     for (const auto& it : m_category_indices)
     {
-        const util::u64 cat_idx = it.second;
         const std::string& cat = it.first;
+        const util::u64 cat_idx = it.second;
         
         std::vector<util::u32>& labs = m_labels[cat_idx];
         
@@ -439,6 +545,134 @@ util::combinations_t util::categorical::find_allc(const std::vector<std::string>
     return result;
 }
 
+//  keep_each: Retain one row for each combination of labels.
+//
+//      keep_each returns the indices used to generate each row of
+//      the modified object
+
+std::vector<std::vector<util::u64>> util::categorical::keep_each(const std::vector<std::string> &categories,
+                                                                 util::u64 index_offset)
+{
+    std::vector<std::vector<util::u64>> indices = find_all(categories, index_offset);
+    
+    unchecked_keep_each(indices, index_offset);
+    
+    return indices;
+}
+
+//  keep_eachc: Retain one row for each combination of labels.
+//
+//      keep_eachc also returns the label combinations associated with
+//      each row.
+
+util::combinations_t util::categorical::keep_eachc(const std::vector<std::string> &categories,
+                                                  util::u64 index_offset)
+{
+    util::combinations_t combs = find_allc(categories, index_offset);
+    
+    unchecked_keep_each(combs.indices, index_offset);
+    
+    return combs;
+}
+
+//  unchecked_keep_each [private]: Main utility to keep each subset.
+
+void util::categorical::unchecked_keep_each(const std::vector<std::vector<util::u64>>& indices,
+                                            util::u64 index_offset)
+{
+    using util::u64;
+    using util::u32;
+    
+    util::categorical copy = *this;
+    
+    const u64 n_indices = indices.size();
+    const u64 n_cats = m_labels.size();
+    
+    copy.resize(n_indices);
+    
+    for (u64 i = 0; i < n_cats; i++)
+    {
+        const std::vector<u32>& labs = m_labels[i];
+        std::vector<u32>& copy_labs = copy.m_labels[i];
+        
+        for (u64 j = 0; j < n_indices; j++)
+        {
+            const std::vector<u64>& c_indices = indices[j];
+            u64 n_c_indices = c_indices.size();
+            
+            u32 first_lab = labs[c_indices[0] - index_offset];
+            
+            bool should_proceed = true;
+            bool need_collapse = false;
+            u64 k = 1;
+            
+            while (should_proceed && k < n_c_indices)
+            {
+                u32 c_lab = labs[c_indices[k] - index_offset];
+                
+                if (c_lab != first_lab)
+                {
+                    should_proceed = false;
+                    need_collapse = true;
+                }
+                
+                k++;
+            }
+            
+            if (need_collapse)
+            {
+                const std::string& str_lab = m_label_ids.at(first_lab);
+                const std::string& cat = m_in_category.at(str_lab);
+                
+                std::string collapsed_expression = get_collapsed_expression(cat);
+                
+                u32 collapsed_id;
+                
+                if (copy.m_label_ids.contains(collapsed_expression))
+                {
+                    collapsed_id = copy.m_label_ids.at(collapsed_expression);
+                }
+                else
+                {
+                    collapsed_id = copy.get_next_label_id();
+                    copy.m_label_ids.insert(collapsed_expression, collapsed_id);
+                    copy.m_in_category[collapsed_expression] = cat;
+                }
+                
+                copy_labs[j] = collapsed_id;
+            }
+            else
+            {
+                copy_labs[j] = first_lab;
+            }
+        }
+    }
+    
+    copy.prune();
+    
+    *this = std::move(copy);
+}
+
+//  one: Retain a single row, collapsing non-uniform categories.
+
+void util::categorical::one()
+{
+    using util::u64;
+    using util::u32;
+    
+    for (const auto& it : m_category_indices)
+    {
+        collapse_category(it.first);
+    }
+    
+    if (size() <= 1)
+    {
+        return;
+    }
+    
+    resize(1);
+}
+
 //  set_category: Set partial contents of a category.
 
 util::u32 util::categorical::set_category(const std::string &category,
@@ -487,7 +721,7 @@ util::u32 util::categorical::set_category(const std::string &category,
     
     if (sz == 0)
     {
-        resize(index_sz);
+        reserve(index_sz);
     }
     
     std::unordered_map<std::string, u32> processed;
@@ -507,7 +741,7 @@ util::u32 util::categorical::set_category(const std::string &category,
             {
                 if (sz == 0)
                 {
-                    resize(0);
+                    reserve(0);
                 }
                 
                 return util::categorical_status::COLLAPSED_EXPRESSION_IN_WRONG_CATEGORY;
@@ -551,14 +785,26 @@ util::u32 util::categorical::set_category(const std::string &category,
 
 //  set_category: Set full contents of a category.
 //
-//      If the object is of size 0, the incoming category can be of any size. Otherwise,
-//      it must match the current size of the object.
+//      If the object is of size 0, the incoming category can be of any size.
+//
+//      Else, if the incoming category is a vector of size 1 (i.e., a "scalar"),
+//      the full contents of the category are set to the label at category[0].
+//
+//      Otherwise, the full category must match the size of the categorical object.
 
 util::u32 util::categorical::set_category(const std::string &category,
                                           const std::vector<std::string> &full_category)
 {
     using util::u64;
     using util::u32;
+    
+    u64 own_size = size();
+    u64 cat_sz = full_category.size();
+    
+    if (cat_sz == 1 && own_size > 0)
+    {
+        return fill_category(category, full_category[0]);
+    }
     
     auto category_it = m_category_indices.find(category);
     
@@ -571,9 +817,6 @@ util::u32 util::categorical::set_category(const std::string &category,
     
     std::vector<u32>& labels = m_labels[category_idx];
     
-    u64 own_size = size();
-    u64 cat_sz = full_category.size();
-    
     if (own_size > 0 && cat_sz != own_size)
     {
         return util::categorical_status::WRONG_CATEGORY_SIZE;
@@ -581,7 +824,7 @@ util::u32 util::categorical::set_category(const std::string &category,
     
     if (own_size == 0)
     {
-        resize(cat_sz);
+        reserve(cat_sz);
     }
     
     std::unordered_map<std::string, u32> processed;
@@ -603,7 +846,7 @@ util::u32 util::categorical::set_category(const std::string &category,
             {
                 if (own_size == 0)
                 {
-                    resize(0);
+                    reserve(0);
                 }
                 
                 return util::categorical_status::COLLAPSED_EXPRESSION_IN_WRONG_CATEGORY;
@@ -655,6 +898,85 @@ util::u32 util::categorical::set_category(const std::string &category,
     return util::categorical_status::OK;
 }
 
+//  fill_category: Fill category with single label.
+
+util::u32 util::categorical::fill_category(const std::string &category, const std::string &lab)
+{
+    using util::u64;
+    using util::u32;
+    
+    auto category_it = m_category_indices.find(category);
+    
+    if (category_it == m_category_indices.end())
+    {
+        return util::categorical_status::CATEGORY_DOES_NOT_EXIST;
+    }
+    
+    u64 sz = size();
+    
+    //  filling category when size is 0 has no effect.
+    if (sz == 0)
+    {
+        return util::categorical_status::OK;
+    }
+    
+    if (m_collapsed_expressions.count(lab) > 0 &&
+        get_collapsed_expression(category) != lab)
+    {
+        return util::categorical_status::COLLAPSED_EXPRESSION_IN_WRONG_CATEGORY;
+    }
+    
+    auto lab_it = m_label_ids.find(lab);
+    bool exists = lab_it != m_label_ids.endk();
+    
+    u32 lab_id;
+    
+    if (exists)
+    {
+        if (m_in_category.at(lab) != category)
+        {
+            return util::categorical_status::LABEL_EXISTS_IN_OTHER_CATEGORY;
+        }
+        
+        lab_id = lab_it->second;
+    }
+    else
+    {
+        lab_id = get_next_label_id();
+    }
+    
+    //  erase all other labels in category
+    std::vector<std::string> in_cat = in_category(category);
+    u64 n_in_cat = in_cat.size();
+    
+    for (u64 i = 0; i < n_in_cat; i++)
+    {
+        const std::string& c_lab = in_cat[i];
+        
+        bool should_erase = exists ? c_lab != lab : true;
+        
+        if (should_erase)
+        {
+            m_in_category.erase(c_lab);
+            m_label_ids.erase(c_lab);
+        }
+    }
+    
+    u64 category_idx = category_it->second;
+    
+    std::vector<u32>& labels = m_labels[category_idx];
+    
+    std::fill(labels.begin(), labels.end(), lab_id);
+    
+    if (!exists)
+    {
+        m_in_category[lab] = category;
+        m_label_ids.insert(lab, lab_id);
+    }
+    
+    return util::categorical_status::OK;
+}
+
 //  categories_match: True if another categorical has identical categories.
 
 bool util::categorical::categories_match(const util::categorical &other) const
@@ -681,7 +1003,7 @@ bool util::categorical::categories_match(const util::categorical &other) const
 
 //  get_collapsed_expression: Get the string representation of a collapsed category.
 
-std::string util::categorical::get_collapsed_expression(const std::string &for_cat) const
+std::string util::categorical::get_collapsed_expression(const std::string& for_cat) const
 {
     return "<" + for_cat + ">";
 }
@@ -737,8 +1059,7 @@ util::u32 util::categorical::keep(std::vector<util::u64>& at_indices, util::s64 
 
 void util::categorical::empty()
 {
-    resize(0);
-    prune();
+    reserve(0);
 }
 
 //  prune: Remove labels wihout rows.
@@ -844,13 +1165,12 @@ util::u32 util::categorical::append(const util::categorical &other)
                 return util::categorical_status::LABEL_EXISTS_IN_OTHER_CATEGORY;
             }
             
-            make_new_lab = other_lab_id != own_lab_id;
-            
             //  ... but the label is bound to different id
-            if (make_new_lab)
+            if (other_lab_id != own_lab_id)
             {
                 replace_other_label_ids[other_lab_id] = own_lab_id;
-                make_new_lab = other.m_label_ids.contains(own_lab_id);
+                make_new_lab = other.m_label_ids.contains(own_lab_id) &&
+                    replace_other_label_ids.count(own_lab_id) == 0;
             }
             
             copy_other_label_ids.erase(lab);
@@ -931,6 +1251,11 @@ void util::categorical::replace_labels(std::vector<std::vector<u32>>& labels,
 {
     using util::u64;
     
+    if (replace_map.size() == 0)
+    {
+        return;
+    }
+    
     u64 cols = labels.size();
     
     for (u64 i = 0; i < cols; i++)
@@ -972,7 +1297,57 @@ std::vector<std::string> util::categorical::get_labels() const
     return m_label_ids.keys();
 }
 
+//  partial_category: Replace int label ids with string labels, for a subset of rows.
+//
+//      Pass in pointer to `exists` to verify that
+//      the category exists.
+
+std::vector<std::string> util::categorical::partial_category(const std::string &category,
+                                                             const std::vector<util::u64>& at_indices,
+                                                             util::u32* status,
+                                                             util::s64 index_offset) const
+{
+    using util::u64;
+    using util::u32;
+    
+    const auto cat_it = m_category_indices.find(category);
+    
+    std::vector<std::string> result;
+    
+    if (cat_it == m_category_indices.end())
+    {
+        *status = util::categorical_status::CATEGORY_DOES_NOT_EXIST;
+        return result;
+    }
+    
+    const std::vector<u32>& labs = m_labels[cat_it->second];
+    
+    u64 n_indices = at_indices.size();
+    u64 sz = size();
+    
+    for (u64 i = 0; i < n_indices; i++)
+    {
+        u64 idx = at_indices[i] + index_offset;
+        
+        if (idx >= sz)
+        {
+            *status = util::categorical_status::OUT_OF_BOUNDS;
+            result.resize(0);
+            return result;
+        }
+        
+        result.push_back(m_label_ids.at(labs[idx]));
+    }
+    
+    *status = util::categorical_status::OK;
+    
+    return result;
+}
+
 //  full_category: Replace int label ids with string labels.
+//
+//      Pass in pointer to `exists` to verify that
+//      the category exists.
 
 std::vector<std::string> util::categorical::full_category(const std::string &category, bool *exists) const
 {
@@ -1003,7 +1378,22 @@ std::vector<std::string> util::categorical::full_category(const std::string &cat
     return result;
 }
 
+//  full_category: Replace int label ids with string labels.
+//
+//      If the category does not exist, the result is an empty vector.
+
+std::vector<std::string> util::categorical::full_category(const std::string &category) const
+{
+    bool dummy;
+    return full_category(category, &dummy);
+}
+
+
 //  in_category: Get all labels in a category.
+//
+//      Pass in pointer to `exists` to verify that
+//      the category exists.
+
 std::vector<std::string> util::categorical::in_category(const std::string& category, bool* exists) const
 {
     std::vector<std::string> result;
@@ -1016,6 +1406,24 @@ std::vector<std::string> util::categorical::in_category(const std::string& categ
     
     *exists = true;
     
+    unchecked_in_category(result, category);
+    
+    return result;
+}
+
+//  in_category: Get all labels in a category.
+//
+//      If the category does not exist, the result is an empty vector.
+
+std::vector<std::string> util::categorical::in_category(const std::string &category) const
+{
+    std::vector<std::string> result;
+    unchecked_in_category(result, category);
+    return result;
+}
+
+void util::categorical::unchecked_in_category(std::vector<std::string> &out, const std::string &category) const
+{
     std::vector<std::string> labs = m_label_ids.keys();
     util::u64 n_labs = labs.size();
     
@@ -1025,11 +1433,58 @@ std::vector<std::string> util::categorical::in_category(const std::string& categ
         
         if (m_in_category.at(lab) == category)
         {
-            result.push_back(lab);
+            out.push_back(lab);
+        }
+    }
+}
+
+//  collapse_category: Collapse category to a single label.
+
+void util::categorical::collapse_category(const std::string& category, bool* exists)
+{
+    using util::u32;
+    
+    std::vector<std::string> labs = in_category(category, exists);
+    u64 n_labs = labs.size();
+    
+    if (!(*exists) || n_labs <= 1)
+    {
+        return;
+    }
+    
+    std::string collapsed_expression = get_collapsed_expression(category);
+    
+    u32 lab_id;
+    
+    if (m_label_ids.contains(collapsed_expression))
+    {
+        lab_id = m_label_ids.at(collapsed_expression);
+    }
+    else
+    {
+        lab_id = get_next_label_id();
+        m_label_ids.insert(collapsed_expression, lab_id);
+        m_in_category[collapsed_expression] = category;
+    }
+    
+    for (u64 i = 0; i < n_labs; i++)
+    {
+        if (labs[i] != collapsed_expression)
+        {
+            m_label_ids.erase(labs[i]);
+            m_in_category.erase(labs[i]);
         }
     }
     
-    return result;
+    std::vector<u32>& full_labs = m_labels[m_category_indices.at(category)];
+    
+    std::fill(full_labs.begin(), full_labs.end(), lab_id);
+}
+
+void util::categorical::collapse_category(const std::string& category)
+{
+    bool dummy;
+    collapse_category(category, &dummy);
 }
 
 //  get_next_label_id: Get the next label id.

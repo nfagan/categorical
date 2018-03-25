@@ -7,6 +7,7 @@ namespace util {
     void init_cat_functions();
     
     void is_valid(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
+    void equals(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
     
     void create(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
     void destroy(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
@@ -14,11 +15,14 @@ namespace util {
     
     void append(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
     
+    void fill_category(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
     void set_category(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
     void set_partial_category(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
     void require_category(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
+    void collapse_category(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
     
     void full_category(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
+    void partial_category(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
     void in_category(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
     
     void get_categories(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
@@ -26,8 +30,13 @@ namespace util {
     void has_label(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
     void has_category(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
     
+    void one(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
+    
+    void keep_each(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
+    void keep_eachc(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
     void keep(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
     void resize(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
+    void repeat(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
     
     void size(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
     

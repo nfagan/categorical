@@ -25,7 +25,15 @@ namespace util {
             {"resize",                  util::ops::RESIZE},
             {"has_lab",                 util::ops::HAS_LABEL},
             {"has_cat",                 util::ops::HAS_CATEGORY},
-            {"is_valid",                util::ops::IS_VALID}
+            {"is_valid",                util::ops::IS_VALID},
+            {"fill_cat",                util::ops::FILL_CATEGORY},
+            {"repeat",                  util::ops::REPEAT},
+            {"keep_each",               util::ops::KEEP_EACH},
+            {"keep_eachc",              util::ops::KEEP_EACHC},
+            {"collapse_cat",            util::ops::COLLAPSE_CATEGORY},
+            {"one",                     util::ops::ONE},
+            {"equals",                  util::ops::EQUALS},
+            {"partial_cat",             util::ops::PARTIAL_CATEGORY}
         });
         
         std::array<util::mex_func_t, util::ops::N_OPS> funcs;
@@ -63,8 +71,19 @@ void util::init_cat_functions()
     globals::funcs[ops::HAS_LABEL] =                &util::has_label;
     globals::funcs[ops::HAS_CATEGORY] =             &util::has_category;
     globals::funcs[ops::IS_VALID] =                 &util::is_valid;
+    globals::funcs[ops::FILL_CATEGORY] =            &util::fill_category;
+    globals::funcs[ops::REPEAT] =                   &util::repeat;
+    globals::funcs[ops::KEEP_EACH] =                &util::keep_each;
+    globals::funcs[ops::KEEP_EACHC] =               &util::keep_eachc;
+    globals::funcs[ops::COLLAPSE_CATEGORY] =        &util::collapse_category;
+    globals::funcs[ops::ONE] =                      &util::one;
+    globals::funcs[ops::EQUALS] =                   &util::equals;
+    globals::funcs[ops::PARTIAL_CATEGORY] =         &util::partial_category;
     
     globals::INITIALIZED = true;
+    
+    std::cout << std::endl;
+    std::cout << "Initialized Categorical interface." << std::endl << std::endl;
 }
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
@@ -73,7 +92,14 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     
     util::init_cat_functions();
     
-    if (nrhs < 1 || mxGetString(prhs[0], cmd, sizeof(cmd)))
+    if (nrhs == 0)
+    {
+        std::cout << std::endl; 
+        std::cout << "Try: `help Categorical/Categorical`" << std::endl << std::endl;
+        return;
+    }
+    
+    if (mxGetString(prhs[0], cmd, sizeof(cmd)))
     {
         mexErrMsgIdAndTxt("categorical:main", "Invalid op-code.");
     }
