@@ -56,7 +56,7 @@ classdef fcat < handle
     
     function tf = ne(obj, B)
       
-      %   NE -- True if objects are not Categoricals with equal contents.
+      %   NE -- True if objects are not fcat objects with equal contents.
       %
       %     See also fcat/eq
       %
