@@ -1,4 +1,4 @@
-classdef Categorical < handle
+classdef fcat < handle
     
   properties (Access = private)
     id;
@@ -6,17 +6,28 @@ classdef Categorical < handle
   
   methods
     
-    function obj = Categorical(id)
+    function obj = fcat(id)
       
-      %   CATEGORICAL -- Create categorical object.
+      %   FCAT -- Create fcat object.
       %
-      %     See also Categorical/findall, Categorical/from
+      %     FCAT objects are meant to group and identify subsets of data, 
+      %     in the vein of categorical arrays.
+      %
+      %     FCAT objects are essentially categorical matrices whose
+      %     elements are unique across, but not necessarily within,
+      %     columns. In this way, each "column" of an FCAT object
+      %     constitutes a category (or dimension) with an arbitrary number
+      %     of levels (or labels). Rows of observations can then be 
+      %     identified by a given combination of labels across all 
+      %     categories.
+      %
+      %     See also fcat/findall, fcat/from, fcat/subsref, categorical
       
       if ( nargin == 0 )
         obj.id = cat_api( 'create' );
       else
         try
-          Categorical.validate_constructor_signature( dbstack() );
+          fcat.validate_constructor_signature( dbstack() );
         catch err
           throwAsCaller( err );
         end
@@ -26,16 +37,16 @@ classdef Categorical < handle
     
     function tf = eq(obj, B)
       
-      %   EQ -- True if two Categorical objects have equal contents.
+      %   EQ -- True if two fcat objects have equal contents.
       %
-      %     See also Categorical/ne, Categorical/findall
+      %     See also fcat/ne, fcat/findall
       %
       %     IN:
       %       - `B` (/any/)
       %     OUT:
       %       - `tf` (logical)
       
-      if ( ~isa(obj, 'Categorical') || ~isa(B, 'Categorical') )
+      if ( ~isa(obj, 'fcat') || ~isa(B, 'fcat') )
         tf = false;
         return;
       end
@@ -47,7 +58,7 @@ classdef Categorical < handle
       
       %   NE -- True if objects are not Categoricals with equal contents.
       %
-      %     See also Categorical/eq
+      %     See also fcat/eq
       %
       %     IN:
       %       - `B` (/any/)
@@ -57,23 +68,23 @@ classdef Categorical < handle
       tf = ~eq( obj, B );
     end
     
-    function n = numel(obj)
+    function n = numel(varargin)
       
       %   SIZE -- Get the number of rows in the object.
       %
-      %     See also Categorical/size
+      %     See also fcat/size
       %
       %     OUT:
       %       - `n` (uint64)
       
-      n = size( obj, 1 );
+      n = size( varargin{1}, 1 );
     end
     
     function tf = isempty(obj)
       
       %   ISEMPTY -- True if the object is of size 0.
       %
-      %     See also Categorical/numel
+      %     See also fcat/numel
       %
       %     OUT:
       %       - `tf` (logical)
@@ -85,7 +96,7 @@ classdef Categorical < handle
       
       %   SIZE -- Get the number of rows in the object.
       %
-      %     See also Categorical/numel, Categorical/getlabs
+      %     See also fcat/numel, fcat/getlabs
       %
       %     IN:
       %       - `dimension` |OPTIONAL| (numeric)
@@ -124,7 +135,7 @@ classdef Categorical < handle
       
       %   RESIZE -- Expand or contract object.
       %
-      %     See also Categorical/size
+      %     See also fcat/size
       %
       %     IN:
       %       - `to` (uint64)
@@ -136,16 +147,164 @@ classdef Categorical < handle
       
       %   REPEAT -- Repeat entire contents N times.
       %
-      %     See also Categorical/resize, repmat
+      %     See also fcat/resize, repmat
       
       cat_api( 'repeat', obj.id, uint64(n_times) );      
+    end
+    
+    function obj = subsasgn(obj, s, values)
+      
+      %   SUBSASGN -- Subscript assignment.
+      %
+      %     obj('category') = 'label'; sets the full contents of 'category'
+      %     to 'label'.
+      %
+      %     obj('category', 1:10) = 'label'; sets the first 10 elements,
+      %     only.
+      %
+      %     obj('category', 2:3) = { 'lab1', 'lab2' } sets the second and
+      %     third elements to 'lab1' and 'lab2', respectively.
+      %
+      %     See also fcat/subsref, fcat/fcat
+      %
+      %     IN:
+      %       - `s` (struct)
+      %       - `values` (/any/)
+      
+      try
+        switch ( s(1).type )
+          case '()'
+            assert( numel(s) == 1, ...
+              'Nested assignments with "()" are illegal.' );
+            
+            subs = s(1).subs;
+            
+            if ( numel(subs) == 1 )
+              %
+              % x('hi') = 'sup';
+              %
+              setcat( obj, subs{1}, values );
+            elseif ( numel(subs) == 2 )
+              if ( strcmp(subs{2}, ':') )
+                %
+                % x('hi', :) = 'sup';
+              	% 
+                setcat( obj, subs{1}, values );
+              else
+                %
+                % x('hi', 1:10) = 'sup';
+              	% 
+                setcat( obj, subs{1}, values, subs{2} );
+              end
+            else
+              error( 'Too many or too few subscripts.' );
+            end
+          otherwise
+            error( 'Assignment with "%s" is not supported.', s(1).type );
+        end
+      catch err
+        throwAsCaller( err );
+      end
+    end
+    
+    function varargout = subsref(obj, s)
+      
+      %   SUBSREF -- Subscript reference.
+      %
+      %     [I, C] = obj.findall( 'category' ); calls the method 'findall'
+      %     with inputs 'category'.
+      %
+      %     c = obj('category') returns the unique labels in category 
+      %     'category', if it exists, or else throws an error.
+      %
+      %     c = obj('category', 1:10) returns the first 10 labels in
+      %     'category', in order, throwing an error if size is less than
+      %     10.
+      %
+      %     c = obj('category', [1; 1; 1]) works as above, but returns a
+      %     3x1 array of the duplicated first label in 'category'.
+      %
+      %     c = obj('category', :) returns the full 'category'.
+      %
+      %     c = obj(1:10) returns a copied fcat object whose elements are
+      %     the first 10 rows of `obj`.
+      %
+      %     c = obj(:) creates a copy of `obj`.
+      %
+      %     See also fcat/subsasgn, fcat/fcat
+      %
+      %     IN:
+      %       - `s` (struct)
+      %     OUT:
+      %       - `varargout` (cell)
+      
+      subs = s(1).subs;
+      type = s(1).type;
+      n_subs = numel( subs );
+
+      s(1) = [];
+      
+      try
+        switch ( type )
+          case '()'
+            assert( n_subs > 0, 'Invalid function-like invocation of a variable.' );
+
+            category_or_inds = subs{1};
+
+            if ( n_subs == 1 )
+              if ( isnumeric(category_or_inds) )
+                %
+                % c = obj(1:10);
+                %
+                varargout{1} = keep( copy(obj), category_or_inds );
+              else
+                if ( strcmp(category_or_inds, ':') )
+                  %
+                  % c = obj(:);
+                  %
+                  varargout{1} = copy( obj );
+                else
+                  %
+                  % c = obj('category');
+                  %
+                  varargout{1} = incat( obj, category_or_inds );
+                end                
+              end
+            else
+              assert( n_subs == 2, 'Too many subscripts.' );
+
+              index_or_colon = subs{2};
+
+              if ( strcmp(index_or_colon, ':') )
+                varargout{1} = fullcat( obj, category_or_inds );
+              else
+                varargout{1} = partcat( obj, category_or_inds, index_or_colon );
+              end
+            end
+          case '.'
+            if ( any(strcmp(methods(obj), subs)) )
+              func = eval( sprintf('@%s', subs) );
+              %   if the ref is to a method, but is called without ()
+              if ( numel(s) == 0 )
+                s(1).subs = {};
+              end
+              inputs = [ {obj} {s(:).subs{:}} ];
+              [varargout{1:nargout()}] = func( inputs{:} );
+              return;
+            end
+          otherwise
+            error( 'Referencing with "%s" is not supported.', type );
+        end
+      catch err
+        throwAsCaller( err );
+      end
     end
     
     function obj = only(obj, labels)
       
       %   ONLY -- Retain rows associated with labels.
       %
-      %     See also Categorical/keep, Categorical/find
+      %     See also fcat/keep, fcat/find
       
       keep( obj, find(obj, labels) );
     end
@@ -154,7 +313,7 @@ classdef Categorical < handle
       
       %   KEEP -- Retain rows at indices.
       %
-      %     See also Categorical/Categorical, Categorical/findall
+      %     See also fcat/fcat, fcat/findall
       %
       %     IN:
       %       - `indices` (uint64)
@@ -166,17 +325,21 @@ classdef Categorical < handle
       
       %   KEEPEACH -- Retain one row for each combination of labels.
       %
-      %     See also Categorical/findall
+      %     See also fcat/findall
       %
       %     IN:
       %       - `categories` (char, cell array of strings)
       %     OUT:
-      %       - `obj` (Categorical) -- Modified object.
+      %       - `obj` (fcat) -- Modified object.
       %       - `I` (cell array of uint64)
       %       - `C` (cell array of strings)
       
       if ( nargout > 2 )
-        [I, C] = cat_api( 'keep_eachc', obj.id, categories );      
+        [I, C] = cat_api( 'keep_eachc', obj.id, categories );
+        
+        if ( ~ischar(categories) )
+          C = reshape( C, numel(categories), numel(C) / numel(categories) );
+        end
       else
         I = cat_api( 'keep_each', obj.id, categories );
       end
@@ -186,7 +349,7 @@ classdef Categorical < handle
       
       %   COMBS -- Get present combinations of labels in categories.
       %
-      %     See also Categorical/findall
+      %     See also fcat/findall
       %
       %     IN:
       %       - `categories` (char, cell array of strings)
@@ -215,7 +378,7 @@ classdef Categorical < handle
       %     N combinations, where each column `i` of C identifies the
       %     labels used to generate the i-th index of I.
       %
-      %     See also Categorical/combs, Categorical/find
+      %     See also fcat/combs, fcat/find
       %
       %     IN:
       %       - `categories` (char, cell array of strings)
@@ -244,16 +407,16 @@ classdef Categorical < handle
       %     Within a category, indices are calculated via an `or` operation.
       %     Across categories, indices are calculated via an `and` operation.
       %
-      %     E.g., if `obj` is a Categorical with labels '0' and '1' in 
+      %     E.g., if `obj` is a fcat with labels '0' and '1' in 
       %     category '0', then find( obj, {'0', '1'} ) returns rows 
       %     associated with '0' OR '1'.
       %
-      %     But if `obj` is a Categorical with labels '0' and '1' in 
+      %     But if `obj` is a fcat with labels '0' and '1' in 
       %     categories '0' and '1', respectively, then 
       %     find( obj, {'0', '1'} ) returns the subset of rows associated 
       %     with '0' AND '1'.
       %
-      %     See also Categorical/getlabs, Categorical/getcats
+      %     See also fcat/getlabs, fcat/getcats
       %
       %     IN:
       %       - `labels` (uint32)
@@ -267,7 +430,7 @@ classdef Categorical < handle
      
       %   GETCATS -- Get category names.
       %
-      %     See also Categorical/getlabs, Categorical/Categorical
+      %     See also fcat/getlabs, fcat/fcat
       %
       %     OUT:
       %       - `C` (cell array of strings)
@@ -279,7 +442,7 @@ classdef Categorical < handle
       
       %   GETLABS -- Get label names.
       %
-      %     See also Categorical/getcats
+      %     See also fcat/getcats
       %
       %     OUT:
       %       - `L` (cell array of strings)
@@ -325,7 +488,7 @@ classdef Categorical < handle
       
       %   FULLCAT -- Get complete category or categories.
       %
-      %     See also Categorical/setcat
+      %     See also fcat/setcat
       %
       %     IN:
       %       - `categories` (char, cell array of strings)
@@ -365,26 +528,36 @@ classdef Categorical < handle
       
       %   INCAT -- Get labels in category.
       %
-      %     See also Categorical/fullcat
+      %     See also fcat/fullcat
       %
       %     IN:
       %       - `category` (char)
       %     OUT:
       %       - `C` (cell array of strings)
       
-      C = cat_api( 'in_cat', obj.id, category );            
+      C = cat_api( 'in_cat', obj.id, category );
     end
     
     function obj = requirecat(obj, category)
       
       %   REQUIRECAT -- Add category if it does not exist.
       %
-      %     See also Categorical/findall
+      %     See also fcat/findall
       %
       %     IN:
       %       - `category` (char, cell array of strings)
       
       cat_api( 'require_cat', obj.id, category );
+    end
+    
+    function obj = rmcat(obj, category)
+      
+      %   RMCAT -- Remove category(ies).
+      %
+      %     IN:
+      %       - `category` (char, cell array of strings)
+      
+      cat_api( 'rm_cat', obj.id, category );        
     end
     
     function obj = collapsecat(obj, category)
@@ -398,7 +571,7 @@ classdef Categorical < handle
       %     collapsecat( obj, {'test1', 'test2'} ) works as above, but for
       %     multiple categories at once.
       %
-      %     See also Categorical/requirecat
+      %     See also fcat/requirecat
       %
       %     IN:
       %       - `category` (char, cell array of strings)
@@ -441,7 +614,7 @@ classdef Categorical < handle
       %     1x1 cell array. Otherwise, the full contents of the category 
       %     'hi' are set to 'hello'.
       %
-      %     See also Categorical/requirecat, Categorical/fillcat
+      %     See also fcat/requirecat, fcat/fillcat
       %
       %     IN:
       %       - `category` (char)
@@ -458,7 +631,7 @@ classdef Categorical < handle
       
       %   FILLCAT -- Set entire contents of category to label.
       %
-      %     See also Categorical/setcat
+      %     See also fcat/setcat
       %
       %     IN:
       %       - `cat` (char)
@@ -469,17 +642,17 @@ classdef Categorical < handle
     
     function obj = append(obj, B)
       
-      %   APPEND -- Append another Categorical object.
+      %   APPEND -- Append another fcat object.
       %
-      %     See also Categorical/Categorical
+      %     See also fcat/fcat
       %
       %     IN:
-      %       - `B` (Categorical)
+      %       - `B` (fcat)
       
-      if ( ~isa(obj, 'Categorical') )
+      if ( ~isa(obj, 'fcat') )
         error( 'Cannot append objects of class "%s".', class(obj) );
       end
-      if ( ~isa(B, 'Categorical') )
+      if ( ~isa(B, 'fcat') )
         error( 'Cannot append objects of class "%s".', class(B) );
       end
       
@@ -490,7 +663,7 @@ classdef Categorical < handle
       
       %   DELETE -- Delete object and free memory.
       %
-      %     See also Categorical/Categorical
+      %     See also fcat/fcat
       %
       %     Calling `clear obj` also deletes the object.
       
@@ -501,19 +674,19 @@ classdef Categorical < handle
        
       %   COPY -- Create a copy of the current instance.
       %
-      %     See also Categorical/Categorical
+      %     See also fcat/fcat
       %
       %     OUT:
-      %       - `B` (Categorical)
+      %       - `B` (fcat)
       
-      B = Categorical( cat_api('copy', obj.id) );
+      B = fcat( cat_api('copy', obj.id) );
     end
     
     function disp(obj)
       
       %   DISP -- Pretty-print the object's contents.
       %
-      %     See also Categorical/Categorical, Categorical/getcats
+      %     See also fcat/fcat, fcat/getcats
       
       desktop_exists = usejava( 'desktop' );
       
@@ -599,7 +772,7 @@ classdef Categorical < handle
       %     [C, F] = ... also returns a 1xN cell array of strings `F`
       %     identifying the columns of `C`.
       %
-      %     See also Categorical/fullcat, Categorical/Categorical
+      %     See also fcat/fullcat, fcat/fcat
       %
       %     OUT:
       %       - `C` (cell array of strings)
@@ -613,7 +786,7 @@ classdef Categorical < handle
       
       %   CATEGORICAL -- Convert to Matlab categorical array.
       %
-      %     See also Categorical/cellstr
+      %     See also fcat/cellstr
       %
       %     OUT:
       %       - `C` (categorical)
@@ -632,13 +805,13 @@ classdef Categorical < handle
       %     appropriately called.
       
       if ( numel(stack) == 1 )
-        error( 'Invalid input to Categorical().' );
+        error( 'Invalid input to fcat().' );
       end
       
       if ( numel(stack) >= 2 )
-        if ( ~strcmp(stack(2).file, 'Categorical.m') || ...
-            ~strcmp(stack(2).name, 'Categorical.copy') )
-          error( 'Invalid input to Categorical().' );
+        if ( ~strcmp(stack(2).file, 'fcat.m') || ...
+            ~strcmp(stack(2).name, 'fcat.copy') )
+          error( 'Invalid input to fcat().' );
         end
       end
     end
@@ -646,22 +819,34 @@ classdef Categorical < handle
   
   methods (Static = true, Access = public)
     
+    function obj = with(cats)
+      
+      %   WITH -- Create fcat with categories.
+      %
+      %     IN:
+      %       - `cats` (char, cell array of strings)
+      %     OUT:
+      %       - `obj` (fcat)
+      
+      obj = requirecat( fcat(), cats );
+    end
+    
     function obj = from(varargin)
       
-      %   FROM -- Create Categorical from compatible source.
+      %   FROM -- Create fcat from compatible source.
       %
-      %     C = Categorical.from( c, cats ) creates a Categorical object
+      %     C = fcat.from( c, cats ) creates a fcat object
       %     from the Matlab categorical array or cell array of strings
       %     `c` and `cats`. `c` is an MxN categorical array or cell array
       %     of strings whose columns correspond to the categories in 
       %     `cats`.
       %
-      %     See also Categorical/Categorical
+      %     See also fcat/fcat
       %
       %     IN:
       %       - `varargin`
       %     OUT:
-      %       - `obj` (Categorical)
+      %       - `obj` (fcat)
       
       narginchk( 1, 2 );
       
@@ -700,7 +885,7 @@ classdef Categorical < handle
       end
 
       if ( iscellstr(arr) )
-        obj = Categorical();
+        obj = fcat();
         try
           requirecat( obj, cats );
           for i = 1:numel(cats)
@@ -709,13 +894,13 @@ classdef Categorical < handle
         catch err
           delete( obj );
           fprintf( ['\n The following error occurred when\n attempting to create' ...
-            , ' a Categorical object\n from cellstr or categorical input:\n\n'] );
+            , ' a fcat object\n from cellstr or categorical input:\n\n'] );
           throw( err );
         end
         return;
       end
 
-      error( 'Cannot convert to Categorical from objects of type "%s"', class(arr) );
+      error( 'Cannot convert to fcat from objects of type "%s"', class(arr) );
     end
   end
 end

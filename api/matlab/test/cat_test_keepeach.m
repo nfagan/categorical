@@ -5,7 +5,7 @@ cat_test_assert_depends_present( 'keep_each' );
 cont = get_example_container();
 [m, f] = label_mat( cont.labels );
 
-labs = Categorical.from( m, f );
+labs = fcat.from( m, f );
 
 for idx = 1:10
   

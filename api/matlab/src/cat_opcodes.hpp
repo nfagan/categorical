@@ -32,7 +32,8 @@ namespace util {
         static constexpr uint32_t ONE = 25u;
         static constexpr uint32_t EQUALS = 26u;
         static constexpr uint32_t PARTIAL_CATEGORY = 27u;
+        static constexpr uint32_t REMOVE_CATEGORY = 28u;
         //
-        static constexpr uint32_t N_OPS = 28u;
+        static constexpr uint32_t N_OPS = 29u;
     }
 }

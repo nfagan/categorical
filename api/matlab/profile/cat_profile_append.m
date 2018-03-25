@@ -23,8 +23,8 @@ c1 = toc();
 
 % Categorical
 tic;
-C = requirecat( Categorical(), cats );
-tmp = requirecat( Categorical(), cats );
+C = requirecat( fcat(), cats );
+tmp = requirecat( fcat(), cats );
 
 for i = 1:n_iters
   ind = randperm( size(categ, 1), 1 );
@@ -43,6 +43,6 @@ delete( C );
 delete( tmp );
 
 fprintf( '\n categorical: %0.3f (ms) [%d]', c1 * 1e3, n_iters );
-fprintf( '\n Categorical: %0.3f (ms) [%d]', c2 * 1e3, n_iters );
+fprintf( '\n fcat:        %0.3f (ms) [%d]', c2 * 1e3, n_iters );
 
 end

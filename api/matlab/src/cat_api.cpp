@@ -33,7 +33,8 @@ namespace util {
             {"collapse_cat",            util::ops::COLLAPSE_CATEGORY},
             {"one",                     util::ops::ONE},
             {"equals",                  util::ops::EQUALS},
-            {"partial_cat",             util::ops::PARTIAL_CATEGORY}
+            {"partial_cat",             util::ops::PARTIAL_CATEGORY},
+            {"rm_cat",                  util::ops::REMOVE_CATEGORY}
         });
         
         std::array<util::mex_func_t, util::ops::N_OPS> funcs;
@@ -79,6 +80,7 @@ void util::init_cat_functions()
     globals::funcs[ops::ONE] =                      &util::one;
     globals::funcs[ops::EQUALS] =                   &util::equals;
     globals::funcs[ops::PARTIAL_CATEGORY] =         &util::partial_category;
+    globals::funcs[ops::REMOVE_CATEGORY] =          &util::remove_category;
     
     globals::INITIALIZED = true;
     

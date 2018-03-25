@@ -2,7 +2,7 @@ function cat_test_copy()
 
 x = cat_test_get_mat_categorical();
 
-c1 = Categorical.from( x.c );
+c1 = fcat.from( x.c );
 
 c2 = copy( c1 );
 

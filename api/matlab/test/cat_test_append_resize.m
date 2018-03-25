@@ -1,6 +1,6 @@
 function cat_test_append_resize()
 
-x = Categorical();
+x = fcat();
 x.requirecat( {'hi', 'hello'} );
 x.setcat( 'hello', 'sup', 100 );
 x.resize( 101 );
@@ -17,7 +17,7 @@ x.resize( 1 );
 x.resize( 0 );
 x.resize( 1 );
 
-y = Categorical();
+y = fcat();
 y.requirecat( getcats(x) );
 
 new_sz = 2;

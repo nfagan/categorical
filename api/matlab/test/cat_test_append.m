@@ -6,7 +6,7 @@ n_iters = 1e3;
 cats = eg.f;
 categ = eg.c;
 
-C = requirecat( Categorical(), cats );
+C = requirecat( fcat(), cats );
 
 categ2 = categorical();
 categ2(1e3, numel(cats)) = '<undefined>';
@@ -18,7 +18,7 @@ for i = 1:n_iters
   
   categ2(i, :) = row;
   
-  tmp = requirecat( Categorical(), cats );
+  tmp = requirecat( fcat(), cats );
   
   for j = 1:numel(cats)
     setcat( tmp, cats{j}, cellstr(row(j)) );

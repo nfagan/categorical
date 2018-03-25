@@ -1438,6 +1438,45 @@ void util::categorical::unchecked_in_category(std::vector<std::string> &out, con
     }
 }
 
+//  remove_category: Remove category and all labels therein.
+
+void util::categorical::remove_category(const std::string &category, bool *exists)
+{
+    using util::u32;
+    using util::u64;
+    
+    std::vector<std::string> labs = in_category(category, exists);
+    
+    if (!(*exists))
+    {
+        return;
+    }
+    
+    util::u64 cat_index = m_category_indices.at(category);
+    
+    for (auto& it : m_category_indices)
+    {
+        if (it.second > cat_index)
+        {
+            it.second--;
+        }
+    }
+    
+    m_labels.erase(m_labels.begin() + cat_index);
+    m_collapsed_expressions.erase(get_collapsed_expression(category));
+    m_category_indices.erase(category);
+    
+    u64 n_labs = labs.size();
+    
+    for (u64 i = 0; i < n_labs; i++)
+    {
+        const std::string& lab = labs[i];
+        
+        m_label_ids.erase(lab);
+        m_in_category.erase(lab);
+    }
+}
+
 //  collapse_category: Collapse category to a single label.
 
 void util::categorical::collapse_category(const std::string& category, bool* exists)

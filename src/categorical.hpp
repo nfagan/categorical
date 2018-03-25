@@ -79,8 +79,11 @@ public:
     
     std::vector<std::string> in_category(const std::string& category, bool* exists) const;
     std::vector<std::string> in_category(const std::string& category) const;
+    
     void collapse_category(const std::string& category, bool* exists);
     void collapse_category(const std::string& category);
+    
+    void remove_category(const std::string& category, bool* exists);
     
     util::u32 keep(std::vector<util::u64>& at_indices, util::s64 offset = 0);
     

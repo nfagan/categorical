@@ -17,7 +17,7 @@ for i = 1:n_iters
   c1(i) = toc;
   
   tic;
-  C = requirecat( Categorical(), cats );
+  C = requirecat( fcat(), cats );
   for j = 1:numel(cats)
     setcat( C, cats{j}, X(:, j) );
   end
@@ -27,6 +27,6 @@ for i = 1:n_iters
 end
 
 fprintf( '\n categorical: %0.3f (ms) [%d]', mean(c1) * 1e3, n_iters );
-fprintf( '\n Categorical: %0.3f (ms) [%d]', mean(c2) * 1e3, n_iters );
+fprintf( '\n fcat:        %0.3f (ms) [%d]', mean(c2) * 1e3, n_iters );
 
 end

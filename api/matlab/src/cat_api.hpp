@@ -20,6 +20,7 @@ namespace util {
     void set_partial_category(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
     void require_category(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
     void collapse_category(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
+    void remove_category(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
     
     void full_category(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
     void partial_category(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);

@@ -4,11 +4,11 @@ categ = cat_test_get_mat_categorical();
 
 n_iters = 1e2;
 
-z = requirecat( Categorical(), categ.f );
+z = requirecat( fcat(), categ.f );
 
 for i = 1:n_iters
   
-  x = Categorical.from( categ.c, categ.f );
+  x = fcat.from( categ.c, categ.f );
   y = categ.c;
   
   n_choose = randi( numel(x), 1, 1 );

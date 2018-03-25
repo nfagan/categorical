@@ -6,7 +6,7 @@ n_iters = 1e2;
 
 for i = 1:n_iters
   
-  x = Categorical.from( categ.c, categ.f );
+  x = fcat.from( categ.c, categ.f );
   y = categ.c;
   
   n_choose = randi( numel(x), 1, 1 );

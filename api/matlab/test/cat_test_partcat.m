@@ -2,7 +2,7 @@ function cat_test_partcat()
 
 x = cat_test_get_mat_categorical();
 
-y = Categorical.from( x.c, x.f );
+y = fcat.from( x.c, x.f );
 
 cats = getcats( y );
 

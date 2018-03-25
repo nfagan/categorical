@@ -3,8 +3,8 @@ function cat_test_resize()
 x = cat_test_get_mat_categorical();
 cats = x.c;
 
-c1 = Categorical.from( cats );
-c2 = Categorical.from( cats );
+c1 = fcat.from( cats );
+c2 = fcat.from( cats );
 
 keep( c1, 1 );
 keep( c2, 1 );
