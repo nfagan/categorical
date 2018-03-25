@@ -1,0 +1,30 @@
+#pragma once
+
+#include <cstdint>
+
+namespace util {
+    namespace ops {
+        static constexpr uint32_t CREATE = 0u;
+        static constexpr uint32_t SET_CATEGORY = 1u;
+        static constexpr uint32_t FIND_ALLC = 2u;
+        static constexpr uint32_t REQUIRE_CATEGORY = 3u;
+        static constexpr uint32_t DESTROY = 4u;
+        static constexpr uint32_t SIZE = 5u;
+        static constexpr uint32_t FIND_ALL = 6u;
+        static constexpr uint32_t GET_CATEGORIES = 7u;
+        static constexpr uint32_t GET_LABELS = 8u;
+        static constexpr uint32_t APPEND = 9u;
+        static constexpr uint32_t FIND = 10u;
+        static constexpr uint32_t FULL_CATEGORY = 11u;
+        static constexpr uint32_t IN_CATEGORY = 12u;
+        static constexpr uint32_t KEEP = 13u;
+        static constexpr uint32_t SET_PARTIAL_CATEGORY = 14u;
+        static constexpr uint32_t COPY = 15u;
+        static constexpr uint32_t RESIZE = 16u;
+        static constexpr uint32_t HAS_LABEL = 17u;
+        static constexpr uint32_t HAS_CATEGORY = 18u;
+        static constexpr uint32_t IS_VALID = 19u;
+        //
+        static constexpr uint32_t N_OPS = 20u;
+    }
+}
