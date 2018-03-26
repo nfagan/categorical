@@ -8,6 +8,7 @@
 #include "categorical.hpp"
 #include <random>
 #include <iostream>
+#include <algorithm>
 
 util::categorical::categorical()
 {
@@ -1295,6 +1296,8 @@ std::vector<std::string> util::categorical::get_categories() const
         cats[i++] = it.first;
     }
     
+    std::sort(cats.begin(), cats.end());
+    
     return cats;
 }
 
@@ -1302,7 +1305,9 @@ std::vector<std::string> util::categorical::get_categories() const
 
 std::vector<std::string> util::categorical::get_labels() const
 {
-    return m_label_ids.keys();
+    std::vector<std::string> labs = m_label_ids.keys();
+    std::sort(labs.begin(), labs.end());
+    return labs;
 }
 
 //  partial_category: Replace int label ids with string labels, for a subset of rows.
