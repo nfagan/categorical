@@ -151,6 +151,19 @@ classdef fcat < handle
       end
     end
     
+    function s = end(obj, ind, N)
+      
+      %   END -- Get the final index in a given dimension.
+      %
+      %     IN:
+      %       - `ind` (double)
+      %       - `N` (double)
+      %     OUT:
+      %       - `s` (double)
+      
+      s = size( obj, ind );
+    end
+    
     function n = nlabs(obj)
       
       %   NLABS -- Get the current number of labels.
@@ -233,13 +246,28 @@ classdef fcat < handle
               is_colon = strcmp( sub, ':' );
               
               if ( isnumeric(sub) || is_colon )
-                %
-                % x(1:10) = other_fcat; | x(:) = other_fcat;
-                %
-                if ( is_colon )
-                  assign( obj, values, 1:numel(obj) );
+                if ( isa(values, 'double') && isempty(values) )
+                  %
+                  % x(1:10) = [];
+                  %
+                  if ( is_colon )
+                    keep( obj, [] );
+                  else
+                    inds = true( numel(obj), 1 );
+                    assert( all(sub > 0 & sub <= numel(obj)), ...
+                      'Index exceeds categorical dimensions.' );
+                    inds(sub) = false;
+                    keep( obj, find(inds) );
+                  end
                 else
-                  assign( obj, values, sub );
+                  %
+                  % x(1:10) = other_fcat; | x(:) = other_fcat;
+                  %
+                  if ( is_colon )
+                    assign( obj, values, 1:numel(obj) );
+                  else
+                    assign( obj, values, sub );
+                  end
                 end
               else
                 %
@@ -248,66 +276,59 @@ classdef fcat < handle
                 setcat( obj, sub, values );
               end
             elseif ( numel(subs) == 2 )
-              if ( strcmp(subs{1}, ':') )
-                if ( ischar(subs{2}) )
+              is_colon_m = strcmp( subs{1}, ':' );
+              is_colon_n = strcmp( subs{2}, ':' );
+              
+              if ( is_colon_m )
+                if ( is_colon_n )
+                  %
+                  % x(:, :) = values
+                  %
+                  setcats( obj, getcats(obj), values );
+                elseif ( ischar(subs{2}) )
                   %
                   % x(:, 'hi') = 'sup';
                   % 
                   setcat( obj, subs{2}, values );
                 else
+                  %
+                  % x(:, 1) = 'val'
+                  %
                   nums = subs{2};
                   cats = getcats( obj );
                   msg = 'Category index must be numeric or a colon.';
-                  if ( ~strcmp(subs{2}, ':') )
+                  if ( ~is_colon_n )
                     assert( isnumeric(nums), msg );
                     c = cats(nums);
                   else
                     c = cats;
                   end
-                  %
-                  %   convert char to cell
-                  %
-                  if ( ~iscell(values) )
-                    values = { values };
-                  end
-                  %
-                  %   do the assignment
-                  %
-                  for i = 1:numel(c)
-                    setcat( obj, c{i}, values(:, i) );
-                  end
+                  setcats( obj, c, values );
                 end
-              else
-                if ( ischar(subs{2}) && ~strcmp(subs{2}, ':') )
+              else  %  not colon m
+                if ( ischar(subs{2}) && ~is_colon_n )
                   %
                   % x(1:10, 'hi') = 'sup';
                   % 
                   setcat( obj, subs{2}, values, subs{1} );
                 else
                   %
-                  % x(1:2, 1) = 'sup' | x(1:2, 2:4) = { .. }
+                  % x(1:2, 1) = 'sup' | x(1:2, 2:4) = { .. } | 
+                  % x(1:2, :) = 'hi'
                   %
                   nums = subs{2};
-                  cats = getcats( obj );
                   msg = 'Category index must be numeric or a colon.';
-                  if ( ~strcmp(subs{2}, ':') )
+                  if ( ~is_colon_n )
                     assert( isnumeric(nums), msg );
+                    cats = getcats( obj );
                     c = cats(nums);
                   else
-                    c = cats;
+                    c = getcats( obj );
                   end
                   %
-                  %   convert char to cell
+                  % do the assignment
                   %
-                  if ( ~iscell(values) )
-                    values = { values };
-                  end
-                  %
-                  %   do the assignment
-                  %
-                  for i = 1:numel(c)
-                    setcat( obj, c{i}, values(:, i), subs{1} );
-                  end
+                  setcats( obj, c, values, subs{1} );
                 end
               end
             else
@@ -419,20 +440,12 @@ classdef fcat < handle
                   cats = cats(index_or_colon);
                 end
                 
-                if ( strcmp(category_or_inds, ':') )
-                  all_rows = true;
-                  out = cell( numel(obj), numel(cats) );
-                else
-                  all_rows = false;
-                  out = cell( numel(category_or_inds), numel(cats) );
-                end
+                all_rows = strcmp( category_or_inds, ':' );
                 
-                for i = 1:numel(cats)
-                  if ( all_rows )
-                    out(:, i) = fullcat( obj, cats{i} );
-                  else
-                    out(:, i) = partcat( obj, cats{i}, category_or_inds );
-                  end
+                if ( all_rows )
+                  out = fullcat( obj, cats );
+                else
+                  out = partcat( obj, cats, category_or_inds );
                 end
                 
                 varargout{1} = out;
@@ -709,33 +722,26 @@ classdef fcat < handle
       %     OUT:
       %       - `C` (cell array of strings)
       
-      if ( ischar(categories) )
-        C = cat_api( 'full_cat', obj.id, categories );
-        return;
-      end
+      C = cat_api( 'full_cat', obj.id, categories );
       
-      if ( ~iscell(categories) )
-        error( 'Categories must be a cell array of strings, or char.' );
-      end
-      
-      n_cats = numel( categories );
-      N = numel( obj );
-      C = cell( N, n_cats );
-      
-      for i = 1:n_cats
-        C(:, i) = cat_api( 'full_cat', obj.id, categories{i} );
+      if ( ~ischar(categories) && numel(categories) > 1 )
+        C = reshape( C, numel(C) / numel(categories), numel(categories) );
       end
     end
     
-    function C = partcat(obj, category, indices)
+    function C = partcat(obj, categories, indices)
       
-      %   PARTCAT -- Get part of a category.
+      %   PARTCAT -- Get part of a category or categories.
       %
       %     IN:
-      %       - `category` (char)
+      %       - `categories` (char)
       %       - `indices` (uint64)
       
-      C = cat_api( 'partial_cat', obj.id, category, uint64(indices) );      
+      C = cat_api( 'partial_cat', obj.id, categories, uint64(indices) );
+      
+      if ( ~ischar(categories) && numel(categories) > 1 )
+        C = reshape( C, numel(C) / numel(categories), numel(categories) );
+      end
     end
     
     function C = incat(obj, category)
@@ -841,6 +847,23 @@ classdef fcat < handle
       end
     end
     
+    function obj = setcats(obj, categories, to, at_indices)
+      
+      %   SETCATS -- Assign values to categories.
+      %
+      %     See also fcat/subsref, fcat/setcat
+      %
+      %     IN:
+      %       - `categories` (char, cell array of strings)
+      %       - `to` (cell array of strings)
+      
+      if ( nargin == 3 )
+        cat_api( 'set_cats', obj.id, categories, to );
+      else
+        cat_api( 'set_partial_cats', obj.id, categories, to, uint64(at_indices) );
+      end  
+    end
+    
     function obj = fillcat(obj, cat, lab)
       
       %   FILLCAT -- Set entire contents of category to label.
@@ -871,6 +894,20 @@ classdef fcat < handle
       end
       
       cat_api( 'append', obj.id, B.id );
+    end
+    
+    function obj = vertcat(obj, varargin)
+      
+      %   VERTCAT -- Append other fcat objects.
+      %
+      %     See also fcat/append
+      %
+      %     IN:
+      %       - `B` (fcat)
+      
+      for i = 1:numel(varargin)
+        append( obj, varargin{i} );
+      end
     end
     
     function obj = assign(obj, B, at_indices)
@@ -1040,7 +1077,7 @@ classdef fcat < handle
       
       fprintf( '  %s %s array\n\n', sz_str, link_str );
       
-      disp( getcats(obj)' );
+%       disp( getcats(obj)' );
       disp( cellstr(obj) );
     end
     

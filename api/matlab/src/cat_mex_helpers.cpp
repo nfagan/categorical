@@ -26,6 +26,18 @@ mxArray* util::string_vector_to_array(const std::vector<std::string>& in_vec)
     return strs;
 }
 
+void util::assign_string_vector_to_array(const std::vector<std::string>& in_vec, 
+        mxArray* out_cell, uint64_t start_idx)
+{
+    uint64_t sz = in_vec.size();
+    
+    for (uint64_t i = 0; i < sz; i++)
+    {
+        mxArray* str = mxCreateString(in_vec[i].c_str());
+        mxSetCell(out_cell, i + start_idx, str);
+    }
+}
+
 std::vector<std::string> util::get_strings(const mxArray* in_strs, const char* id)
 {
     mxClassID strs_class = mxGetClassID(in_strs);

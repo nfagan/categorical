@@ -2,6 +2,8 @@
 
 void util::full_category(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {    
+    using util::u64;
+    
     const char* func_id = "categorical:fullcat";
     
     util::assert_nrhs(nrhs, 3, func_id);
@@ -9,23 +11,41 @@ void util::full_category(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prh
     
     util::categorical* cat = util::detail::mat_to_ptr<util::categorical>(prhs[1]);
     
-    bool str_success;
-    bool cat_exists;
+    std::vector<std::string> categories = util::get_strings(prhs[2], func_id);
     
-    std::string category = util::get_string(prhs[2], &str_success);
+    u64 n_cats = categories.size();
     
-    if (!str_success)
+    mxArray* strs = mxCreateCellMatrix(n_cats * cat->size(), 1);
+    u64 assign_at = 0;
+    
+    for (u64 i = 0; i < n_cats; i++)
     {
-        mexErrMsgIdAndTxt(func_id, "String copy failed.");
+        bool cat_exists;
+        
+        const std::string& c_cat = categories[i];
+        
+        std::vector<std::string> full_cat = cat->full_category(c_cat, &cat_exists);
+        
+        //
+        //  cleanup created arrays
+        //
+        if (!cat_exists)
+        {
+            for (u64 j = 0; j < assign_at; j++)
+            {
+                mxDestroyArray(mxGetCell(strs, j));
+            }
+            
+            mxDestroyArray(strs);
+            std::string msg = util::get_error_text_missing_category(c_cat);
+            mexErrMsgIdAndTxt(func_id, msg.c_str());
+        }
+        
+        util::assign_string_vector_to_array(full_cat, strs, assign_at);
+        
+        assign_at += full_cat.size();
+                
     }
     
-    std::vector<std::string> full_cat_vec = cat->full_category(category, &cat_exists);
-    
-    if (!cat_exists)
-    {
-        std::string msg = util::get_error_text_missing_category(category);
-        mexErrMsgIdAndTxt(func_id, msg.c_str());
-    }
-    
-    plhs[0] = util::string_vector_to_array(full_cat_vec);
+    plhs[0] = strs;
 }

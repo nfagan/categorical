@@ -37,7 +37,9 @@ namespace util {
             {"rm_cat",                  util::ops::REMOVE_CATEGORY},
             {"n_cats",                  util::ops::N_CATEGORIES},
             {"n_labs",                  util::ops::N_LABELS},
-            {"assign",                  util::ops::ASSIGN}
+            {"assign",                  util::ops::ASSIGN},
+            {"set_cats",                util::ops::SET_CATEGORIES},
+            {"set_partial_cats",        util::ops::SET_PARTIAL_CATEGORIES}
         });
         
         std::array<util::mex_func_t, util::ops::N_OPS> funcs;
@@ -87,6 +89,8 @@ void util::init_cat_functions()
     globals::funcs[ops::N_CATEGORIES] =             &util::n_categories;
     globals::funcs[ops::N_LABELS] =                 &util::n_labels;
     globals::funcs[ops::ASSIGN] =                   &util::assign;
+    globals::funcs[ops::SET_CATEGORIES] =           &util::set_categories;
+    globals::funcs[ops::SET_PARTIAL_CATEGORIES] =   &util::set_partial_categories;
     
     globals::INITIALIZED = true;
     

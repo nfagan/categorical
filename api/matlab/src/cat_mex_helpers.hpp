@@ -19,6 +19,8 @@ namespace util {
     std::vector<uint64_t> numeric_array_to_vector64(const mxArray* in_arr, const char* func_id);
     
     mxArray* string_vector_to_array(const std::vector<std::string>& in_vec);
+    void assign_string_vector_to_array(const std::vector<std::string>& in_vec, 
+        mxArray* out_cell, uint64_t start_idx);
     
     void assert_nlhs(int actual, int expected, const char* id);
     void assert_nlhs(int minimum, int maximum, int actual, const char* id);
