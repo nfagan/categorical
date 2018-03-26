@@ -35,7 +35,8 @@ namespace util {
         static constexpr uint32_t REMOVE_CATEGORY = 28u;
         static constexpr uint32_t N_CATEGORIES = 29u;
         static constexpr uint32_t N_LABELS = 30u;
+        static constexpr uint32_t ASSIGN = 31u;
         //
-        static constexpr uint32_t N_OPS = 31u;
+        static constexpr uint32_t N_OPS = 32u;
     }
 }

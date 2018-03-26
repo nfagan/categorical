@@ -91,6 +91,9 @@ public:
     void repeat(util::u64 times);
     
     util::u32 append(const categorical& other);
+    util::u32 assign(const util::categorical& other,
+                     const std::vector<util::u64>& at_indices,
+                     util::s64 index_offset);
     
     void empty();
     

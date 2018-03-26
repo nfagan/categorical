@@ -1,4 +1,8 @@
 classdef fcat < handle
+  
+  properties (Access = private, Constant = true)
+    DISPLAY_MODES = { 'auto', 'short', 'full' };
+  end
     
   properties (Access = private)
     id;
@@ -35,7 +39,7 @@ classdef fcat < handle
         obj.id = id;
       end
       %   set default display mode
-      obj.displaymode = 'short';
+      obj.displaymode = 'auto';
     end
     
     function tf = eq(obj, B)
@@ -199,13 +203,17 @@ classdef fcat < handle
       %     obj('category') = 'label'; sets the full contents of 'category'
       %     to 'label'.
       %
-      %     obj('category', 1:10) = 'label'; sets the first 10 elements,
+      %     obj(1:10, 'category') = 'label'; sets the first 10 elements,
       %     only.
       %
-      %     obj('category', 2:3) = { 'lab1', 'lab2' } sets the second and
+      %     obj(2:3, 'category') = { 'lab1', 'lab2' } sets the second and
       %     third elements to 'lab1' and 'lab2', respectively.
       %
-      %     See also fcat/subsref, fcat/fcat
+      %     obj(1, 1) = 'label' assigns 'label' to the first row of the
+      %     first category. The order of categories is consistent with the 
+      %     output of `getcats`.
+      %
+      %     See also fcat/subsref, fcat/fcat, fcat/getcats
       %
       %     IN:
       %       - `s` (struct)
@@ -220,21 +228,87 @@ classdef fcat < handle
             subs = s(1).subs;
             
             if ( numel(subs) == 1 )
-              %
-              % x('hi') = 'sup';
-              %
-              setcat( obj, subs{1}, values );
-            elseif ( numel(subs) == 2 )
-              if ( strcmp(subs{2}, ':') )
+              
+              sub = subs{1};
+              is_colon = strcmp( sub, ':' );
+              
+              if ( isnumeric(sub) || is_colon )
                 %
-                % x('hi', :) = 'sup';
-              	% 
-                setcat( obj, subs{1}, values );
+                % x(1:10) = other_fcat; | x(:) = other_fcat;
+                %
+                if ( is_colon )
+                  assign( obj, values, 1:numel(obj) );
+                else
+                  assign( obj, values, sub );
+                end
               else
                 %
-                % x('hi', 1:10) = 'sup';
-              	% 
-                setcat( obj, subs{1}, values, subs{2} );
+                % x('hi') = 'sup';
+                %
+                setcat( obj, sub, values );
+              end
+            elseif ( numel(subs) == 2 )
+              if ( strcmp(subs{1}, ':') )
+                if ( ischar(subs{2}) )
+                  %
+                  % x(:, 'hi') = 'sup';
+                  % 
+                  setcat( obj, subs{2}, values );
+                else
+                  nums = subs{2};
+                  cats = getcats( obj );
+                  msg = 'Category index must be numeric or a colon.';
+                  if ( ~strcmp(subs{2}, ':') )
+                    assert( isnumeric(nums), msg );
+                    c = cats(nums);
+                  else
+                    c = cats;
+                  end
+                  %
+                  %   convert char to cell
+                  %
+                  if ( ~iscell(values) )
+                    values = { values };
+                  end
+                  %
+                  %   do the assignment
+                  %
+                  for i = 1:numel(c)
+                    setcat( obj, c{i}, values(:, i) );
+                  end
+                end
+              else
+                if ( ischar(subs{2}) && ~strcmp(subs{2}, ':') )
+                  %
+                  % x(1:10, 'hi') = 'sup';
+                  % 
+                  setcat( obj, subs{2}, values, subs{1} );
+                else
+                  %
+                  % x(1:2, 1) = 'sup' | x(1:2, 2:4) = { .. }
+                  %
+                  nums = subs{2};
+                  cats = getcats( obj );
+                  msg = 'Category index must be numeric or a colon.';
+                  if ( ~strcmp(subs{2}, ':') )
+                    assert( isnumeric(nums), msg );
+                    c = cats(nums);
+                  else
+                    c = cats;
+                  end
+                  %
+                  %   convert char to cell
+                  %
+                  if ( ~iscell(values) )
+                    values = { values };
+                  end
+                  %
+                  %   do the assignment
+                  %
+                  for i = 1:numel(c)
+                    setcat( obj, c{i}, values(:, i), subs{1} );
+                  end
+                end
               end
             else
               error( 'Too many or too few subscripts.' );
@@ -257,21 +331,27 @@ classdef fcat < handle
       %     c = obj('category') returns the unique labels in category 
       %     'category', if it exists, or else throws an error.
       %
-      %     c = obj('category', 1:10) returns the first 10 labels in
+      %     c = obj(1:10, 'category') returns the first 10 labels in
       %     'category', in order, throwing an error if size is less than
       %     10.
       %
-      %     c = obj('category', [1; 1; 1]) works as above, but returns a
+      %     c = obj([1; 1; 1], 'category') works as above, but returns a
       %     3x1 array of the duplicated first label in 'category'.
       %
-      %     c = obj('category', :) returns the full 'category'.
+      %     c = obj(:, 'category') returns the full 'category'.
+      %
+      %     c = obj(1, 1) returns the first element in the first category
+      %     of `obj`. The order of categories is consistent with the output
+      %     of `getcats()`.
+      %
+      %     c = obj(:, 1) returns the first full category of `obj`.
       %
       %     c = obj(1:10) returns a copied fcat object whose elements are
       %     the first 10 rows of `obj`.
       %
       %     c = obj(:) creates a copy of `obj`.
       %
-      %     See also fcat/subsasgn, fcat/fcat
+      %     See also fcat/subsasgn, fcat/fcat, fcat/getcats
       %
       %     IN:
       %       - `s` (struct)
@@ -314,8 +394,22 @@ classdef fcat < handle
               assert( n_subs == 2, 'Too many subscripts.' );
 
               index_or_colon = subs{2};
+              is_colon_cat = strcmp( category_or_inds, ':' );
+              is_colon_idx = strcmp( index_or_colon, ':' );
               
-              if ( isnumeric(category_or_inds) || strcmp(category_or_inds, ':') )
+              if ( isnumeric(category_or_inds) || is_colon_cat )
+                %
+                % obj(1, 'test1') | obj(:, 'test1')
+                %
+                if ( ~is_colon_idx && ischar(index_or_colon) )
+                  if ( is_colon_cat )
+                    varargout{1} = fullcat( obj, index_or_colon );
+                    return;
+                  else
+                    varargout{1} = partcat( obj, index_or_colon, category_or_inds );
+                    return;
+                  end
+                end
                 %
                 % obj(1, 1) | obj(1, :) | obj(:, 1) | obj(:, :)
                 %
@@ -344,12 +438,12 @@ classdef fcat < handle
                 varargout{1} = out;
                 return;
               end
-
-              if ( strcmp(index_or_colon, ':') )
-                varargout{1} = fullcat( obj, category_or_inds );
-              else
-                varargout{1} = partcat( obj, category_or_inds, index_or_colon );
+              
+              if ( ischar(category_or_inds) )
+                error( 'Specify a category as a column subscript.' );
               end
+              
+              error( 'Invalid reference signature.' );
             end
           case '.'
             if ( any(strcmp(methods(obj), subs)) )
@@ -415,9 +509,57 @@ classdef fcat < handle
       end
     end
     
+    function C = unique(obj, categories, flag)
+      
+      %   UNIQUE -- Get unique combinations of labels in categories.
+      %
+      %     C = unique( obj ) returns an MxN cell array of M unique rows of
+      %     labels in N categories.
+      %
+      %     C = unique( obj, [] ) does the same.
+      %
+      %     C = unique( obj, 'cat1' ) returns an Mx1 cell array of the
+      %     unique labels in 'cat1'.
+      %
+      %     C = unique( obj, {'cat1', 'cat2'} ) returns an Mx2 cell array
+      %     of the unique rows of labels in 'cat1' and 'cat2'.
+      %
+      %     Rows are not sorted, but instead appear in the order in which
+      %     they appear in the full array.
+      %
+      %     C = unique( ..., 'sorted' ) sorts the rows of `C`, in which
+      %     case the output of `unique` is equivalent to the behavior of
+      %     Matlab's categorical/unique function with the 'rows' specifier.
+      %
+      %     See also fcat/combs, categorical/unique
+      
+      if ( nargin == 1 || isempty(categories) )
+        categories = getcats( obj );
+      end
+      
+      C = combs( obj, categories )';
+      
+      if ( nargin == 3 )
+        if ( strcmp(flag, 'sorted') )
+          C = cellstr( unique(categorical(C), 'rows') );
+        else
+          valid_flags = { 'sorted' };
+          error( 'Invalid flag. Flag can be "%s".', strjoin(valid_flags, ' | ') );
+        end
+      end
+    end
+    
     function C = combs(obj, categories)
       
       %   COMBS -- Get present combinations of labels in categories.
+      %
+      %     C = combs( obj ) returns an MxN cell array of N label
+      %     combination in M categories.
+      %
+      %     C = combs( obj, 'cat1' ) returns the unique labels in 'cat1'.
+      %
+      %     C = combs( obj, {'cat1', 'cat2'} ) returns a 2xN cell array of
+      %     N label combinations in categories 'cat1' and 'cat2'.
       %
       %     See also fcat/findall
       %
@@ -464,6 +606,8 @@ classdef fcat < handle
         [I, C] = cat_api( 'find_allc', obj.id, categories );
         if ( ~ischar(categories) )
           C = reshape( C, numel(categories), numel(C) / numel(categories) );
+        else
+          C = C(:)';
         end
       else
         I = cat_api( 'find_all', obj.id, categories );
@@ -729,6 +873,24 @@ classdef fcat < handle
       cat_api( 'append', obj.id, B.id );
     end
     
+    function obj = assign(obj, B, at_indices)
+      
+      %   ASSIGN -- Assign contents of other fcat at indices.
+      %
+      %     IN:
+      %       - `B` (fcat)
+      %       - `at_indices` (uint64)
+      
+      if ( ~isa(obj, 'fcat') )
+        error( 'Cannot assign objects of class "%s".', class(obj) );
+      end
+      if ( ~isa(B, 'fcat') )
+        error( 'Cannot assign objects of class "%s".', class(B) );
+      end
+      
+      cat_api( 'assign', obj.id, B.id, uint64(at_indices) );
+    end
+    
     function delete(obj)
       
       %   DELETE -- Delete object and free memory.
@@ -758,17 +920,20 @@ classdef fcat < handle
       %   SETDISP -- Control display mode.
       %
       %     setdisp( obj, 'short' ) displays a compacted view of the
-      %     contents of the object, and is the default.
+      %     contents of the object.
       %
       %     setdisp( obj, 'full' ) displays the full contents of `obj` as
       %     if it were a cell array of strings.
       %
+      %     setdisp( obj, 'auto' ) displays 'full' when the number of rows
+      %     is less than 100, and 'short' otherwise.
+      %
       %     See also fcat/cellstr, fcat/categorical
       %
       %     IN:
-      %       - `mode` ({'short', 'full'})
+      %       - `mode` ({'short', 'full', 'auto'})
       
-      modes = { 'short', 'full' };
+      modes = fcat.DISPLAY_MODES;
       if ( ~ischar(mode) || ~any(strcmp(modes, mode)) )
         error( 'Invalid display mode. Options are: \n\n%s', strjoin(modes, ' | ') );
       end
@@ -779,7 +944,7 @@ classdef fcat < handle
       
       %   DISP -- Pretty-print the object's contents.
       %
-      %     See also fcat/fcat, fcat/getcats
+      %     See also fcat/setdisp, fcat/fcat, fcat/getcats
       
       desktop_exists = usejava( 'desktop' );
       
@@ -797,12 +962,91 @@ classdef fcat < handle
         return;
       end
       
-      if ( strcmp(obj.displaymode, 'full') )
-        disp( getcats(obj)' );
-        disp( '--' );
-        disp( cellstr(obj) );
+      sz_m = numel( obj );
+      sz_n = size( obj, 2 );
+      
+      if ( desktop_exists )
+        sz_str = sprintf( '%d×%d', sz_m, sz_n );
+      else
+        sz_str = sprintf( '%d-by-%d', sz_m, sz_n );
+      end
+      
+      if ( strcmp(obj.displaymode, 'short') )
+        dispshort( obj, desktop_exists, link_str, sz_str );
         return;
       end
+      
+      if ( strcmp(obj.displaymode, 'full') )
+        dispfull( obj, desktop_exists, link_str, sz_str );
+        return;
+      end
+      
+      if ( strcmp(obj.displaymode, 'auto') )
+        if ( numel(obj) > 100 )
+          dispshort( obj, desktop_exists, link_str, sz_str );
+        else
+          dispfull( obj, desktop_exists, link_str, sz_str );
+        end
+        return;
+      end
+      
+      error( 'Unrecognized display mode "%s".', obj.displaymode );      
+    end
+    
+    %
+    %   CONVERSION
+    %
+    
+    function [C, F] = cellstr(obj)
+      
+      %   CELLSTR -- Convert to cell array of strings.
+      %
+      %     C = cellstr( obj ) returns an MxN cell array of strings `C`,
+      %     whose rows are observations and columns are categories.
+      %
+      %     [C, F] = ... also returns a 1xN cell array of strings `F`
+      %     identifying the columns of `C`.
+      %
+      %     See also fcat/fullcat, fcat/fcat
+      %
+      %     OUT:
+      %       - `C` (cell array of strings)
+      %       - `F` (cell array of strings)
+      
+      F = getcats( obj );
+      C = fullcat( obj, F );
+    end
+    
+    function [C, F] = categorical(obj)
+      
+      %   CATEGORICAL -- Convert to Matlab categorical array.
+      %
+      %     See also fcat/cellstr
+      %
+      %     OUT:
+      %       - `C` (categorical)
+      %       - `F` (cell array of strings)
+      
+      [C, F] = cellstr( obj );
+      C = categorical( C );
+    end
+  end
+  
+  methods (Access = private)
+    
+    function dispfull(obj, desktop_exists, link_str, sz_str)
+      
+      %   DISPFULL -- Display complete contents.
+      
+      fprintf( '  %s %s array\n\n', sz_str, link_str );
+      
+      disp( getcats(obj)' );
+      disp( cellstr(obj) );
+    end
+    
+    function dispshort(obj, desktop_exists, link_str, sz_str)
+      
+      %   DISPSHORT -- Display a summarized version of contents.
       
       cats = getcats( obj );
       
@@ -814,14 +1058,6 @@ classdef fcat < handle
       
       max_labs = 5;
       max_cats = 10;
-      
-      sz = numel( obj );
-      
-      if ( desktop_exists )
-        sz_str = sprintf( '%d×1', sz );
-      else
-        sz_str = sprintf( '%d-by-1', sz );
-      end
       
       fprintf( '  %s %s %s', sz_str, link_str, addtl_str );
       
@@ -881,44 +1117,6 @@ classdef fcat < handle
       
       fprintf( '\n\n' );
     end
-    
-    %
-    %   CONVERSION
-    %
-    
-    function [C, F] = cellstr(obj)
-      
-      %   CELLSTR -- Convert to cell array of strings.
-      %
-      %     C = cellstr( obj ) returns an MxN cell array of strings `C`,
-      %     whose rows are observations and columns are categories.
-      %
-      %     [C, F] = ... also returns a 1xN cell array of strings `F`
-      %     identifying the columns of `C`.
-      %
-      %     See also fcat/fullcat, fcat/fcat
-      %
-      %     OUT:
-      %       - `C` (cell array of strings)
-      %       - `F` (cell array of strings)
-      
-      F = getcats( obj );
-      C = fullcat( obj, F );
-    end
-    
-    function [C, F] = categorical(obj)
-      
-      %   CATEGORICAL -- Convert to Matlab categorical array.
-      %
-      %     See also fcat/cellstr
-      %
-      %     OUT:
-      %       - `C` (categorical)
-      %       - `F` (cell array of strings)
-      
-      [C, F] = cellstr( obj );
-      C = categorical( C );
-    end
   end
   
   methods (Static = true, Access = private)
@@ -943,16 +1141,27 @@ classdef fcat < handle
   
   methods (Static = true, Access = public)
     
-    function obj = with(cats)
+    function obj = with(cats, sz)
       
       %   WITH -- Create fcat with categories.
       %
+      %     obj = fcat.with( {'cat1', 'cat2'} ) creates a new fcat object
+      %     with categories 'cat1' and 'cat2'.
+      %
+      %     obj = fcat.with( ..., 1000 ) additionally resizes the object to
+      %     contain 1000 rows.
+      %
       %     IN:
       %       - `cats` (char, cell array of strings)
+      %       - `sz` (uint64) |OPTIONAL|
       %     OUT:
       %       - `obj` (fcat)
       
       obj = requirecat( fcat(), cats );
+      
+      if ( nargin == 2 )
+        resize( obj, sz );
+      end
     end
     
     function obj = from(varargin)
@@ -979,6 +1188,10 @@ classdef fcat < handle
       if ( nargin == 1 )        
         if ( isa(arr, 'categorical') || isa(arr, 'cell') )
           cats = arrayfun( @(x) sprintf('cat%d', x), 1:size(arr, 2), 'un', false );
+        end
+        
+        if ( isa(arr, 'SparseLabels') )
+          [arr, cats] = label_mat( arr );
         end
       else
         cats = varargin{2};

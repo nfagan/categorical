@@ -1032,13 +1032,6 @@ util::u32 util::categorical::keep(std::vector<util::u64>& at_indices, util::s64 
         empty();
         return util::categorical_status::OK;
     }
-    
-    std::sort(at_indices.begin(), at_indices.end());
-    
-    if (at_indices[n_indices-1] + offset >= sz)
-    {
-        return util::categorical_status::OUT_OF_BOUNDS;
-    }
 
     u64 n_cats = m_labels.size();
     
@@ -1053,7 +1046,14 @@ util::u32 util::categorical::keep(std::vector<util::u64>& at_indices, util::s64 
         
         for (u64 j = 0; j < n_indices; j++)
         {
-            tmp_col[j] = own_col[at_indices[j] + offset];
+            u64 idx = at_indices[j] + offset;
+            
+            if (idx >= sz)
+            {
+                return util::categorical_status::OUT_OF_BOUNDS;
+            }
+            
+            tmp_col[j] = own_col[idx];
         }
     }
     
@@ -1281,6 +1281,130 @@ void util::categorical::replace_labels(std::vector<std::vector<u32>>& labels,
             }
         }
     }
+}
+
+//  assign: Assign contents at indices.
+
+util::u32 util::categorical::assign(const util::categorical& other,
+                                    const std::vector<util::u64>& at_indices,
+                                    util::s64 index_offset)
+{
+    using util::u32;
+    using util::u64;
+    
+    if (!categories_match(other))
+    {
+        return util::categorical_status::CATEGORIES_DO_NOT_MATCH;
+    }
+    
+    u64 n_indices = at_indices.size();
+    u64 own_sz = size();
+    u64 other_sz = other.size();
+    
+    //  error if the number of indices doesn't match
+    //  the size of the incoming array.
+    if (n_indices != other_sz)
+    {
+        return util::categorical_status::WRONG_INDEX_SIZE;
+    }
+    
+    //  error if assigning more rows than exist in the array.
+    if (other_sz > own_sz)
+    {
+        return util::categorical_status::OUT_OF_BOUNDS;
+    }
+    
+    if (other_sz == 0)
+    {
+        return util::categorical_status::OK;
+    }
+    
+    //  bounds check
+    for (u64 i = 0; i < n_indices; i++)
+    {
+        if (at_indices[i] + index_offset >= own_sz)
+        {
+            return util::categorical_status::OUT_OF_BOUNDS;
+        }
+    }
+    
+    std::vector<std::string> other_labels = other.m_label_ids.keys();
+    u64 n_other_labels = other_labels.size();
+    
+    std::unordered_map<u32, u32> replace_other_label_ids;
+    std::unordered_set<u32> new_label_ids;
+    
+    for (u64 i = 0; i < n_other_labels; i++)
+    {
+        const std::string& other_lab = other_labels[i];
+        const u32 other_id = other.m_label_ids.at(other_lab);
+        
+        auto own_id_it = m_label_ids.find(other_lab);
+        
+        //  label exists in `this`
+        if (own_id_it != m_label_ids.endk())
+        {
+            const std::string& own_cat = m_in_category.at(other_lab);
+            const std::string& other_cat = other.m_in_category.at(other_lab);
+            
+            if (own_cat != other_cat)
+            {
+                //  get rid of label ids that were added.
+                prune();
+                return util::categorical_status::LABEL_EXISTS_IN_OTHER_CATEGORY;
+            }
+            
+            u32 own_id = m_label_ids.at(other_lab);
+            
+            if (own_id != other_id)
+            {
+                replace_other_label_ids[other_id] = own_id;
+            }
+        }
+        else
+        {
+            u32 assign_id = other_id;
+            
+            if (m_label_ids.contains(other_id))
+            {
+                u32 new_id = util::categorical::get_id(this, &other, new_label_ids);
+                replace_other_label_ids[other_id] = new_id;
+                new_label_ids.insert(new_id);
+                assign_id = new_id;
+            }
+            
+            m_label_ids.insert(other_lab, assign_id);
+            m_in_category[other_lab] = other.m_in_category.at(other_lab);
+        }
+    }
+    
+    for (const auto& cat_it : m_category_indices)
+    {
+        const std::string& cat = cat_it.first;
+        const u64 own_cat_idx = cat_it.second;
+        const u64 other_cat_idx = other.m_category_indices.at(cat);
+        
+        std::vector<u32>& own_ids = m_labels[own_cat_idx];
+        const std::vector<u32>& other_ids = other.m_labels[other_cat_idx];
+        
+        for (u64 i = 0; i < n_indices; i++)
+        {
+            const u64 own_idx = at_indices[i] + index_offset;
+            
+            u32 other_id = other_ids[i];
+            
+            if (replace_other_label_ids.count(other_id) > 0)
+            {
+                other_id = replace_other_label_ids[other_id];
+            }
+            
+            own_ids[own_idx] = other_id;
+        }
+    }
+    
+    prune();
+    
+    return util::categorical_status::OK;
 }
 
 //  get_categories: Get all string categories.

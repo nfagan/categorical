@@ -14,6 +14,7 @@ namespace util {
     void copy(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
     
     void append(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
+    void assign(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
     
     void fill_category(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
     void set_category(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
