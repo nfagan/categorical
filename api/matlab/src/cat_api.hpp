@@ -40,6 +40,8 @@ namespace util {
     void repeat(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
     
     void size(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
+    void n_categories(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
+    void n_labels(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
     
     void find(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
     void find_all(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);

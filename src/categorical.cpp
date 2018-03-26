@@ -208,6 +208,13 @@ util::u64 util::categorical::n_categories() const
     return m_category_indices.size();
 }
 
+//  n_labels: Get the current number of labels.
+
+util::u64 util::categorical::n_labels() const
+{
+    return m_label_ids.size();
+}
+
 //  add_category: Add a new category.
 //
 //      An error code is returned if the category already exists.
@@ -262,7 +269,7 @@ void util::categorical::unchecked_add_category(const std::string& category,
     //  fill the category with the collapsed expression for the category.
     if (sz > 0)
     {
-        set_collapsed_expressions(new_labs, category, collapsed_expression);
+        set_collapsed_expressions(m_labels[m_labels.size()-1], category, collapsed_expression, 0);
     }
 }
 
@@ -283,9 +290,10 @@ void util::categorical::set_collapsed_expressions(std::vector<util::u32> &labs,
     {
         id = get_next_label_id();
         m_label_ids.insert(collapsed_expression, id);
+        m_in_category[collapsed_expression] = category;
     }
     
-    m_in_category[collapsed_expression] = category;
+//    m_in_category[collapsed_expression] = category;
     
     std::fill(labs.begin() + start_offset, labs.end(), id);
 }
@@ -815,8 +823,6 @@ util::u32 util::categorical::set_category(const std::string &category,
     
     u64 category_idx = category_it->second;
     
-    std::vector<u32>& labels = m_labels[category_idx];
-    
     if (own_size > 0 && cat_sz != own_size)
     {
         return util::categorical_status::WRONG_CATEGORY_SIZE;
@@ -826,6 +832,8 @@ util::u32 util::categorical::set_category(const std::string &category,
     {
         reserve(cat_sz);
     }
+    
+    std::vector<u32>& labels = m_labels[category_idx];
     
     std::unordered_map<std::string, u32> processed;
     

@@ -2,6 +2,7 @@ classdef fcat < handle
     
   properties (Access = private)
     id;
+    displaymode;
   end
   
   methods
@@ -33,6 +34,8 @@ classdef fcat < handle
         end
         obj.id = id;
       end
+      %   set default display mode
+      obj.displaymode = 'short';
     end
     
     function tf = eq(obj, B)
@@ -105,9 +108,9 @@ classdef fcat < handle
       
       if ( nargin == 1 )
         if ( isvalid(obj) )
-          sz = [ cat_api('size', obj.id), 1 ];
+          sz = [ cat_api('size', obj.id), ncats(obj) ];
         else
-          sz = [ 0, 1 ];
+          sz = uint64( [0, 0] );
         end
         return;
       end
@@ -119,8 +122,21 @@ classdef fcat < handle
         error( msg );
       end
       
-      if ( dim > 1 )
-        sz = 1;
+      if ( dim > 2 )
+        if ( isvalid(obj) )
+          sz = 1;
+        else
+          sz = 0;
+        end
+        return;
+      end
+      
+      if ( dim == 2 )
+        if ( isvalid(obj) )
+          sz = ncats( obj );
+        else
+          sz = 0;
+        end
         return;
       end
       
@@ -129,6 +145,30 @@ classdef fcat < handle
       else
         sz = 0;
       end
+    end
+    
+    function n = nlabs(obj)
+      
+      %   NLABS -- Get the current number of labels.
+      %
+      %     See also fcat/size, fcat/ncats, fcat/numel
+      %
+      %     OUT:
+      %       - `n` (uint64)
+      
+      n = cat_api( 'n_labs', obj.id );      
+    end
+    
+    function n = ncats(obj)
+      
+      %   NCATS -- Get the current number of categories.
+      %
+      %     See also fcat/size, fcat/labs, fcat/numel
+      %
+      %     OUT:
+      %       - `n` (uint64)
+      
+      n = cat_api( 'n_cats', obj.id );      
     end
     
     function obj = resize(obj, to)
@@ -274,6 +314,36 @@ classdef fcat < handle
               assert( n_subs == 2, 'Too many subscripts.' );
 
               index_or_colon = subs{2};
+              
+              if ( isnumeric(category_or_inds) || strcmp(category_or_inds, ':') )
+                %
+                % obj(1, 1) | obj(1, :) | obj(:, 1) | obj(:, :)
+                %
+                cats = getcats( obj );
+                
+                if ( ~strcmp(index_or_colon, ':') )
+                  cats = cats(index_or_colon);
+                end
+                
+                if ( strcmp(category_or_inds, ':') )
+                  all_rows = true;
+                  out = cell( numel(obj), numel(cats) );
+                else
+                  all_rows = false;
+                  out = cell( numel(category_or_inds), numel(cats) );
+                end
+                
+                for i = 1:numel(cats)
+                  if ( all_rows )
+                    out(:, i) = fullcat( obj, cats{i} );
+                  else
+                    out(:, i) = partcat( obj, cats{i}, category_or_inds );
+                  end
+                end
+                
+                varargout{1} = out;
+                return;
+              end
 
               if ( strcmp(index_or_colon, ':') )
                 varargout{1} = fullcat( obj, category_or_inds );
@@ -680,6 +750,29 @@ classdef fcat < handle
       %       - `B` (fcat)
       
       B = fcat( cat_api('copy', obj.id) );
+      B.displaymode = obj.displaymode;
+    end
+    
+    function obj = setdisp(obj, mode)
+      
+      %   SETDISP -- Control display mode.
+      %
+      %     setdisp( obj, 'short' ) displays a compacted view of the
+      %     contents of the object, and is the default.
+      %
+      %     setdisp( obj, 'full' ) displays the full contents of `obj` as
+      %     if it were a cell array of strings.
+      %
+      %     See also fcat/cellstr, fcat/categorical
+      %
+      %     IN:
+      %       - `mode` ({'short', 'full'})
+      
+      modes = { 'short', 'full' };
+      if ( ~ischar(mode) || ~any(strcmp(modes, mode)) )
+        error( 'Invalid display mode. Options are: \n\n%s', strjoin(modes, ' | ') );
+      end
+      obj.displaymode = mode;
     end
     
     function disp(obj)
@@ -704,18 +797,31 @@ classdef fcat < handle
         return;
       end
       
+      if ( strcmp(obj.displaymode, 'full') )
+        disp( getcats(obj)' );
+        disp( '--' );
+        disp( cellstr(obj) );
+        return;
+      end
+      
       cats = getcats( obj );
       
       if ( numel(cats) == 0 )
         addtl_str = 'with 0 categories';
       else
-        addtl_str = 'with labels:';
+        addtl_str = 'with categories:';
       end
       
       max_labs = 5;
+      max_cats = 10;
       
       sz = numel( obj );
-      sz_str = sprintf( '%d×1', sz );
+      
+      if ( desktop_exists )
+        sz_str = sprintf( '%d×1', sz );
+      else
+        sz_str = sprintf( '%d-by-1', sz );
+      end
       
       fprintf( '  %s %s %s', sz_str, link_str, addtl_str );
       
@@ -725,9 +831,11 @@ classdef fcat < handle
       
       n_digits = cellfun( @numel, cats );
       
-      max_n_digits = max( n_digits );
+      n_cats_disp = min( numel(cats), max_cats );
       
-      for i = 1:numel(cats)
+      max_n_digits = max( n_digits(1:n_cats_disp) );
+      
+      for i = 1:n_cats_disp
         c_cat = cats{i};
         
         labs = incat( obj, c_cat );
@@ -753,6 +861,22 @@ classdef fcat < handle
         lab_str = sprintf( '[%s]', lab_str );
         
         fprintf( ' %s', lab_str );
+      end
+      
+      if ( numel(cats) > n_cats_disp )
+        if ( max_n_digits > 1 )
+          c_cat = '..';
+          amt_pad = max_n_digits - numel( c_cat );
+          cat_space = repmat( ' ', 1, amt_pad );
+        else
+          c_cat = '.';
+          cat_space = '';
+        end
+        if ( desktop_exists )
+          fprintf( '\n  %s<strong>%s</strong>|', cat_space, c_cat );
+        else
+          fprintf( '\n  %s%s|', cat_space, c_cat );
+        end
       end
       
       fprintf( '\n\n' );
