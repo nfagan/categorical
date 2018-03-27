@@ -10,7 +10,7 @@ n_inds = 1e2;
 
 new_cat = categorical();
 new_cat(n_inds, numel(x.f)) = '<undefined>';
-indices = randperm( numel(f), n_inds );
+indices = randperm( size(f, 1), n_inds );
 
 new_cat(1:size(new_cat, 1), :) = c(indices, :);
 

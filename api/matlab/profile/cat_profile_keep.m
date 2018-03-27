@@ -19,7 +19,7 @@ c1 = toc();
 
 tic;
 for i = 1:n_iters
-  keep( copy(f), randperm(numel(f)) );
+  keep( copy(f), randperm(size(f, 1)) );
 end
 c2 = toc();
 

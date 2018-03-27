@@ -15,11 +15,11 @@ for i = 1:numel(labs1)
   assert( isequal(find(c1, labs1{i}), find(c2, labs1{i})), 'Indices weren''t equal.' );
 end
 
-orig_size = numel( c2 );
+orig_size = size( c2, 1 );
 
-keep( c1, sort(randperm(numel(c1), 100)) );
+keep( c1, sort(randperm(size(c1, 1), 100)) );
 
-assert( numel(c2) == orig_size, 'Size changed.' );
+assert( size(c2, 1) == orig_size, 'Size changed.' );
 
 assert( isequal(sort(getlabs(c2)), sort(labs2)), 'Labels changed.' );
 

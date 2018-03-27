@@ -10,6 +10,8 @@
 #include <iostream>
 #include <algorithm>
 
+#define CAT_ALLOW_SET_FROM_SIZE0
+
 util::categorical::categorical()
 {
     m_size = 0;
@@ -730,7 +732,11 @@ util::u32 util::categorical::set_category(const std::string &category,
     
     if (sz == 0)
     {
+#ifdef CAT_ALLOW_SET_FROM_SIZE0
         reserve(index_sz);
+#else
+        return util::categorical_status::WRONG_CATEGORY_SIZE;
+#endif
     }
     
     std::unordered_map<std::string, u32> processed;
@@ -831,7 +837,11 @@ util::u32 util::categorical::set_category(const std::string &category,
     
     if (own_size == 0)
     {
+#ifdef CAT_ALLOW_SET_FROM_SIZE0
         reserve(cat_sz);
+#else
+        return util::categorical_status::WRONG_INDEX_SIZE;
+#endif
     }
     
     std::vector<u32>& labels = m_labels[category_idx];

@@ -11,7 +11,7 @@ n_iters = 1e5;
 %   categorical - preallocate 
 new_cat = categorical();
 new_cat(n_iters, numel(x.f)) = '<undefined>';
-indices = randperm( numel(f), n_iters );
+indices = randperm( size(f, 1), n_iters );
 
 tic;
 new_cat(:, :) = c(indices, :);

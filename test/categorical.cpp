@@ -50,10 +50,12 @@ void test_eq()
     
     assert(cat1 == cat2);
     
+    cat1.reserve(3);
     cat1.set_category("test1", {"hi", "hello", "sup"});
     
     assert(cat1 != cat2);
     
+    cat2.reserve(3);
     cat2.set_category("test1", {"hi", "hello", "sup"});
     
     assert(cat2 == cat1);
@@ -71,6 +73,7 @@ void test_keep_each()
     
     std::vector<std::string> full_cat = {"hi", "hello", "hello"};
     
+    cat1.reserve(full_cat.size());
     cat1.set_category("test1", full_cat);
     cat1.set_category("test2", {"no", "yes", "yes"});
     
@@ -91,6 +94,7 @@ void test_repeat()
     
     std::vector<std::string> full_cat = {"hi", "hello", "sup"};
     
+    cat1.reserve(full_cat.size());
     cat1.set_category("test1", full_cat);
     
     cat1.repeat(2);
@@ -117,6 +121,7 @@ void test_fill_category()
     
     cat1.require_category("test1");
     cat1.require_category("test2");
+    cat1.reserve(full_cat1.size());
     
     cat1.set_category("test1", full_cat1);
     
@@ -163,6 +168,9 @@ void test_append()
     cats2.require_category("test1");
     cats2.require_category("test2");
     
+    cats1.reserve(full_cat1.size());
+    cats2.reserve(full_cat1.size());
+    
     cats1.set_category("test1", full_cat1);
     cats2.set_category("test1", full_cat2);
     cats1.set_category("test2", full_cat3);
@@ -198,6 +206,9 @@ void test_append_same_labels()
     cat1.require_category("test");
     cat2.require_category("test");
     
+    cat1.reserve(2);
+    cat2.reserve(2);
+    
     cat1.set_category("test", {"test1", "test2"});
     cat2.set_category("test", {"test2", "test1"});
     
@@ -224,6 +235,8 @@ void test_set_category()
     std::string cat = "test1";
     
     cats.require_category(cat);
+    
+    cats.reserve(2);
     
     u32 res = cats.set_category(cat, full_cat);
     
@@ -256,6 +269,8 @@ void test_find_allc()
     assert(result.indices.size() == 0);
     assert(result.combinations.size() == 0);
     
+    cats.reserve(search_cats.size());
+    
     cats.set_category("test1", search_cats);
     
     std::vector<std::string> search_cat = { "test1" };
@@ -280,6 +295,8 @@ void test_find_allc()
         hi_labs[i] = "hello";
         sup_labs[i] = "sup2";
     }
+    
+    cats2.reserve(hi_labs.size());
     
     u32 status = cats2.set_category("hi", hi_labs);
     assert(status == util::categorical_status::OK);

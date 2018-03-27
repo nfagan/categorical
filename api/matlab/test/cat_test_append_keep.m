@@ -11,13 +11,13 @@ for i = 1:n_iters
   x = fcat.from( categ.c, categ.f );
   y = categ.c;
   
-  n_choose = randi( numel(x), 1, 1 );
-  keep_indices = sort( randperm(numel(x), n_choose) );
+  n_choose = randi( size(x, 1), 1, 1 );
+  keep_indices = sort( randperm(size(x, 1), n_choose) );
   
   y = y(keep_indices, :);
   keep( x, keep_indices );
   
-  assert( numel(x) == size(y, 1), 'Sizes didn''t match.' );
+  assert( size(x, 1) == size(y, 1), 'Sizes didn''t match.' );
   
   x_labs = sort( getlabs(x) );
   y_labs = sort( unique(y) );

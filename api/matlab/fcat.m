@@ -77,14 +77,14 @@ classdef fcat < handle
     
     function n = numel(varargin)
       
-      %   SIZE -- Get the number of rows in the object.
+      %   SIZE -- Get the number of elements in the object.
       %
       %     See also fcat/size
       %
       %     OUT:
       %       - `n` (uint64)
       
-      n = size( varargin{1}, 1 );
+      n = prod( size(varargin{1}) );
     end
     
     function tf = isempty(obj)
@@ -253,8 +253,8 @@ classdef fcat < handle
                   if ( is_colon )
                     keep( obj, [] );
                   else
-                    inds = true( numel(obj), 1 );
-                    assert( all(sub > 0 & sub <= numel(obj)), ...
+                    inds = true( size(obj, 1), 1 );
+                    assert( all(sub > 0 & sub <= size(obj, 1)), ...
                       'Index exceeds categorical dimensions.' );
                     inds(sub) = false;
                     keep( obj, find(inds) );
@@ -264,7 +264,7 @@ classdef fcat < handle
                   % x(1:10) = other_fcat; | x(:) = other_fcat;
                   %
                   if ( is_colon )
-                    assign( obj, values, 1:numel(obj) );
+                    assign( obj, values, 1:size(obj, 1) );
                   else
                     assign( obj, values, sub );
                   end
@@ -453,7 +453,7 @@ classdef fcat < handle
               end
               
               if ( ischar(category_or_inds) )
-                error( 'Specify a category as a column subscript.' );
+                error( 'Category must be column, not row, subscript.' );
               end
               
               error( 'Invalid reference signature.' );
@@ -977,7 +977,7 @@ classdef fcat < handle
       obj.displaymode = mode;
     end
     
-    function disp(obj)
+    function disp(obj, cls)
       
       %   DISP -- Pretty-print the object's contents.
       %
@@ -985,7 +985,9 @@ classdef fcat < handle
       
       desktop_exists = usejava( 'desktop' );
       
-      cls = class( obj );
+      if ( nargin < 2 )
+        cls = class( obj );
+      end
       
       if ( desktop_exists )
         link_str = sprintf( '<a href="matlab:helpPopup %s/%s">%s</a>' ...
@@ -999,7 +1001,7 @@ classdef fcat < handle
         return;
       end
       
-      sz_m = numel( obj );
+      sz_m = size( obj, 1 );
       sz_n = size( obj, 2 );
       
       if ( desktop_exists )
@@ -1019,7 +1021,7 @@ classdef fcat < handle
       end
       
       if ( strcmp(obj.displaymode, 'auto') )
-        if ( numel(obj) > 100 )
+        if ( size(obj, 1) > 100 )
           dispshort( obj, desktop_exists, link_str, sz_str );
         else
           dispfull( obj, desktop_exists, link_str, sz_str );
