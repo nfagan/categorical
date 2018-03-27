@@ -8,7 +8,7 @@ function conf = cat_buildconfig()
 conf = struct();
 
 %
-% #define CAT_PRUNE_AFTER_ASSIGN
+% see: #define CAT_PRUNE_AFTER_ASSIGN
 %
 %   if true, calls to setcat() and assign() will also call prune(). In this
 %   way, there can be no "dangling" labels left in the object. But this is

@@ -3,54 +3,57 @@
 #include "cat_class_handle.hpp"
 #include "categorical.hpp"
 
+#define MEXFUNC(id) \
+  void id(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
+
 namespace util {
     void init_cat_functions();
     
-    void is_valid(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
-    void equals(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
+    MEXFUNC(is_valid);
+    MEXFUNC(equals);
     
-    void create(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
-    void destroy(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
-    void copy(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
+    MEXFUNC(create);
+    MEXFUNC(destroy);
+    MEXFUNC(copy);
     
-    void append(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
-    void assign(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
-    void assign_partial(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
-    void prune(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
+    MEXFUNC(append);
+    MEXFUNC(assign);
+    MEXFUNC(assign_partial);
+    MEXFUNC(prune);
     
-    void fill_category(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
-    void set_category(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
-    void set_partial_category(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
-    void set_categories(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
-    void set_partial_categories(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
-    void require_category(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
-    void collapse_category(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
-    void remove_category(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
+    MEXFUNC(fill_category);
+    MEXFUNC(set_category);
+    MEXFUNC(set_partial_category);
+    MEXFUNC(set_categories);
+    MEXFUNC(set_partial_categories);
+    MEXFUNC(require_category);
+    MEXFUNC(collapse_category);
+    MEXFUNC(remove_category);
     
-    void full_category(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
-    void partial_category(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
-    void in_category(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
+    MEXFUNC(full_category);
+    MEXFUNC(partial_category);
+    MEXFUNC(in_category);
     
-    void get_categories(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
-    void get_labels(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
-    void has_label(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
-    void has_category(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
+    MEXFUNC(get_categories);
+    MEXFUNC(get_labels);
+    MEXFUNC(has_label);
+    MEXFUNC(has_category);
     
-    void one(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
+    MEXFUNC(one);
     
-    void keep_each(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
-    void keep_eachc(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
-    void keep(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
-    void resize(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
-    void repeat(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
+    MEXFUNC(keep_each);
+    MEXFUNC(keep_eachc);
+    MEXFUNC(keep);
+    MEXFUNC(resize);
+    MEXFUNC(repeat);
     
-    void size(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
-    void n_categories(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
-    void n_labels(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
+    MEXFUNC(size);
+    MEXFUNC(n_categories);
+    MEXFUNC(n_labels);
     
-    void count(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
+    MEXFUNC(count);
     
-    void find(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
-    void find_all(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
-    void find_allc(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
+    MEXFUNC(find);
+    MEXFUNC(find_all);
+    MEXFUNC(find_allc);
 }
