@@ -188,6 +188,18 @@ classdef fcat < handle
       n = cat_api( 'n_cats', obj.id );      
     end
     
+    function c = count(obj, labels)
+      
+      %   COUNT -- Count the number of rows associated with labels.
+      %
+      %     IN:
+      %       - `labels` (char, cell array of strings)
+      %     OUT:
+      %       - `c` (uint64)
+      
+      c = cat_api( 'count', obj.id, labels );            
+    end
+    
     function obj = resize(obj, to)
       
       %   RESIZE -- Expand or contract object.
@@ -877,6 +889,13 @@ classdef fcat < handle
       cat_api( 'fill_cat', obj.id, cat, lab );      
     end
     
+    function obj = prune(obj)
+      
+      %   PRUNE -- Remove labels without rows.
+      
+      cat_api( 'prune', obj.id );
+    end
+    
     function obj = append(obj, B)
       
       %   APPEND -- Append another fcat object.
@@ -910,13 +929,14 @@ classdef fcat < handle
       end
     end
     
-    function obj = assign(obj, B, at_indices)
+    function obj = assign(obj, B, to_indices, from_indices)
       
       %   ASSIGN -- Assign contents of other fcat at indices.
       %
       %     IN:
       %       - `B` (fcat)
-      %       - `at_indices` (uint64)
+      %       - `to_indices` (uint64)
+      %       - `from_indices` (uint64)
       
       if ( ~isa(obj, 'fcat') )
         error( 'Cannot assign objects of class "%s".', class(obj) );
@@ -925,7 +945,12 @@ classdef fcat < handle
         error( 'Cannot assign objects of class "%s".', class(B) );
       end
       
-      cat_api( 'assign', obj.id, B.id, uint64(at_indices) );
+      if ( nargin == 3 )
+        cat_api( 'assign', obj.id, B.id, uint64(to_indices) );
+      else
+        cat_api( 'assign_partial', obj.id, B.id, uint64(to_indices) ...
+          , uint64(from_indices) );
+      end
     end
     
     function delete(obj)

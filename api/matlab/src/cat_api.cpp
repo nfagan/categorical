@@ -39,7 +39,10 @@ namespace util {
             {"n_labs",                  util::ops::N_LABELS},
             {"assign",                  util::ops::ASSIGN},
             {"set_cats",                util::ops::SET_CATEGORIES},
-            {"set_partial_cats",        util::ops::SET_PARTIAL_CATEGORIES}
+            {"set_partial_cats",        util::ops::SET_PARTIAL_CATEGORIES},
+            {"assign_partial",          util::ops::ASSIGN_PARTIAL},
+            {"prune",                   util::ops::PRUNE},
+            {"count",                   util::ops::COUNT}
         });
         
         std::array<util::mex_func_t, util::ops::N_OPS> funcs;
@@ -91,6 +94,9 @@ void util::init_cat_functions()
     globals::funcs[ops::ASSIGN] =                   &util::assign;
     globals::funcs[ops::SET_CATEGORIES] =           &util::set_categories;
     globals::funcs[ops::SET_PARTIAL_CATEGORIES] =   &util::set_partial_categories;
+    globals::funcs[ops::ASSIGN_PARTIAL] =           &util::assign_partial;
+    globals::funcs[ops::PRUNE] =                    &util::prune;
+    globals::funcs[ops::COUNT] =                    &util::count;
     
     globals::INITIALIZED = true;
     

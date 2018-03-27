@@ -15,6 +15,8 @@ namespace util {
     
     void append(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
     void assign(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
+    void assign_partial(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
+    void prune(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
     
     void fill_category(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
     void set_category(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
@@ -45,6 +47,8 @@ namespace util {
     void size(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
     void n_categories(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
     void n_labels(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
+    
+    void count(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
     
     void find(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);
     void find_all(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]);

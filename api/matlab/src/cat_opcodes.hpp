@@ -38,7 +38,10 @@ namespace util {
         static constexpr uint32_t ASSIGN = 31u;
         static constexpr uint32_t SET_CATEGORIES = 32u;
         static constexpr uint32_t SET_PARTIAL_CATEGORIES = 33u;
+        static constexpr uint32_t ASSIGN_PARTIAL = 34u;
+        static constexpr uint32_t PRUNE = 35u;
+        static constexpr uint32_t COUNT = 36u;
         //
-        static constexpr uint32_t N_OPS = 34u;
+        static constexpr uint32_t N_OPS = 37u;
     }
 }

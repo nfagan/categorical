@@ -9,8 +9,7 @@
 #include <random>
 #include <iostream>
 #include <algorithm>
-
-#define CAT_ALLOW_SET_FROM_SIZE0
+#include "config.hpp"
 
 util::categorical::categorical()
 {
@@ -216,6 +215,40 @@ util::u64 util::categorical::n_categories() const
 util::u64 util::categorical::n_labels() const
 {
     return m_label_ids.size();
+}
+
+//  count: Get the number of rows associated with label.
+
+util::u64 util::categorical::count(const std::string& lab) const
+{
+    using util::u32;
+    using util::u64;
+    
+    auto lab_id_it = m_label_ids.find(lab);
+    
+    u64 sum = 0;
+    
+    if (lab_id_it == m_label_ids.endk())
+    {
+        return sum;
+    }
+    
+    u32 id = lab_id_it->second;
+    const std::string& in_cat = m_in_category.at(lab);
+    const u64 cat_idx = m_category_indices.at(in_cat);
+    
+    const std::vector<u32>& lab_col = m_labels[cat_idx];
+    const u64 sz = lab_col.size();
+    
+    for (u64 i = 0; i < sz; i++)
+    {
+        if (lab_col[i] == id)
+        {
+            sum++;
+        }
+    }
+    
+    return sum;
 }
 
 //  add_category: Add a new category.
@@ -792,7 +825,9 @@ util::u32 util::categorical::set_category(const std::string &category,
         labels[indices[i]] = lab_id;
     }
     
+#ifdef CAT_PRUNE_AFTER_ASSIGN
     prune();
+#endif
     
     return util::categorical_status::OK;
     
@@ -1330,12 +1365,12 @@ util::u32 util::categorical::assign(const util::categorical& other,
     }
     
     //  bounds check
-    for (u64 i = 0; i < n_indices; i++)
+    
+    u32 bounds_status = util::categorical::bounds_check(at_indices, n_indices, own_sz, index_offset);
+    
+    if (bounds_status != util::categorical_status::OK)
     {
-        if (at_indices[i] + index_offset >= own_sz)
-        {
-            return util::categorical_status::OUT_OF_BOUNDS;
-        }
+        return bounds_status;
     }
     
     std::vector<std::string> other_labels = other.m_label_ids.keys();
@@ -1412,7 +1447,153 @@ util::u32 util::categorical::assign(const util::categorical& other,
         }
     }
     
+#ifdef CAT_PRUNE_AFTER_ASSIGN
     prune();
+#endif
+    
+    return util::categorical_status::OK;
+}
+
+util::u32 util::categorical::assign(const util::categorical& other,
+                                    const std::vector<util::u64>& to_indices,
+                                    const std::vector<util::u64>& from_indices,
+                                    util::s64 index_offset)
+{
+    using util::u32;
+    using util::u64;
+    
+    if (!categories_match(other))
+    {
+        return util::categorical_status::CATEGORIES_DO_NOT_MATCH;
+    }
+    
+    u64 n_to_indices = to_indices.size();
+    u64 n_from_indices = from_indices.size();
+    u64 own_sz = size();
+    u64 other_sz = other.size();
+    
+    //  error if n from indices does not match n to indices
+    if (n_to_indices != n_from_indices)
+    {
+        return util::categorical_status::WRONG_INDEX_SIZE;
+    }
+    
+    //  bounds check
+    u32 own_status = util::categorical::bounds_check(to_indices, n_to_indices, own_sz, index_offset);
+    u32 other_status = util::categorical::bounds_check(from_indices, n_from_indices, other_sz, index_offset);
+    u32 ok = util::categorical_status::OK;
+    
+    if (own_status != ok || other_status != ok)
+    {
+        return own_status;
+    }
+    
+    std::unordered_map<u32, u32> replace_other_label_ids;
+    std::unordered_set<u32> new_label_ids;
+    
+#ifdef CAT_COPY_ASSIGN_FROM
+    std::vector<std::vector<u32>> copy_own_labs = m_labels;
+#endif
+    
+    for (const auto& cat_it : m_category_indices)
+    {
+        const std::string& own_cat = cat_it.first;
+        const u64 own_cat_idx = cat_it.second;
+        const u64 other_cat_idx = other.m_category_indices.at(own_cat);
+        
+#ifdef CAT_COPY_ASSIGN_FROM
+        std::vector<u32>& own_labs = copy_own_labs[own_cat_idx];
+#else
+        std::vector<u32>& own_labs = m_labels[own_cat_idx];
+#endif
+        const std::vector<u32>& other_labs = other.m_labels[other_cat_idx];
+        
+        for (u64 i = 0; i < n_to_indices; i++)
+        {
+            const u64 from_idx = from_indices[i] + index_offset;
+            const u64 to_idx = to_indices[i] + index_offset;
+            
+            const u32 other_lab_id = other_labs[from_idx];
+            
+            if (replace_other_label_ids.count(other_lab_id) > 0)
+            {
+                own_labs[to_idx] = replace_other_label_ids.at(other_lab_id);
+                continue;
+            }
+            
+            //
+            //  not yet processed
+            //
+            const std::string& str_lab = other.m_label_ids.at(other_lab_id);
+            const std::string& other_cat = other.m_in_category.at(str_lab);
+            
+            auto own_lab_it = m_label_ids.find(str_lab);
+            
+            u32 assign_id = other_lab_id;
+            
+            //  label exists
+            if (own_lab_it != m_label_ids.endk())
+            {
+                if (m_in_category.at(str_lab) != other_cat)
+                {
+                    //  get rid of added labels
+                    prune();
+                    
+                    return util::categorical_status::LABEL_EXISTS_IN_OTHER_CATEGORY;
+                }
+                
+                u32 own_lab_id = m_label_ids.at(str_lab);
+                
+                if (own_lab_id != other_lab_id)
+                {
+                    assign_id = own_lab_id;
+                }
+            }
+            else
+            {
+                if (m_label_ids.contains(other_lab_id))
+                {
+                    u32 new_id = util::categorical::get_id(this, &other, new_label_ids);
+                    new_label_ids.insert(new_id);
+                    assign_id = new_id;
+                }
+                
+                m_label_ids.insert(str_lab, assign_id);
+                m_in_category[str_lab] = other_cat;
+            }
+            
+            replace_other_label_ids[other_lab_id] = assign_id;
+            
+            own_labs[to_idx] = assign_id;
+        }
+    }
+    
+#ifdef CAT_COPY_ASSIGN_FROM
+    m_labels = std::move(copy_own_labs);
+#endif
+#ifdef CAT_PRUNE_AFTER_ASSIGN
+    prune();
+#endif
+    
+    return util::categorical_status::OK;
+}
+
+//  bounds_check: Ensure indices are in bounds
+
+util::u32 util::categorical::bounds_check(const std::vector<util::u64>& indices,
+                       util::u64 n_check,
+                       util::u64 end,
+                       util::u64 index_offset)
+{
+    using util::u64;
+    
+    for (u64 i = 0; i < n_check; i++)
+    {
+        if (indices[i] + index_offset >= end)
+        {
+            return util::categorical_status::OUT_OF_BOUNDS;
+        }
+    }
     
     return util::categorical_status::OK;
 }

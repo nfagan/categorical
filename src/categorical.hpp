@@ -65,6 +65,7 @@ public:
                                    util::u64 index_offset = 0);
     
     void one();
+    void prune();
     
     std::vector<std::string> get_categories() const;
     std::vector<std::string> get_labels() const;
@@ -92,8 +93,12 @@ public:
     
     util::u32 append(const categorical& other);
     util::u32 assign(const util::categorical& other,
-                     const std::vector<util::u64>& at_indices,
+                     const std::vector<util::u64>& to_indices,
                      util::s64 index_offset);
+    util::u32 assign(const util::categorical& other,
+                                        const std::vector<util::u64>& to_indices,
+                                        const std::vector<util::u64>& from_indices,
+                                        util::s64 index_offset);
     
     void empty();
     
@@ -111,6 +116,7 @@ public:
     util::u32 require_category(const std::string& category);
     
     util::u64 size() const;
+    util::u64 count(const std::string& lab) const;
 private:
     util::u64 m_size;
     util::u32 m_next_id;
@@ -142,7 +148,6 @@ private:
     
     std::string get_collapsed_expression(const std::string& for_cat) const;
     
-    void prune();
     void resize(util::u64 rows);
     
     static util::u32 get_id(const categorical* self, const categorical* other,
@@ -153,4 +158,9 @@ private:
                                const std::unordered_map<util::u32, util::u32>& replace_map);
     
     static util::bit_array assign_bit_array(const std::vector<util::u32>& labels, util::u32 lab);
+    
+    static util::u32 bounds_check(const std::vector<util::u64>& indices,
+                                  util::u64 n_check,
+                                  util::u64 end,
+                                  util::u64 index_offset);
 };
