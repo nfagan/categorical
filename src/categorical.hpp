@@ -25,6 +25,12 @@ namespace util {
         std::vector<std::string> combinations;
     };
     
+    struct labels_t
+    {
+        std::vector<util::u32> ids;
+        std::vector<std::string> labels;
+    };
+    
     namespace categorical_status {
         static constexpr util::u32 OK = 0u;
         static constexpr util::u32 CATEGORY_EXISTS = 1u;
@@ -69,6 +75,8 @@ public:
     
     std::vector<std::string> get_categories() const;
     std::vector<std::string> get_labels() const;
+    util::labels_t get_labels_and_ids() const;
+    std::vector<const std::vector<util::u32>*> get_label_mat() const;
     
     std::vector<std::string> full_category(const std::string& category, bool* exists) const;
     std::vector<std::string> full_category(const std::string& category) const;

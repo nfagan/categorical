@@ -2,6 +2,7 @@ classdef fcat < handle
   
   properties (Access = private, Constant = true)
     DISPLAY_MODES = { 'auto', 'short', 'full' };
+    MAX_ROWS_DISPLAY_FULL = 1000;
   end
     
   properties (Access = private)
@@ -20,13 +21,12 @@ classdef fcat < handle
       %
       %     FCAT objects are essentially categorical matrices whose
       %     elements are unique across, but not necessarily within,
-      %     columns. In this way, each "column" of an FCAT object
-      %     constitutes a category (or dimension) with an arbitrary number
-      %     of levels (or labels). Rows of observations can then be 
-      %     identified by a given combination of labels across all 
-      %     categories.
+      %     columns. In this way, each column of an FCAT object constitutes 
+      %     a category (or dimension) with an arbitrary number of levels 
+      %     (or labels). Rows of observations can then be identified by a 
+      %     given combination of labels across all categories.
       %
-      %     See also fcat/findall, fcat/from, fcat/subsref, categorical
+      %     See also fcat/findall, fcat/from, fcat/subsref, categorical/categorical
       
       if ( nargin == 0 )
         obj.id = cat_api( 'create' );
@@ -933,6 +933,12 @@ classdef fcat < handle
       
       %   ASSIGN -- Assign contents of other fcat at indices.
       %
+      %     assign( obj, B, 1:10 ) assigns the full contents of `B` to rows
+      %     1:10 of `obj`. `B` must have 10 rows.
+      %
+      %     assign( obj, B, 1:10, 11:20 ) assigns rows 11:20 of `B` to rows
+      %     1:10 of `obj`.
+      %
       %     IN:
       %       - `B` (fcat)
       %       - `to_indices` (uint64)
@@ -948,8 +954,8 @@ classdef fcat < handle
       if ( nargin == 3 )
         cat_api( 'assign', obj.id, B.id, uint64(to_indices) );
       else
-        cat_api( 'assign_partial', obj.id, B.id, uint64(to_indices) ...
-          , uint64(from_indices) );
+        cat_api( 'assign_partial', obj.id, B.id ...
+          , uint64(to_indices), uint64(from_indices) );
       end
     end
     
@@ -1046,7 +1052,7 @@ classdef fcat < handle
       end
       
       if ( strcmp(obj.displaymode, 'auto') )
-        if ( size(obj, 1) > 100 )
+        if ( size(obj, 1) > fcat.MAX_ROWS_DISPLAY_FULL )
           dispshort( obj, desktop_exists, link_str, sz_str );
         else
           dispfull( obj, desktop_exists, link_str, sz_str );
@@ -1091,8 +1097,9 @@ classdef fcat < handle
       %       - `C` (categorical)
       %       - `F` (cell array of strings)
       
-      [C, F] = cellstr( obj );
-      C = categorical( C );
+      [N, labs, ids] = cat_api( 'to_numeric_mat', obj.id );
+      C = categorical( N, ids, labs );
+      F = getcats( obj );
     end
   end
   
@@ -1103,9 +1110,7 @@ classdef fcat < handle
       %   DISPFULL -- Display complete contents.
       
       fprintf( '  %s %s array\n\n', sz_str, link_str );
-      
-%       disp( getcats(obj)' );
-      disp( cellstr(obj) );
+      disp( categorical(obj) );
     end
     
     function dispshort(obj, desktop_exists, link_str, sz_str)
@@ -1295,7 +1300,7 @@ classdef fcat < handle
         catch err
           delete( obj );
           fprintf( ['\n The following error occurred when\n attempting to create' ...
-            , ' a fcat object\n from cellstr or categorical input:\n\n'] );
+            , ' an fcat object\n from cellstr or categorical input:\n\n'] );
           throw( err );
         end
         return;

@@ -56,4 +56,6 @@ namespace util {
     MEXFUNC(find);
     MEXFUNC(find_all);
     MEXFUNC(find_allc);
+    
+    MEXFUNC(to_numeric_matrix);
 }

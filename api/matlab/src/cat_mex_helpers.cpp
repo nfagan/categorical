@@ -50,7 +50,7 @@ std::vector<std::string> util::get_strings(const mxArray* in_strs, const char* i
         
         if (!success)
         {
-            mexErrMsgIdAndTxt(id, "String copy failed.");
+            mexErrMsgIdAndTxt(id, "Cannot convert to string from given values.");
         }
         
         std::vector<std::string> res = { str };
@@ -84,7 +84,7 @@ std::vector<std::string> util::get_strings(const mxArray* in_strs, const char* i
         
         if (!success)
         {
-            mexErrMsgIdAndTxt(id, "String copy failed.");
+            mexErrMsgIdAndTxt(id, "Cannot convert to string from given values.");
         }
         
         strs[i] = str;

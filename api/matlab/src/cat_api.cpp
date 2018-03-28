@@ -42,7 +42,8 @@ namespace util {
             {"set_partial_cats",        util::ops::SET_PARTIAL_CATEGORIES},
             {"assign_partial",          util::ops::ASSIGN_PARTIAL},
             {"prune",                   util::ops::PRUNE},
-            {"count",                   util::ops::COUNT}
+            {"count",                   util::ops::COUNT},
+            {"to_numeric_mat",          util::ops::TO_NUMERIC_MATRIX}
         });
         
         std::array<util::mex_func_t, util::ops::N_OPS> funcs;
@@ -97,6 +98,7 @@ void util::init_cat_functions()
     globals::funcs[ops::ASSIGN_PARTIAL] =           &util::assign_partial;
     globals::funcs[ops::PRUNE] =                    &util::prune;
     globals::funcs[ops::COUNT] =                    &util::count;
+    globals::funcs[ops::TO_NUMERIC_MATRIX] =        &util::to_numeric_matrix;
     
     globals::INITIALIZED = true;
     

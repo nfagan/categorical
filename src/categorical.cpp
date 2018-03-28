@@ -1625,6 +1625,42 @@ std::vector<std::string> util::categorical::get_labels() const
     return labs;
 }
 
+//  get_labels_and_ids: Get labels and numeric labels
+
+util::labels_t util::categorical::get_labels_and_ids() const
+{
+    std::vector<std::string> labs = get_labels();
+    util::u64 n_labs = labs.size();
+    std::vector<util::u32> ids(n_labs);
+    
+    for (util::u64 i = 0; i < n_labs; i++)
+    {
+        ids[i] = m_label_ids.at(labs[i]);
+    }
+    
+    return { ids, labs };
+}
+
+//  get_label_mat: Get a reference to the labels array, where columns
+//      are ordered by category.
+
+std::vector<const std::vector<util::u32>*> util::categorical::get_label_mat() const
+{
+    std::vector<std::string> cats = get_categories();
+    
+    std::vector<const std::vector<util::u32>*> res(cats.size());
+    
+    util::u64 out_idx = 0;
+    
+    for (const auto& cat : cats)
+    {
+        util::u64 cat_idx = m_category_indices.at(cat);
+        res[out_idx++] = &m_labels[cat_idx];
+    }
+    
+    return res;
+}
+
 //  partial_category: Replace int label ids with string labels, for a subset of rows.
 //
 //      Pass in pointer to `exists` to verify that

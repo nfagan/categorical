@@ -41,7 +41,8 @@ namespace util {
         static constexpr uint32_t ASSIGN_PARTIAL = 34u;
         static constexpr uint32_t PRUNE = 35u;
         static constexpr uint32_t COUNT = 36u;
+        static constexpr uint32_t TO_NUMERIC_MATRIX = 37u;
         //
-        static constexpr uint32_t N_OPS = 37u;
+        static constexpr uint32_t N_OPS = 38u;
     }
 }

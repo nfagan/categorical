@@ -31,9 +31,7 @@ for i = 1:n_iters
   
   row = cellstr( categ(ind, :) );
   
-  for j = 1:numel(cats)
-    setcat( tmp, cats{j}, row{j} );
-  end
+  setcats( tmp, cats, row );
   
   append( C, tmp );
 end
