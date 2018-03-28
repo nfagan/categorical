@@ -95,7 +95,7 @@ std::vector<std::string> util::get_strings(const mxArray* in_strs, const char* i
 
 std::string util::get_string(const mxArray* in_str, bool* success)
 {    
-    int sz = mxGetNumberOfElements(in_str);
+    uint64_t sz = mxGetNumberOfElements(in_str);
     
     size_t strlen = (sz+1) * sizeof(char);
     
@@ -126,7 +126,7 @@ std::string util::get_string(const mxArray* in_str, bool* success)
 
 std::string util::get_string_with_trap(const mxArray* in_str, const char* id)
 {    
-    int sz = mxGetNumberOfElements(in_str);
+    uint64_t sz = mxGetNumberOfElements(in_str);
     
     size_t strlen = (sz+1) * sizeof(char);
     
