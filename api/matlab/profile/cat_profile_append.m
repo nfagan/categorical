@@ -53,12 +53,30 @@ for i = 1:n_iters
 end
 c3 = toc();
 
+% fcat - assign
+C2 = fcat.from( categ, eg.f );
+tic;
+C = requirecat( fcat(), cats );
+tmp = requirecat( fcat(), cats );
+resize( tmp, 1 );
+resize( C, n_iters );
+
+for i = 1:n_iters
+  ind = randperm( size(C2, 1), 1 );
+  
+  assign( tmp, C2, 1, ind );
+  
+  assign( C, tmp, i );
+end
+c4 = toc();
+
 
 delete( C );
 delete( tmp );
 
-fprintf( '\n categorical: %0.3f (ms) [%d]', c1 * 1e3, n_iters );
-fprintf( '\n fcat:        %0.3f (ms) [%d]', c2 * 1e3, n_iters );
-fprintf( '\n fcat: (subs) %0.3f (ms) [%d]', c3 * 1e3, n_iters );
+fprintf( '\n categorical:   %0.3f (ms) [%d]', c1 * 1e3, n_iters );
+fprintf( '\n fcat:          %0.3f (ms) [%d]', c2 * 1e3, n_iters );
+fprintf( '\n fcat: (subs)   %0.3f (ms) [%d]', c3 * 1e3, n_iters );
+fprintf( '\n fcat: (assign) %0.3f (ms) [%d]', c4 * 1e3, n_iters );
 
 end
