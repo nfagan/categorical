@@ -71,7 +71,7 @@ public:
                                    util::u64 index_offset = 0);
     
     void one();
-    void prune();
+    util::u64 prune();
     
     std::vector<std::string> get_categories() const;
     std::vector<std::string> get_labels() const;
@@ -118,8 +118,12 @@ public:
     
     util::u32 set_category(const std::string& category, const std::vector<std::string>& full_category);
     util::u32 set_category(const std::string& category, const std::vector<std::string>& part_category,
-                           const util::bit_array& at_indices);
+                           const std::vector<util::u64>& at_indices,
+                           util::s64 index_offset = 0,
+                           bool check_bounds = true);
+    
     util::u32 fill_category(const std::string& category, const std::string& lab);
+    
     util::u32 add_category(const std::string& category);
     util::u32 require_category(const std::string& category);
     
@@ -171,4 +175,5 @@ private:
                                   util::u64 n_check,
                                   util::u64 end,
                                   util::u64 index_offset);
+    static util::u64 maximum(const std::vector<util::u64>& indices, util::u64 end);
 };

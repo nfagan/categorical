@@ -721,7 +721,9 @@ void util::categorical::one()
 
 util::u32 util::categorical::set_category(const std::string &category,
                                           const std::vector<std::string> &full_category,
-                                          const util::bit_array& at_indices)
+                                          const std::vector<util::u64>& at_indices,
+                                          util::s64 index_offset,
+                                          bool check_bounds)
 {
     using util::u64;
     using util::u32;
@@ -736,8 +738,7 @@ util::u32 util::categorical::set_category(const std::string &category,
     
     const u64 sz = size();
     const u64 cat_sz = full_category.size();
-    const u64 index_sz = at_indices.size();
-    const u64 n_indices = at_indices.sum();
+    const u64 n_indices = at_indices.size();
     
     bool is_scalar = false;
     
@@ -753,24 +754,38 @@ util::u32 util::categorical::set_category(const std::string &category,
         }
     }
     
-    if (sz > 0 && index_sz != sz)
-    {
-        return util::categorical_status::WRONG_INDEX_SIZE;
-    }
-    
-    u64 category_idx = category_it->second;
-    std::vector<u32>& labels = m_labels[category_idx];
-    
-    const std::vector<u64> indices = bit_array::findv(at_indices);
-    
     if (sz == 0)
     {
 #ifdef CAT_ALLOW_SET_FROM_SIZE0
-        reserve(index_sz);
+        if (n_indices == 0)
+        {
+            return util::categorical_status::OK;
+        }
+        
+        u64 max = util::categorical::maximum(at_indices, n_indices);
+        
+        if (max + index_offset > max || max == ~(u64(0)))
+        {
+            return util::categorical_status::CAT_OVERFLOW;
+        }
+        
+        reserve(max + index_offset + 1);
 #else
         return util::categorical_status::WRONG_CATEGORY_SIZE;
 #endif
     }
+    else if (check_bounds)
+    {
+        u32 bounds_status = bounds_check(at_indices, n_indices, sz, index_offset);
+        
+        if (bounds_status != util::categorical_status::OK)
+        {
+            return bounds_status;
+        }
+    }
+    
+    u64 category_idx = category_it->second;
+    std::vector<u32>& labels = m_labels[category_idx];
     
     std::unordered_map<std::string, u32> processed;
     
@@ -822,7 +837,7 @@ util::u32 util::categorical::set_category(const std::string &category,
             lab_id = processed[lab];
         }
         
-        labels[indices[i]] = lab_id;
+        labels[at_indices[i] + index_offset] = lab_id;
     }
     
 #ifdef CAT_PRUNE_AFTER_ASSIGN
@@ -1118,7 +1133,7 @@ void util::categorical::empty()
 
 //  prune: Remove labels wihout rows.
 
-void util::categorical::prune()
+util::u64 util::categorical::prune()
 {
     using util::u64;
     using util::u32;
@@ -1155,6 +1170,8 @@ void util::categorical::prune()
         m_in_category.erase(lab);
         m_label_ids.erase(id);
     }
+    
+    return n_remaining;
 }
 
 //  append: Append one categorical object to another.
@@ -1596,6 +1613,23 @@ util::u32 util::categorical::bounds_check(const std::vector<util::u64>& indices,
     }
     
     return util::categorical_status::OK;
+}
+
+//  maximum: Get the largest element in a vector of indices.
+
+util::u64 util::categorical::maximum(const std::vector<util::u64> &indices, util::u64 end)
+{
+    util::u64 max = 0;
+    
+    for (util::u64 i = 0; i < end; i++)
+    {
+        if (indices[i] > max)
+        {
+            max = indices[i];
+        }
+    }
+    
+    return max;
 }
 
 //  get_categories: Get all string categories.

@@ -5,6 +5,7 @@ void util::set_partial_categories(int nlhs, mxArray *plhs[], int nrhs, const mxA
 {
     using util::u64;
     using util::u32;
+    using util::s64;
     
     const char* func_id = "categorical:setpartcat";
     
@@ -23,6 +24,7 @@ void util::set_partial_categories(int nlhs, mxArray *plhs[], int nrhs, const mxA
     u64 n_values = values.size();
     u64 at_indices_sz = at_indices.size();
     u64 n_per_col;
+    s64 index_offset = -1;
     
     bool is_scalar = false;
     
@@ -50,29 +52,17 @@ void util::set_partial_categories(int nlhs, mxArray *plhs[], int nrhs, const mxA
         n_per_col = at_indices_sz;
     }
     
-    std::sort(at_indices.begin(), at_indices.end());
+    bool check_bounds = sz == 0;
     
-    util::u64 index_sz;
-    util::u64 cat_sz = cat->size();
-    
-    if (cat_sz == 0)
+    if (sz > 0)
     {
-        index_sz = at_indices[at_indices_sz-1];
-    }
-    else
-    {
-        index_sz = cat_sz;
-    }
-    
-    util::bit_array assign_index(index_sz, false);
-    
-    util::s64 index_offset = -1;
-    
-    bool assign_status = assign_index.assign_true(at_indices, index_offset);
-    
-    if (!assign_status)
-    {
-        mexErrMsgIdAndTxt(func_id, "Indices exceed categorical dimensions.");
+        for (u64 i = 0; i < at_indices_sz; i++)
+        {
+            if (at_indices[i] - 1 >= sz)
+            {
+                mexErrMsgIdAndTxt(func_id, "Indices exceed categorical dimensions.");
+            }
+        }
     }
     
     std::vector<std::string> part_cat(n_per_col);
@@ -84,7 +74,7 @@ void util::set_partial_categories(int nlhs, mxArray *plhs[], int nrhs, const mxA
         
         std::copy(values.begin() + start, values.begin() + stop, part_cat.begin());
         
-        u32 status = cat->set_category(cats[i], part_cat, assign_index);
+        u32 status = cat->set_category(cats[i], part_cat, at_indices, index_offset, check_bounds);
 
         if (status == util::categorical_status::OK)
         {
@@ -114,6 +104,16 @@ void util::set_partial_categories(int nlhs, mxArray *plhs[], int nrhs, const mxA
         }
 
         if (status == util::categorical_status::WRONG_INDEX_SIZE)
+        {
+            mexErrMsgIdAndTxt(func_id, "Indices exceed categorical dimensions.");
+        }
+        
+        if (status == util::categorical_status::CAT_OVERFLOW)
+        {
+            mexErrMsgIdAndTxt(func_id, "Indices exceed categorical dimensions.");
+        }
+        
+        if (status == util::categorical_status::OUT_OF_BOUNDS)
         {
             mexErrMsgIdAndTxt(func_id, "Indices exceed categorical dimensions.");
         }

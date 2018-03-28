@@ -889,11 +889,23 @@ classdef fcat < handle
       cat_api( 'fill_cat', obj.id, cat, lab );      
     end
     
-    function obj = prune(obj)
+    function [obj, n] = prune(obj)
       
       %   PRUNE -- Remove labels without rows.
+      %
+      %     prune( obj ) ensures that each label in `obj` is associated
+      %     with at least one row.
+      %
+      %     [obj, n] = prune( obj ) also returns the number of labels that
+      %     were removed.
+      %
+      %     See also categorical/removecats
+      %
+      %     OUT:
+      %       - `obj` (fcat)
+      %       - `n` (uint64)
       
-      cat_api( 'prune', obj.id );
+      n = cat_api( 'prune', obj.id );
     end
     
     function obj = append(obj, B)

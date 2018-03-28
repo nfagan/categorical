@@ -30,9 +30,9 @@ for i = 1:iters
   ind = inds{i};
   col = cols{i};
   
-  setcat( f, cats{col}, lab, ind );
+%   setcat( f, cats{col}, lab, ind );
   
-%   f(ind, col) = lab;
+  f(ind, col) = lab;
 end
 c2 = toc;
 
