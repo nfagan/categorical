@@ -11,6 +11,7 @@ namespace util {
     
     MEXFUNC(is_valid);
     MEXFUNC(equals);
+    MEXFUNC(progenitors_match);
     
     MEXFUNC(create);
     MEXFUNC(destroy);
@@ -40,6 +41,7 @@ namespace util {
     MEXFUNC(has_category);
     
     MEXFUNC(one);
+    MEXFUNC(empty);
     
     MEXFUNC(keep_each);
     MEXFUNC(keep_eachc);
@@ -58,4 +60,6 @@ namespace util {
     MEXFUNC(find_allc);
     
     MEXFUNC(to_numeric_matrix);
+    
+    MEXFUNC(get_build_config);
 }

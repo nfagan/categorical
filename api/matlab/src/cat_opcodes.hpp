@@ -42,7 +42,10 @@ namespace util {
         static constexpr uint32_t PRUNE = 35u;
         static constexpr uint32_t COUNT = 36u;
         static constexpr uint32_t TO_NUMERIC_MATRIX = 37u;
+        static constexpr uint32_t GET_BUILD_CONFIG = 38u;
+        static constexpr uint32_t EMPTY = 39u;
+        static constexpr uint32_t PROGENITORS_MATCH = 40u;
         //
-        static constexpr uint32_t N_OPS = 38u;
+        static constexpr uint32_t N_OPS = 41u;
     }
 }

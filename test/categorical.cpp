@@ -46,16 +46,16 @@ void test_progenitor_ids()
     categorical cat1;
     categorical cat2;
     
-    assert(!cat1.has_same_progenitor(cat2));
+    assert(!cat1.progenitors_match(cat2));
     
     categorical cat3 = cat1;
     
-    assert(cat3.has_same_progenitor(cat1));
+    assert(cat3.progenitors_match(cat1));
     
     cat3.require_category("cat1");
     cat3.set_category("cat1", {"first"});
     
-    assert(!cat3.has_same_progenitor(cat1));
+    assert(!cat3.progenitors_match(cat1));
     
     std::cout << "OK: test_progenitor_ids" << std::endl;
 }

@@ -52,8 +52,8 @@ for i = 1:10
   [y, I, C] = keepeach( copy(labs), subset_cats );
   
   for j = 1:numel(I)
-    subset_indexed = one( keep(copy(labs), I{j}) );
-    subset_eached = keep( copy(y), j );
+    subset_indexed = one( prune(keep(copy(labs), I{j})) );
+    subset_eached = prune( keep(copy(y), j) );
     
     assert( subset_indexed == subset_eached, 'Subsets didn''t match.' );
     

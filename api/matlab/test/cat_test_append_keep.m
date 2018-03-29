@@ -1,6 +1,8 @@
 function cat_test_append_keep()
 
 categ = cat_test_get_mat_categorical();
+conf = cat_buildconfig();
+use_progenitor_ids = conf.use_progenitor_ids;
 
 n_iters = 1e2;
 
@@ -20,7 +22,12 @@ for i = 1:n_iters
   assert( size(x, 1) == size(y, 1), 'Sizes didn''t match.' );
   
   x_labs = sort( getlabs(x) );
-  y_labs = sort( unique(y) );
+  
+  if ( ~use_progenitor_ids )
+    y_labs = sort( unique(y) );
+  else
+    y_labs = sort( categories(y) );
+  end
   
   assert( isequal(x_labs, y_labs), 'Labels didn''t match.' );  
   

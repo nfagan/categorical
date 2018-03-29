@@ -39,7 +39,26 @@ classdef fcat < handle
         obj.id = id;
       end
       %   set default display mode
-      obj.displaymode = 'auto';
+      obj.displaymode = 'full';
+    end
+    
+    function tf = progenitorsmatch(obj, B)
+      
+      %   PROGENITORSMATCH -- True if two fcats have the same source.
+      %
+      %     See also fcat/eq, fcat/findall
+      %
+      %     IN:
+      %       - `B` (/any/)
+      %     OUT:
+      %       - `tf` (logical)
+
+      if ( ~isa(obj, 'fcat') || ~isa(B, 'fcat') )
+        tf = false;
+        return;
+      end
+      
+      tf = cat_api( 'progenitors_match', obj.id, B.id );
     end
     
     function tf = eq(obj, B)
@@ -510,6 +529,15 @@ classdef fcat < handle
       cat_api( 'keep', obj.id, uint64(indices) );     
     end
     
+    function obj = empty(obj)
+      
+      %   EMPTY -- Retain 0 rows.
+      %
+      %     See also fcat/keep
+      
+      cat_api( 'empty', obj.id );
+    end
+    
     function [obj, I, C] = keepeach(obj, categories)
       
       %   KEEPEACH -- Retain one row for each combination of labels.
@@ -534,44 +562,15 @@ classdef fcat < handle
       end
     end
     
-    function C = unique(obj, categories, flag)
+    function obj = unique(obj)
       
-      %   UNIQUE -- Get unique combinations of labels in categories.
+      %   UNIQUE -- Retain unique rows.
       %
-      %     C = unique( obj ) returns an MxN cell array of M unique rows of
-      %     labels in N categories.
-      %
-      %     C = unique( obj, [] ) does the same.
-      %
-      %     C = unique( obj, 'cat1' ) returns an Mx1 cell array of the
-      %     unique labels in 'cat1'.
-      %
-      %     C = unique( obj, {'cat1', 'cat2'} ) returns an Mx2 cell array
-      %     of the unique rows of labels in 'cat1' and 'cat2'.
-      %
-      %     Rows are not sorted, but instead appear in the order in which
-      %     they appear in the full array.
-      %
-      %     C = unique( ..., 'sorted' ) sorts the rows of `C`, in which
-      %     case the output of `unique` is equivalent to the behavior of
-      %     Matlab's categorical/unique function with the 'rows' specifier.
+      %     unique( obj ) keeps the unique rows of `obj`.
       %
       %     See also fcat/combs, categorical/unique
       
-      if ( nargin == 1 || isempty(categories) )
-        categories = getcats( obj );
-      end
-      
-      C = combs( obj, categories )';
-      
-      if ( nargin == 3 )
-        if ( strcmp(flag, 'sorted') )
-          C = cellstr( unique(categorical(C), 'rows') );
-        else
-          valid_flags = { 'sorted' };
-          error( 'Invalid flag. Flag can be "%s".', strjoin(valid_flags, ' | ') );
-        end
-      end
+      keepeach( obj, getcats(obj) );
     end
     
     function C = combs(obj, categories)
@@ -789,7 +788,7 @@ classdef fcat < handle
       %     IN:
       %       - `category` (char, cell array of strings)
       
-      cat_api( 'rm_cat', obj.id, category );        
+      cat_api( 'rm_cat', obj.id, category );
     end
     
     function obj = collapsecat(obj, category)
@@ -816,6 +815,16 @@ classdef fcat < handle
       %   ONE -- Collapse all categories, and retain a single row.
       
       cat_api( 'one', obj.id );
+    end
+    
+    function obj = none(obj)
+      
+      %   NONE -- Keep 0 rows, but retain labels.
+      %
+      %     none( obj ) keeps 0 rows of `obj`, but does not remove labels
+      %     from `obj`, and is equivalent to keep( obj, [] ).
+      
+      keep( obj, [] );      
     end
     
     function obj = setcat(obj, category, to, at_indices)
@@ -1221,6 +1230,16 @@ classdef fcat < handle
   end
   
   methods (Static = true, Access = public)
+    
+    function conf = buildconfig()
+      
+      %   BUILDCONFIG -- Get config options with which the cat_api was built.
+      %
+      %     OUT:
+      %       - `conf` (struct)
+      
+      conf = cat_buildconfig();      
+    end
     
     function obj = with(cats, sz)
       

@@ -43,7 +43,11 @@ namespace util {
             {"assign_partial",          util::ops::ASSIGN_PARTIAL},
             {"prune",                   util::ops::PRUNE},
             {"count",                   util::ops::COUNT},
-            {"to_numeric_mat",          util::ops::TO_NUMERIC_MATRIX}
+            {"to_numeric_mat",          util::ops::TO_NUMERIC_MATRIX},
+            {"get_build_config",        util::ops::GET_BUILD_CONFIG},
+            {"empty",                   util::ops::EMPTY},
+            {"progenitors_match",       util::ops::PROGENITORS_MATCH}
+                    
         });
         
         std::array<util::mex_func_t, util::ops::N_OPS> funcs;
@@ -99,6 +103,9 @@ void util::init_cat_functions()
     globals::funcs[ops::PRUNE] =                    &util::prune;
     globals::funcs[ops::COUNT] =                    &util::count;
     globals::funcs[ops::TO_NUMERIC_MATRIX] =        &util::to_numeric_matrix;
+    globals::funcs[ops::GET_BUILD_CONFIG] =         &util::get_build_config;
+    globals::funcs[ops::EMPTY] =                    &util::empty;
+    globals::funcs[ops::PROGENITORS_MATCH] =        &util::progenitors_match;
     
     globals::INITIALIZED = true;
     

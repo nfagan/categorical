@@ -70,13 +70,28 @@ for i = 1:n_iters
 end
 c4 = toc();
 
+% fcat - assign copy
+C2 = fcat.from( categ, eg.f );
+tic;
+C = C2(1:n_iters);
+tmp = C(1);
 
-delete( C );
-delete( tmp );
+assert( progenitorsmatch(C, C2) );
+assert( progenitorsmatch(tmp, C) );
+
+for i = 1:n_iters
+  from_ind = randperm( size(C2, 1), 1 );
+  
+  assign( tmp, C2, 1, from_ind );
+  
+  assign( C, tmp, i );
+end
+c5 = toc();
 
 fprintf( '\n categorical:   %0.3f (ms) [%d]', c1 * 1e3, n_iters );
 fprintf( '\n fcat:          %0.3f (ms) [%d]', c2 * 1e3, n_iters );
 fprintf( '\n fcat: (subs)   %0.3f (ms) [%d]', c3 * 1e3, n_iters );
 fprintf( '\n fcat: (assign) %0.3f (ms) [%d]', c4 * 1e3, n_iters );
+fprintf( '\n fcat: (assign) %0.3f (ms) [%d]', c5 * 1e3, n_iters );
 
 end

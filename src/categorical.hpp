@@ -72,6 +72,7 @@ public:
                                    util::u64 index_offset = 0);
     
     void one();
+    void empty();
     util::u64 prune();
     
     std::vector<std::string> get_categories() const;
@@ -109,8 +110,6 @@ public:
                                         const std::vector<util::u64>& from_indices,
                                         util::s64 index_offset);
     
-    void empty();
-    
     bool has_category(const std::string& category) const;
     bool has_label(const std::string& label) const;
     
@@ -132,7 +131,7 @@ public:
     util::u64 count(const std::string& lab) const;
     
 #ifdef CAT_USE_PROGENITOR_IDS
-    bool has_same_progenitor(const util::categorical& other) const;
+    bool progenitors_match(const util::categorical& other) const;
 #endif
 private:
     util::u64 m_size;
@@ -154,6 +153,17 @@ private:
     void unchecked_full_category(std::vector<std::string>& out, const std::string& category) const;
     void unchecked_keep_each(const std::vector<std::vector<util::u64>>& indices, util::u64 index_offset);
     void unchecked_insert_label(const std::string& lab, const util::u32 id, const std::string& category);
+    
+    void unchecked_append_progenitors_match(const util::categorical& other,
+                                            util::u64 own_sz,
+                                            util::u64 other_sz);
+    void unchecked_assign_progenitors_match(const util::categorical& other,
+                                            const std::vector<util::u64>& to_indices,
+                                            util::s64 index_offset);
+    void unchecked_assign_progenitors_match(const util::categorical& other,
+                     const std::vector<util::u64>& to_indices,
+                     const std::vector<util::u64>& from_indices,
+                     util::s64 index_offset);
     
     bool categories_match(const categorical& other) const;
     

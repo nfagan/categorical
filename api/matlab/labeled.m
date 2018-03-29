@@ -758,7 +758,7 @@ classdef labeled < handle
       append( obj.labels, B.labels );
     end
     
-    function obj = assign(obj, B, at_indices)
+    function obj = assign(obj, B, to_indices, from_indices)
       
       %   ASSIGN -- Append contents of other labeled object at indices.
       %
@@ -766,6 +766,8 @@ classdef labeled < handle
       %
       %     IN:
       %       - `B` (labeled)
+      %       - `to_indices` (uint64)
+      %       - `from_indices` (uint64)      
       
       if ( ~isa(obj, 'labeled') )
         error( 'Cannot assign objects of class "%s".', class(obj) );
@@ -775,11 +777,20 @@ classdef labeled < handle
       end
       
       data_copy = obj.data;
+      
       colons = repmat( {':'}, 1, ndims(data_copy)-1 );
       
-      data_copy( at_indices, colons{:} ) = B.data;
+      if ( nargin == 3 )
+        data_copy(to_indices, colons{:}) = B.data;
+      else
+        data_copy(to_indices, colons{:}) = B.data(from_indices, colons{:});
+      end
       
-      assign( obj.labels, B.labels, at_indices );
+      if ( nargin == 3 )
+        assign( obj.labels, B.labels, to_indices );
+      else
+        assign( obj.labels, B.labels, to_indices, from_indices );
+      end
       
       obj.data = data_copy;
     end

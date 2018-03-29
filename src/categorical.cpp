@@ -643,6 +643,10 @@ void util::categorical::unchecked_keep_each(const std::vector<std::vector<util::
     
     copy.resize(n_indices);
     
+#ifdef CAT_USE_PROGENITOR_IDS
+    bool randomize_on_insert = true;
+#endif
+    
     for (u64 i = 0; i < n_cats; i++)
     {
         const std::vector<u32>& labs = m_labels[i];
@@ -689,6 +693,14 @@ void util::categorical::unchecked_keep_each(const std::vector<std::vector<util::
                 {
                     collapsed_id = copy.get_next_label_id();
                     copy.unchecked_insert_label(collapsed_expression, collapsed_id, cat);
+                    
+#ifdef CAT_USE_PROGENITOR_IDS
+                    if (randomize_on_insert)
+                    {
+                        m_progenitor_ids.randomize();
+                        randomize_on_insert = false;
+                    }
+#endif
                 }
                 
                 copy_labs[j] = collapsed_id;
@@ -703,10 +715,6 @@ void util::categorical::unchecked_keep_each(const std::vector<std::vector<util::
     copy.prune();
     
     *this = std::move(copy);
-    
-#ifdef CAT_USE_PROGENITOR_IDS
-    m_progenitor_ids.randomize();
-#endif
 }
 
 //  one: Retain a single row, collapsing non-uniform categories.
@@ -797,7 +805,7 @@ util::u32 util::categorical::set_category(const std::string &category,
     }
     
 #ifdef CAT_USE_PROGENITOR_IDS
-    m_progenitor_ids.randomize();
+    bool randomize_on_insert = true;
 #endif
     
     u64 category_idx = category_it->second;
@@ -842,6 +850,14 @@ util::u32 util::categorical::set_category(const std::string &category,
             {
                 lab_id = get_next_label_id();
                 unchecked_insert_label(lab, lab_id, category);
+                
+#ifdef CAT_USE_PROGENITOR_IDS
+                if (randomize_on_insert)
+                {
+                    m_progenitor_ids.randomize();
+                    randomize_on_insert = false;
+                }
+#endif
             }
             
             processed[lab] = lab_id;
@@ -909,7 +925,7 @@ util::u32 util::categorical::set_category(const std::string &category,
     }
     
 #ifdef CAT_USE_PROGENITOR_IDS
-    m_progenitor_ids.randomize();
+    bool randomize_on_insert = true;
 #endif
     
     std::vector<u32>& labels = m_labels[category_idx];
@@ -956,8 +972,15 @@ util::u32 util::categorical::set_category(const std::string &category,
             else
             {
                 lab_id = get_next_label_id();
-                
                 unchecked_insert_label(lab, lab_id, category);
+                
+#ifdef CAT_USE_PROGENITOR_IDS
+                if (randomize_on_insert)
+                {
+                    m_progenitor_ids.randomize();
+                    randomize_on_insert = false;
+                }
+#endif
             }
             
             processed[lab] = lab_id;
@@ -1106,12 +1129,6 @@ util::u32 util::categorical::keep(std::vector<util::u64>& at_indices, util::s64 
     
     u64 n_indices = at_indices.size();
     u64 sz = size();
-    
-    if (n_indices == 0)
-    {
-        empty();
-        return util::categorical_status::OK;
-    }
 
     u64 n_cats = m_labels.size();
     
@@ -1139,12 +1156,14 @@ util::u32 util::categorical::keep(std::vector<util::u64>& at_indices, util::s64 
     
     m_labels = std::move(tmp);
     
+#ifndef CAT_USE_PROGENITOR_IDS
     prune();
+#endif
     
     return util::categorical_status::OK;
 }
 
-//  empty: Retain 0 rows.
+//  empty: Retain 0 rows, and prune missing labels.
 
 void util::categorical::empty()
 {
@@ -1191,7 +1210,32 @@ util::u64 util::categorical::prune()
         m_label_ids.erase(id);
     }
     
+#ifdef CAT_USE_PROGENITOR_IDS
+    if (n_remaining > 0)
+    {
+        m_progenitor_ids.randomize();
+    }
+#endif
+    
     return n_remaining;
+}
+
+void util::categorical::unchecked_append_progenitors_match(const util::categorical& other,
+                                                           util::u64 own_sz,
+                                                           util::u64 other_sz)
+{
+    resize(own_sz + other_sz);
+    
+    u64 n_cols = m_labels.size();
+    
+    size_t n_copy = other_sz * sizeof(util::u32);
+    
+    for (u64 i = 0; i < n_cols; i++)
+    {
+        util::u32* dest_ptr = m_labels[i].data();
+        const util::u32* src_ptr = other.m_labels[i].data();
+        std::memcpy(dest_ptr + own_sz, src_ptr, n_copy);
+    }
 }
 
 //  append: Append one categorical object to another.
@@ -1226,6 +1270,14 @@ util::u32 util::categorical::append(const util::categorical &other)
     {
         return util::categorical_status::CAT_OVERFLOW;
     }
+    
+#ifdef CAT_USE_PROGENITOR_IDS
+    if (m_progenitor_ids == other.m_progenitor_ids)
+    {
+        unchecked_append_progenitors_match(other, own_sz, other_sz);
+        return util::categorical_status::OK;
+    }
+#endif
     
     std::vector<std::string> own_labels = m_label_ids.keys();
     std::vector<std::string> other_labels = other.m_label_ids.keys();
@@ -1369,6 +1421,58 @@ void util::categorical::replace_labels(std::vector<std::vector<u32>>& labels,
     }
 }
 
+//  unchecked_assign_progenitors_match: Assign contents at indices, assuming progenitors match.
+
+void util::categorical::unchecked_assign_progenitors_match(const util::categorical& other,
+                                        const std::vector<util::u64>& to_indices,
+                                        util::s64 index_offset)
+{
+    using util::u32;
+    using util::u64;
+    
+    u64 n_cols = m_labels.size();
+    u64 n_indices = to_indices.size();
+    
+    for (u64 i = 0; i < n_cols; i++)
+    {
+        std::vector<u32>& own_labs = m_labels[i];
+        const std::vector<u32>& other_labs = other.m_labels[i];
+        
+        for (u64 j = 0; j < n_indices; j++)
+        {
+            u64 to_idx = to_indices[j] + index_offset;
+            own_labs[to_idx] = other_labs[j];
+        }
+    }
+}
+
+//  unchecked_assign_progenitors_match: Assign contents at indices, assuming progenitors match.
+
+void util::categorical::unchecked_assign_progenitors_match(const util::categorical &other,
+                                                           const std::vector<util::u64> &to_indices,
+                                                           const std::vector<util::u64> &from_indices,
+                                                           util::s64 index_offset)
+{
+    using util::u32;
+    using util::u64;
+    
+    u64 n_cols = m_labels.size();
+    u64 n_indices = to_indices.size();
+    
+    for (u64 i = 0; i < n_cols; i++)
+    {
+        std::vector<u32>& own_labs = m_labels[i];
+        const std::vector<u32>& other_labs = other.m_labels[i];
+        
+        for (u64 j = 0; j < n_indices; j++)
+        {
+            u64 from_idx = from_indices[j] + index_offset;
+            u64 to_idx = to_indices[j] + index_offset;
+            own_labs[to_idx] = other_labs[from_idx];
+        }
+    }
+}
+
 //  assign: Assign contents at indices.
 
 util::u32 util::categorical::assign(const util::categorical& other,
@@ -1415,6 +1519,11 @@ util::u32 util::categorical::assign(const util::categorical& other,
     }
     
 #ifdef CAT_USE_PROGENITOR_IDS
+    if (m_progenitor_ids == other.m_progenitor_ids)
+    {
+        unchecked_assign_progenitors_match(other, at_indices, index_offset);
+        return util::categorical_status::OK;
+    }
     m_progenitor_ids.randomize();
 #endif
     
@@ -1533,6 +1642,11 @@ util::u32 util::categorical::assign(const util::categorical& other,
     }
     
 #ifdef CAT_USE_PROGENITOR_IDS
+    if (m_progenitor_ids == other.m_progenitor_ids)
+    {
+        unchecked_assign_progenitors_match(other, to_indices, from_indices, index_offset);
+        return util::categorical_status::OK;
+    }
     m_progenitor_ids.randomize();
 #endif
     
@@ -1992,7 +2106,7 @@ util::u32 util::categorical::get_next_label_id()
 }
 
 #ifdef CAT_USE_PROGENITOR_IDS
-bool util::categorical::has_same_progenitor(const util::categorical& other) const
+bool util::categorical::progenitors_match(const util::categorical& other) const
 {
     return m_progenitor_ids == other.m_progenitor_ids;
 }
