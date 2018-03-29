@@ -9,7 +9,6 @@
 #include <random>
 #include <iostream>
 #include <algorithm>
-#include "config.hpp"
 
 util::categorical::categorical()
 {
@@ -309,6 +308,16 @@ void util::categorical::unchecked_add_category(const std::string& category,
     }
 }
 
+//  unchecked_insert_label [private]: Internally add label and id to array.
+
+void util::categorical::unchecked_insert_label(const std::string& lab,
+                                               const util::u32 id,
+                                               const std::string& category)
+{
+    m_label_ids.insert(lab, id);
+    m_in_category[lab] = category;
+}
+
 //  set_collapsed_expressions: Initialize categories with collapsed expressions.
 
 void util::categorical::set_collapsed_expressions(std::vector<util::u32> &labs,
@@ -325,11 +334,11 @@ void util::categorical::set_collapsed_expressions(std::vector<util::u32> &labs,
     else
     {
         id = get_next_label_id();
-        m_label_ids.insert(collapsed_expression, id);
-        m_in_category[collapsed_expression] = category;
+        unchecked_insert_label(collapsed_expression, id, category);
+#ifdef CAT_USE_PROGENITOR_IDS
+        m_progenitor_ids.randomize();
+#endif
     }
-    
-//    m_in_category[collapsed_expression] = category;
     
     std::fill(labs.begin() + start_offset, labs.end(), id);
 }
@@ -679,8 +688,7 @@ void util::categorical::unchecked_keep_each(const std::vector<std::vector<util::
                 else
                 {
                     collapsed_id = copy.get_next_label_id();
-                    copy.m_label_ids.insert(collapsed_expression, collapsed_id);
-                    copy.m_in_category[collapsed_expression] = cat;
+                    copy.unchecked_insert_label(collapsed_expression, collapsed_id, cat);
                 }
                 
                 copy_labs[j] = collapsed_id;
@@ -695,6 +703,10 @@ void util::categorical::unchecked_keep_each(const std::vector<std::vector<util::
     copy.prune();
     
     *this = std::move(copy);
+    
+#ifdef CAT_USE_PROGENITOR_IDS
+    m_progenitor_ids.randomize();
+#endif
 }
 
 //  one: Retain a single row, collapsing non-uniform categories.
@@ -784,6 +796,10 @@ util::u32 util::categorical::set_category(const std::string &category,
         }
     }
     
+#ifdef CAT_USE_PROGENITOR_IDS
+    m_progenitor_ids.randomize();
+#endif
+    
     u64 category_idx = category_it->second;
     std::vector<u32>& labels = m_labels[category_idx];
     
@@ -825,9 +841,7 @@ util::u32 util::categorical::set_category(const std::string &category,
             else
             {
                 lab_id = get_next_label_id();
-                
-                m_in_category[lab] = category;
-                m_label_ids.insert(lab, lab_id);
+                unchecked_insert_label(lab, lab_id, category);
             }
             
             processed[lab] = lab_id;
@@ -894,6 +908,10 @@ util::u32 util::categorical::set_category(const std::string &category,
 #endif
     }
     
+#ifdef CAT_USE_PROGENITOR_IDS
+    m_progenitor_ids.randomize();
+#endif
+    
     std::vector<u32>& labels = m_labels[category_idx];
     
     std::unordered_map<std::string, u32> processed;
@@ -939,8 +957,7 @@ util::u32 util::categorical::set_category(const std::string &category,
             {
                 lab_id = get_next_label_id();
                 
-                m_in_category[lab] = category;
-                m_label_ids.insert(lab, lab_id);
+                unchecked_insert_label(lab, lab_id, category);
             }
             
             processed[lab] = lab_id;
@@ -1039,9 +1056,12 @@ util::u32 util::categorical::fill_category(const std::string &category, const st
     
     if (!exists)
     {
-        m_in_category[lab] = category;
-        m_label_ids.insert(lab, lab_id);
+        unchecked_insert_label(lab, lab_id, category);
     }
+    
+#ifdef CAT_USE_PROGENITOR_IDS
+    m_progenitor_ids.randomize();
+#endif
     
     return util::categorical_status::OK;
 }
@@ -1310,6 +1330,10 @@ util::u32 util::categorical::append(const util::categorical &other)
     util::categorical::replace_labels(m_labels, 0, own_sz, replace_own_label_ids);
     util::categorical::replace_labels(m_labels, own_sz, new_sz, replace_other_label_ids);
     
+#ifdef CAT_USE_PROGENITOR_IDS
+    m_progenitor_ids.randomize();
+#endif
+    
     return util::categorical_status::OK;
     
 }
@@ -1390,6 +1414,10 @@ util::u32 util::categorical::assign(const util::categorical& other,
         return bounds_status;
     }
     
+#ifdef CAT_USE_PROGENITOR_IDS
+    m_progenitor_ids.randomize();
+#endif
+    
     std::vector<std::string> other_labels = other.m_label_ids.keys();
     u64 n_other_labels = other_labels.size();
     
@@ -1435,8 +1463,7 @@ util::u32 util::categorical::assign(const util::categorical& other,
                 assign_id = new_id;
             }
             
-            m_label_ids.insert(other_lab, assign_id);
-            m_in_category[other_lab] = other.m_in_category.at(other_lab);
+            unchecked_insert_label(other_lab, assign_id, other.m_in_category.at(other_lab));
         }
     }
     
@@ -1504,6 +1531,10 @@ util::u32 util::categorical::assign(const util::categorical& other,
     {
         return own_status;
     }
+    
+#ifdef CAT_USE_PROGENITOR_IDS
+    m_progenitor_ids.randomize();
+#endif
     
     std::unordered_map<u32, u32> replace_other_label_ids;
     std::unordered_set<u32> new_label_ids;
@@ -1575,8 +1606,7 @@ util::u32 util::categorical::assign(const util::categorical& other,
                     assign_id = new_id;
                 }
                 
-                m_label_ids.insert(str_lab, assign_id);
-                m_in_category[str_lab] = other_cat;
+                unchecked_insert_label(str_lab, assign_id, other_cat);
             }
             
             replace_other_label_ids[other_lab_id] = assign_id;
@@ -1873,6 +1903,10 @@ void util::categorical::remove_category(const std::string &category, bool *exist
         m_label_ids.erase(lab);
         m_in_category.erase(lab);
     }
+    
+#ifdef CAT_USE_PROGENITOR_IDS
+    m_progenitor_ids.randomize();
+#endif
 }
 
 //  collapse_category: Collapse category to a single label.
@@ -1900,8 +1934,7 @@ void util::categorical::collapse_category(const std::string& category, bool* exi
     else
     {
         lab_id = get_next_label_id();
-        m_label_ids.insert(collapsed_expression, lab_id);
-        m_in_category[collapsed_expression] = category;
+        unchecked_insert_label(collapsed_expression, lab_id, category);
     }
     
     for (u64 i = 0; i < n_labs; i++)
@@ -1916,6 +1949,10 @@ void util::categorical::collapse_category(const std::string& category, bool* exi
     std::vector<u32>& full_labs = m_labels[m_category_indices.at(category)];
     
     std::fill(full_labs.begin(), full_labs.end(), lab_id);
+    
+#ifdef CAT_USE_PROGENITOR_IDS
+    m_progenitor_ids.randomize();
+#endif
 }
 
 void util::categorical::collapse_category(const std::string& category)
@@ -1953,6 +1990,13 @@ util::u32 util::categorical::get_next_label_id()
     
     return id;
 }
+
+#ifdef CAT_USE_PROGENITOR_IDS
+bool util::categorical::has_same_progenitor(const util::categorical& other) const
+{
+    return m_progenitor_ids == other.m_progenitor_ids;
+}
+#endif
 
 util::u32 util::categorical::get_id(const categorical* self, const categorical* other,
                    const std::unordered_set<util::u32>& new_ids)
@@ -1999,3 +2043,39 @@ util::u32 util::get_id(std::function<bool(util::u32)> exists_func)
     
     return id;
 }
+
+//
+//  progenitor_ids
+//
+
+#ifdef CAT_USE_PROGENITOR_IDS
+util::categorical::progenitor_ids::progenitor_ids()
+{
+    randomize();
+}
+
+void util::categorical::progenitor_ids::randomize()
+{
+    using namespace util;
+    
+    auto exists_func = std::bind(&categorical::progenitor_ids::exists, this, std::placeholders::_1);
+    
+    a = util::get_id(exists_func);
+    b = util::get_id(exists_func);
+}
+
+bool util::categorical::progenitor_ids::operator ==(const util::categorical::progenitor_ids& other) const
+{
+    return a == other.a && b == other.b;
+}
+
+bool util::categorical::progenitor_ids::operator !=(const util::categorical::progenitor_ids& other) const
+{
+    return !(a == b);
+}
+
+bool util::categorical::progenitor_ids::exists(util::u32 id) const
+{
+    return a == id || b == id || id == 0;
+}
+#endif

@@ -2,6 +2,7 @@
 #include <iostream>
 #include <assert.h>
 
+void test_progenitor_ids();
 void test_eq();
 void test_repeat();
 void test_keep_each();
@@ -18,6 +19,7 @@ int main(int argc, char* argv[])
     std::cout << "BEGIN CATEGORICAL" << std::endl;
 
     test_append();
+    test_progenitor_ids();
     test_eq();
     test_keep_each();
     test_repeat();
@@ -31,6 +33,31 @@ int main(int argc, char* argv[])
     std::cout << "END CATEGORICAL" << std::endl;
 
 	return 0;
+}
+
+void test_progenitor_ids()
+{
+#ifndef CAT_USE_PROGENITOR_IDS
+    return;
+#endif
+    
+    using namespace util;
+    
+    categorical cat1;
+    categorical cat2;
+    
+    assert(!cat1.has_same_progenitor(cat2));
+    
+    categorical cat3 = cat1;
+    
+    assert(cat3.has_same_progenitor(cat1));
+    
+    cat3.require_category("cat1");
+    cat3.set_category("cat1", {"first"});
+    
+    assert(!cat3.has_same_progenitor(cat1));
+    
+    std::cout << "OK: test_progenitor_ids" << std::endl;
 }
 
 void test_eq()

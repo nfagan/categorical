@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "config.hpp"
 #include "types.hpp"
 #include "multimap.hpp"
 #include "bit_array.hpp"
@@ -129,6 +130,10 @@ public:
     
     util::u64 size() const;
     util::u64 count(const std::string& lab) const;
+    
+#ifdef CAT_USE_PROGENITOR_IDS
+    bool has_same_progenitor(const util::categorical& other) const;
+#endif
 private:
     util::u64 m_size;
     util::u32 m_next_id;
@@ -148,6 +153,7 @@ private:
     void unchecked_in_category(std::vector<std::string>& out, const std::string& category) const;
     void unchecked_full_category(std::vector<std::string>& out, const std::string& category) const;
     void unchecked_keep_each(const std::vector<std::vector<util::u64>>& indices, util::u64 index_offset);
+    void unchecked_insert_label(const std::string& lab, const util::u32 id, const std::string& category);
     
     bool categories_match(const categorical& other) const;
     
@@ -175,5 +181,24 @@ private:
                                   util::u64 n_check,
                                   util::u64 end,
                                   util::u64 index_offset);
+    
     static util::u64 maximum(const std::vector<util::u64>& indices, util::u64 end);
+
+private:
+#ifdef CAT_USE_PROGENITOR_IDS
+    struct progenitor_ids
+    {
+        progenitor_ids();
+        ~progenitor_ids() = default;
+        
+        void randomize();
+        bool exists(util::u32 id) const;
+        
+        util::u32 a;
+        util::u32 b;
+        
+        bool operator ==(const util::categorical::progenitor_ids& other) const;
+        bool operator !=(const util::categorical::progenitor_ids& other) const;
+    } m_progenitor_ids;
+#endif
 };

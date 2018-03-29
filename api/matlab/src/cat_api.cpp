@@ -103,7 +103,7 @@ void util::init_cat_functions()
     globals::INITIALIZED = true;
     
     std::cout << std::endl;
-    std::cout << "Initialized Categorical interface." << std::endl << std::endl;
+    std::cout << "Initialized fcat interface." << std::endl << std::endl;
 }
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
@@ -115,7 +115,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     if (nrhs == 0)
     {
         std::cout << std::endl; 
-        std::cout << "Try: `help Categorical/Categorical`" << std::endl << std::endl;
+        std::cout << "Try: `help fcat/fcat`" << std::endl << std::endl;
         return;
     }
     
