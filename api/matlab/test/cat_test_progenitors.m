@@ -35,5 +35,12 @@ f2(1, 1) = new_lab;
 
 assert( ~progenitorsmatch(f, f2), 'Inserting new label did not change progenitor.' );
 
+z = copy( f2 );
+
+assert( progenitorsmatch(z, f2) );
+
+rmcat( z, x.f{1} );
+
+assert( ~progenitorsmatch(f2, z), 'Removing category did not change progenitor ids.' );
 
 end

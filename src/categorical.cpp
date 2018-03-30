@@ -28,6 +28,29 @@ bool util::categorical::operator !=(const util::categorical &other) const
     return !(util::categorical::operator ==(other));
 }
 
+//  unchecked_eq_progenitors_match: Check for equality, assuming progenitors and sizes match.
+
+bool util::categorical::unchecked_eq_progenitors_match(const util::categorical &other, util::u64 sz) const
+{
+    u64 n_cats = m_labels.size();
+    
+    for (u64 i = 0; i < n_cats; i++)
+    {
+        const std::vector<u32>& own_labs = m_labels[i];
+        const std::vector<u32>& other_labs = other.m_labels[i];
+        
+        for (u64 j = 0; j < sz; j++)
+        {
+            if (own_labs[j] != other_labs[j])
+            {
+                return false;
+            }
+        }
+    }
+    
+    return true;
+}
+
 //  ==: Check for equality.
 
 bool util::categorical::operator ==(const util::categorical &other) const
@@ -47,6 +70,13 @@ bool util::categorical::operator ==(const util::categorical &other) const
     {
         return false;
     }
+    
+#ifdef CAT_USE_PROGENITOR_IDS
+    if (m_progenitor_ids == other.m_progenitor_ids)
+    {
+        return unchecked_eq_progenitors_match(other, own_sz);
+    }
+#endif
     
     if (m_label_ids.size() != other.m_label_ids.size())
     {
@@ -2185,7 +2215,7 @@ bool util::categorical::progenitor_ids::operator ==(const util::categorical::pro
 
 bool util::categorical::progenitor_ids::operator !=(const util::categorical::progenitor_ids& other) const
 {
-    return !(a == b);
+    return !(util::categorical::progenitor_ids::operator ==(other));
 }
 
 bool util::categorical::progenitor_ids::exists(util::u32 id) const

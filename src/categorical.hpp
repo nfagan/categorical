@@ -154,6 +154,8 @@ private:
     void unchecked_keep_each(const std::vector<std::vector<util::u64>>& indices, util::u64 index_offset);
     void unchecked_insert_label(const std::string& lab, const util::u32 id, const std::string& category);
     
+    bool unchecked_eq_progenitors_match(const util::categorical& other, util::u64 sz) const;
+    
     void unchecked_append_progenitors_match(const util::categorical& other,
                                             util::u64 own_sz,
                                             util::u64 other_sz);
