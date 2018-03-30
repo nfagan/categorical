@@ -318,20 +318,27 @@ classdef labeled < handle
             %
             if ( strcmp(subs, 'data') )
               varargout{1} = getdata( obj );
+            else
+              error( 'No properties or methods matched "%s".', subs );
             end
           otherwise
             error( 'Referencing with "%s" is not supported.', type );
         end
         
         if ( ~isempty(s) )
-          [varargout{1:nargout()}] = subsref( varargout{1}, s );
+          n_out = nargout();
+          if ( n_out == 0 )
+            varargout{1} = subsref( varargout{1}, s );
+          else
+            [varargout{1:n_out}] = subsref( varargout{1}, s );
+          end
         end
       catch err
         throwAsCaller( err );
       end
     end
     
-    function n = numArgumentsFromSubscript(obj, a, b)
+    function n = numArgumentsFromSubscript(obj, a, b)      
       n = 1;
     end
     
@@ -844,7 +851,7 @@ classdef labeled < handle
       
       %   DISP -- Pretty-print the object's contents.
       
-      disp( obj.labels, class(obj) );
+      disp( obj.labels, [obj.datatype, ' ', class(obj)] );
     end
     
     function delete(obj)
@@ -859,4 +866,21 @@ classdef labeled < handle
     end
   end
   
+  methods (Static = true)
+    
+    function obj = like(other)
+      
+      %   LIKE -- Create empty object with data and labels like those of
+      %     another object.
+      %
+      %     IN:
+      %       - `other` (labeled)
+      
+      if ( ~isa(other, 'labeled') )
+        error( 'Input must be a labeled object; was "%s".', class(other) );
+      end
+      
+      obj = keep( copy(other), [] );
+    end
+  end
 end

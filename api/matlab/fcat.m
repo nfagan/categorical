@@ -39,7 +39,7 @@ classdef fcat < handle
         obj.id = id;
       end
       %   set default display mode
-      obj.displaymode = 'full';
+      obj.displaymode = 'auto';
     end
     
     function tf = progenitorsmatch(obj, B)
@@ -508,6 +508,10 @@ classdef fcat < handle
       end
     end
     
+    function n = numArgumentsFromSubscript(obj, a, b)
+      n = 1;
+    end
+    
     function obj = only(obj, labels)
       
       %   ONLY -- Retain rows associated with labels.
@@ -759,6 +763,11 @@ classdef fcat < handle
       
       %   INCAT -- Get labels in category.
       %
+      %     C = incat( obj, 'cat1' ) returns the labels in 'cat1'.
+      %
+      %     C = incat( obj, {'cat1', 'cat2'} ) returns the labels in 'cat1'
+      %     and 'cat2'. The order of labels in `C` is undefined.
+      %
       %     See also fcat/fullcat
       %
       %     IN:
@@ -766,7 +775,21 @@ classdef fcat < handle
       %     OUT:
       %       - `C` (cell array of strings)
       
-      C = cat_api( 'in_cat', obj.id, category );
+      if ( ischar(category) )
+        C = cat_api( 'in_cat', obj.id, category );
+      else
+        C = cat_api( 'in_cats', obj.id, category );
+      end
+    end
+    
+    function obj = addcat(obj, category)
+      
+      %   ADDCAT -- Add new category.
+      %
+      %     IN:
+      %       - `category` (cell array of strings, char)
+      
+      cat_api( 'add_cat', obj.id, category );      
     end
     
     function obj = requirecat(obj, category)
@@ -1122,6 +1145,18 @@ classdef fcat < handle
       C = categorical( N, ids, labs );
       F = getcats( obj );
     end
+    
+    function B = saveobj(obj)
+      
+      %   SAVEOBJ -- Convert object to struct in order to save.
+      %
+      %     OUT:
+      %       - `B` (struct)
+      
+      B = struct();
+      B.categorical = categorical( obj );
+      B.categories = getcats( obj );
+    end
   end
   
   methods (Access = private)
@@ -1221,24 +1256,46 @@ classdef fcat < handle
       end
       
       if ( numel(stack) >= 2 )
-        if ( ~strcmp(stack(2).file, 'fcat.m') || ...
-            ~strcmp(stack(2).name, 'fcat.copy') )
+        if ( ~strcmp(stack(2).file, 'fcat.m') )
           error( 'Invalid input to fcat().' );
         end
+      end
+    end
+    
+    function obj = from_categorical(C, cats)
+      
+      %   FROM_CATEGORICAL -- Private utility to convert from categorical
+      %     array.
+      
+      nums = double( C );
+      
+      if ( max(max(nums)) >= double(intmax('uint32') - 1) )
+        error( ['Cannot convert to fcat from categorical because more than' ...
+            , ' `intmax(''uint32'')` categories were present in the array.'] );
+      end
+      
+      labels = categories( C );
+      
+      try
+        obj = fcat( cat_api('from_categorical', cats, labels, uint32(nums)) );
+      catch err
+        fprintf( ['\n The following error occurred when\n attempting to create' ...
+            , ' an fcat object\n from categorical input:\n\n'] );
+        throwAsCaller( err );
       end
     end
   end
   
   methods (Static = true, Access = public)
     
-    function conf = buildconfig()
+    function obj = loadobj(B)
       
-      %   BUILDCONFIG -- Get config options with which the cat_api was built.
+      %   LOADOBJ -- Load and instantiate fcat.
       %
       %     OUT:
-      %       - `conf` (struct)
+      %       - `obj` (fcat)
       
-      conf = cat_buildconfig();      
+      obj = fcat.from( B.categorical, B.categories );
     end
     
     function obj = with(cats, sz)
@@ -1262,6 +1319,22 @@ classdef fcat < handle
       if ( nargin == 2 )
         resize( obj, sz );
       end
+    end
+    
+    function obj = like(B)
+      
+      %   LIKE -- Create fcat with the same categories and labels as another.
+      %
+      %     See also fcat/with, fcat/from
+      %
+      %     IN:
+      %       - `B` (fcat)
+      
+      if ( ~isa(B, 'fcat') )
+        error( 'Input must be an fcat object; was "%s".', class(B) );
+      end
+      
+      obj = keep( copy(B), [] );
     end
     
     function obj = from(varargin)
@@ -1318,16 +1391,15 @@ classdef fcat < handle
       end
 
       if ( isa(arr, 'categorical') )
-        arr = cellstr( arr );
+        obj = fcat.from_categorical( arr, cats );
+        return;
       end
 
       if ( iscellstr(arr) )
         obj = fcat();
         try
           requirecat( obj, cats );
-          for i = 1:numel(cats)
-            setcat( obj, cats{i}, arr(:, i) );
-          end
+          setcats( obj, cats, arr );
         catch err
           delete( obj );
           fprintf( ['\n The following error occurred when\n attempting to create' ...
@@ -1338,6 +1410,25 @@ classdef fcat < handle
       end
 
       error( 'Cannot convert to fcat from objects of type "%s"', class(arr) );
+    end
+    
+    function build()
+      
+      %   BUILD -- Build cat_api.
+      %
+      %     See also fcat/buildconfig
+      
+      cat_buildall();      
+    end
+    
+    function conf = buildconfig()
+      
+      %   BUILDCONFIG -- Get config options with which the cat_api was built.
+      %
+      %     OUT:
+      %       - `conf` (struct)
+      
+      conf = cat_buildconfig();      
     end
   end
 end

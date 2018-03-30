@@ -17,6 +17,7 @@ namespace util {
     mxArray* numeric_vector_to_array(const std::vector<T>& in_vec, mxClassID output_kind);
     
     std::vector<uint64_t> numeric_array_to_vector64(const mxArray* in_arr, const char* func_id);
+    std::vector<uint32_t> numeric_array_to_vector32(const mxArray* in_arr, const char* func_id);
     
     mxArray* string_vector_to_array(const std::vector<std::string>& in_vec);
     void assign_string_vector_to_array(const std::vector<std::string>& in_vec, 

@@ -45,7 +45,10 @@ namespace util {
         static constexpr uint32_t GET_BUILD_CONFIG = 38u;
         static constexpr uint32_t EMPTY = 39u;
         static constexpr uint32_t PROGENITORS_MATCH = 40u;
+        static constexpr uint32_t ADD_CATEGORY = 41u;
+        static constexpr uint32_t IN_CATEGORIES = 42u;
+        static constexpr uint32_t FROM_CATEGORICAL = 43u;
         //
-        static constexpr uint32_t N_OPS = 41u;
+        static constexpr uint32_t N_OPS = 44u;
     }
 }

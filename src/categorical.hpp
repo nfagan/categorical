@@ -90,6 +90,7 @@ public:
     
     std::vector<std::string> in_category(const std::string& category, bool* exists) const;
     std::vector<std::string> in_category(const std::string& category) const;
+    std::vector<std::string> in_categories(const std::vector<std::string>& categories, bool* exist) const;
     
     void collapse_category(const std::string& category, bool* exists);
     void collapse_category(const std::string& category);
@@ -133,6 +134,13 @@ public:
 #ifdef CAT_USE_PROGENITOR_IDS
     bool progenitors_match(const util::categorical& other) const;
 #endif
+    
+    friend void from_matlab_categorical(util::categorical* self,
+                                        const std::vector<std::string>& categories,
+                                        const std::vector<std::string>& labels,
+                                        util::u32* lab_ids,
+                                        util::u64 rows,
+                                        util::u64 cols);
 private:
     util::u64 m_size;
     util::u32 m_next_id;
@@ -206,11 +214,11 @@ private:
         void randomize();
         bool exists(util::u32 id) const;
         
-        util::u32 a;
-        util::u32 b;
-        
         bool operator ==(const util::categorical::progenitor_ids& other) const;
         bool operator !=(const util::categorical::progenitor_ids& other) const;
+        
+        util::u32 a;
+        util::u32 b;
     } m_progenitor_ids;
 #endif
 };

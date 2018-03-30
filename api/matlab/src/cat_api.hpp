@@ -28,12 +28,14 @@ namespace util {
     MEXFUNC(set_categories);
     MEXFUNC(set_partial_categories);
     MEXFUNC(require_category);
+    MEXFUNC(add_category);
     MEXFUNC(collapse_category);
     MEXFUNC(remove_category);
     
     MEXFUNC(full_category);
     MEXFUNC(partial_category);
     MEXFUNC(in_category);
+    MEXFUNC(in_categories);
     
     MEXFUNC(get_categories);
     MEXFUNC(get_labels);
@@ -60,6 +62,7 @@ namespace util {
     MEXFUNC(find_allc);
     
     MEXFUNC(to_numeric_matrix);
+    MEXFUNC(from_categorical);
     
     MEXFUNC(get_build_config);
 }

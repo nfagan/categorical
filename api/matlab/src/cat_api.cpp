@@ -46,7 +46,10 @@ namespace util {
             {"to_numeric_mat",          util::ops::TO_NUMERIC_MATRIX},
             {"get_build_config",        util::ops::GET_BUILD_CONFIG},
             {"empty",                   util::ops::EMPTY},
-            {"progenitors_match",       util::ops::PROGENITORS_MATCH}
+            {"progenitors_match",       util::ops::PROGENITORS_MATCH},
+            {"add_cat",                 util::ops::ADD_CATEGORY},
+            {"in_cats",                 util::ops::IN_CATEGORIES},
+            {"from_categorical",        util::ops::FROM_CATEGORICAL}
                     
         });
         
@@ -106,6 +109,9 @@ void util::init_cat_functions()
     globals::funcs[ops::GET_BUILD_CONFIG] =         &util::get_build_config;
     globals::funcs[ops::EMPTY] =                    &util::empty;
     globals::funcs[ops::PROGENITORS_MATCH] =        &util::progenitors_match;
+    globals::funcs[ops::ADD_CATEGORY] =             &util::add_category;
+    globals::funcs[ops::IN_CATEGORIES] =            &util::in_categories;
+    globals::funcs[ops::FROM_CATEGORICAL] =         &util::from_categorical;
     
     globals::INITIALIZED = true;
     

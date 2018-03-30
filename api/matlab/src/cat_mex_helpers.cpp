@@ -178,6 +178,32 @@ std::vector<uint64_t> util::numeric_array_to_vector64(const mxArray* in_arr, con
     return res;
 }
 
+std::vector<uint32_t> util::numeric_array_to_vector32(const mxArray* in_arr, const char* func_id)
+{
+    
+    mxClassID id = mxGetClassID(in_arr);
+    
+    if (id != mxUINT32_CLASS)
+    {
+        mexErrMsgIdAndTxt(func_id, "Input must be uint32.");
+    }
+    
+    uint64_t n_els = mxGetNumberOfElements(in_arr);
+    
+    if (n_els == 0)
+    {
+        return std::vector<uint32_t>();
+    }
+    
+    std::vector<uint32_t> res(n_els);
+    
+    uint32_t* src = (uint32_t*) mxGetData(in_arr);
+    
+    std::memcpy(res.data(), src, n_els * sizeof(uint32_t));
+    
+    return res;
+}
+
 void util::assert_scalar(const mxArray *arr, const char* id, const char* msg)
 {
     if (!mxIsScalar(arr))

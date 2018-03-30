@@ -282,10 +282,19 @@ util::u64 util::categorical::count(const std::string& lab) const
 
 //  add_category: Add a new category.
 //
-//      An error code is returned if the category already exists.
+//      An error code is returned if the category already exists,
+//      or if the collapsed expression for the category is present
+//      in another category.
 
 util::u32 util::categorical::add_category(const std::string& category)
 {
+    std::string clpsed = get_collapsed_expression(category);
+    
+    if (has_label(clpsed) && m_in_category.at(clpsed) != category)
+    {
+        return util::categorical_status::COLLAPSED_EXPRESSION_IN_WRONG_CATEGORY;
+    }
+    
     if (has_category(category))
     {
         return categorical_status::CATEGORY_EXISTS;
@@ -1991,6 +2000,43 @@ std::vector<std::string> util::categorical::in_category(const std::string &categ
 {
     std::vector<std::string> result;
     unchecked_in_category(result, category);
+    return result;
+}
+
+std::vector<std::string> util::categorical::in_categories(const std::vector<std::string> &categories,
+                                                          bool *exist) const
+{
+    std::vector<std::string> result;
+    
+    for (const auto& cat : categories)
+    {
+        if (!has_category(cat))
+        {
+            *exist = false;
+            return result;
+        }
+    }
+    
+    *exist = true;
+    
+    std::vector<std::string> labs = m_label_ids.keys();
+    util::u64 n_labs = labs.size();
+    util::u64 n_cats = categories.size();
+    
+    for (util::u64 i = 0; i < n_labs; i++)
+    {
+        const std::string& lab = labs[i];
+        const std::string& cat = m_in_category.at(lab);
+        
+        for (util::u64 j = 0; j < n_cats; j++)
+        {
+            if (cat == categories[j])
+            {
+                result.push_back(lab);
+            }
+        }
+    }
+    
     return result;
 }
 
