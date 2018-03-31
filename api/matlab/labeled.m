@@ -73,6 +73,13 @@ classdef labeled < handle
       if ( ~isa(obj, 'labeled') )
         error( 'First input must be a labeled; was "%s".', class(obj) );
       end
+      
+      if ( nargin ~= 3 )
+        narginchk( 2, 2 );
+        func = categories;
+        categories = getcats( obj.labels );
+      end
+      
       if ( ~isa(func, 'function_handle') )
         error( 'Third input must be a function_handle; was "%s".', class(func) );
       end
@@ -182,7 +189,7 @@ classdef labeled < handle
         return;        
       end
       
-      for i = 1:n_inds
+      for i = 1:n_inds        
         res = func( keep(copy(obj), I{i}) );
         
         if ( ~isa(res, 'labeled') )
@@ -192,7 +199,8 @@ classdef labeled < handle
         
         if ( i == 1 )
           new_labs = fcat.like( res.labels );
-          new_data = res.data;
+          colons = repmat( {':'}, 1, ndims(res.data)-1 );
+          new_data = res.data( [], colons{:} );
         else
           append( new_labs, res.labels );
           new_data = [ new_data; res.data ];
@@ -810,6 +818,18 @@ classdef labeled < handle
       requirecat( obj.labels, category );
     end
     
+    function obj = addcat(obj, category)
+      
+      %   ADDCAT -- Add category.
+      %
+      %     See also fcat/findall
+      %
+      %     IN:
+      %       - `category` (char, cell array of strings)
+      
+      addcat( obj.labels, category );
+    end
+    
     function obj = rmcat(obj, category)
       
       %   RMCAT -- Remove category(ies).
@@ -952,9 +972,9 @@ classdef labeled < handle
         error( 'Cannot append objects of class "%s".', class(B) );
       end
       
-      obj.data = [obj.data; B.data];
-      
       append( obj.labels, B.labels );
+      
+      obj.data = [obj.data; B.data];
     end
     
     function obj = assign(obj, B, to_indices, from_indices)
@@ -994,6 +1014,43 @@ classdef labeled < handle
       obj.data = data_copy;
     end
     
+    function obj = replace(obj, from, with)
+      
+      %   REPLACE -- Replace labels with label.
+      %
+      %     replace( obj, 'label1', 'label2' ); replaces occurrences of
+      %     'label1' with 'label2'. If 'label2' exists in `obj`, it must be
+      %     in the same category as 'label1'.
+      %
+      %     replace( obj, {'lab1', 'lab2'}, 'lab3' ); works as above, but
+      %     for multiple labels.
+      %
+      %     IN:
+      %       - `from` (cell array of strings, char)
+      %       - `with` (char)
+      
+      replace( obj.labels, from, with );
+    end
+    
+    function [obj, n] = prune(obj)
+      
+      %   PRUNE -- Remove labels without rows.
+      %
+      %     prune( obj ) ensures that each label in `obj` is associated
+      %     with at least one row.
+      %
+      %     [obj, n] = prune( obj ) also returns the number of labels that
+      %     were removed.
+      %
+      %     See also categorical/removecats
+      %
+      %     OUT:
+      %       - `obj` (fcat)
+      %       - `n` (uint64)
+      
+      [~, n] = prune( obj.labels );
+    end
+    
     function obj = vertcat(obj, varargin)
       
       %   VERTCAT -- Append other labeled objects.
@@ -1006,6 +1063,20 @@ classdef labeled < handle
       for i = 1:numel(varargin)
         append( obj, varargin{i} );
       end
+    end
+    
+    function B = ctranspose(obj)
+      
+      %   CTRANSPOSE -- Overloaded operator copy.
+      %
+      %     B = A'; is syntactic sugar for B = copy( A );
+      %
+      %     See also labeled/copy
+      %
+      %     OUT:
+      %       - `B` (labeled)
+      
+      B = copy( obj );
     end
     
     function B = copy(obj)
@@ -1059,6 +1130,22 @@ classdef labeled < handle
   end
   
   methods (Static = true)
+    
+    function obj = from(convertible)
+      
+      %   FROM -- Convert to labeled from compatible source.
+      %
+      %     IN:
+      %       - `convertible`
+      
+      if ( isa(convertible, 'Container') )
+        obj = labeled( convertible.data, fcat.from(convertible.labels) );
+        return;
+      end
+      
+      error( 'Cannot convert to labeled from object of class "%s".' ...
+        , class(convertible) );
+    end
     
     function obj = like(other)
       
