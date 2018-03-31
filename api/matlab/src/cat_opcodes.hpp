@@ -48,7 +48,8 @@ namespace util {
         static constexpr uint32_t ADD_CATEGORY = 41u;
         static constexpr uint32_t IN_CATEGORIES = 42u;
         static constexpr uint32_t FROM_CATEGORICAL = 43u;
+        static constexpr uint32_t REPLACE = 44u;
         //
-        static constexpr uint32_t N_OPS = 44u;
+        static constexpr uint32_t N_OPS = 45u;
     }
 }

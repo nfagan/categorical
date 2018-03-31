@@ -27,6 +27,181 @@ classdef labeled < handle
       setall( obj, data, labels );
     end
     
+    function tf = eq(obj, B)
+      
+      %   EQ -- True if two labeled objects have equal contents.
+      %
+      %     NaN values in data are compared as equal.
+      %
+      %     See also labeled/labeled
+      %
+      %     IN:
+      %       - `B` (/T/)
+      %     OUT:
+      %       - `tf` (logical)
+      
+      tf = isa( obj, 'labeled' ) && isa( B, 'labeled' ) && ...
+        isequaln( obj.data, B.data ) && obj.labels == B.labels;
+    end
+    
+    function tf = ne(obj, B)
+      
+      %   NE -- False if two labeled objects have equal contents.
+      %
+      %     See also labeled/eq
+      %
+      %     IN:
+      %       - `B` (/T/)
+      %     OUT:
+      %       - `tf` (logical)
+      
+      tf = ~eq( obj, B );
+    end
+    
+    function obj = eachindex(obj, categories, func)
+      
+      %   EACHINDEX -- Apply function to data, with indices of subsets.
+      %
+      %     eachindex( obj, categories, func ) calls `func` with inputs 
+      %     `obj.data` and a cell array of indices `I` whose elements 
+      %     identify unique combinations of labels in `categories`.
+      %
+      %     IN:
+      %       - `categories` (cell array of strings, char)
+      %       - `func` (function_handle)
+      
+      if ( ~isa(obj, 'labeled') )
+        error( 'First input must be a labeled; was "%s".', class(obj) );
+      end
+      if ( ~isa(func, 'function_handle') )
+        error( 'Third input must be a function_handle; was "%s".', class(func) );
+      end
+      
+      [new_labs, I] = keepeach( obj.labels, categories );
+      new_data = func( obj.data, I );
+      
+      sz_msg = [ 'The output of a function called with eachindex or each' ...
+        , ' must have a single row for each label-combination.' ];
+      
+      setall( obj, new_data, new_labs, sz_msg );
+    end
+    
+    function obj = each(obj, cats, func, uniform)
+      
+      %   EACH -- Apply function to subsets of rows of data.
+      %
+      %     each( obj, categories, func ) calls `func` with a single input
+      %     for each combination of labels in `categories`. The input to
+      %     `func` is the subset of rows of `obj.data` associated with a
+      %     given label combination. The output of `func` must be uniform;
+      %     i.e., calls to `func` must yield arrays of the same class, 
+      %     with 1 row, and with matching sizes along the remaining 
+      %     dimensions.
+      %
+      %     each( ..., isuniform ) specifies whether the output of `func`
+      %     is uniform. If `isuniform` is false, data in the object are an
+      %     Mx1 cell array.
+      %
+      %     See also labeled/eachobj, labeled/eachindex
+      %
+      %     IN:
+      %       - `categories` (cell array of strings, char)
+      %       - `func` (function_handle)
+      %       - `uniform` (logical) |OPTIONAL|
+      
+      if ( nargin < 4 )
+        uniform = true;
+      end
+      
+      if ( ~isa(func, 'function_handle') )
+        error( 'Third input must be a function_handle; was "%s".', class(func) );
+      end
+      
+      eachindex( obj, cats, @(x, I) rowop(x, I, func, uniform) );
+    end
+    
+    function [out, I, C] = eachobj(obj, cats, func, uniform)
+      
+      %   EACHOBJ -- Apply function to subsets of labeled object.
+      %
+      %     B = each( obj, categories, func ) calls `func` with a single 
+      %     input for each combination of labels in `categories`. The input 
+      %     to `func` is a labeled object whose rows of data and labels are
+      %     associated with a given label combination. The output of `func`
+      %     must also be a labeled object.
+      %
+      %     B = each( ..., isuniform ) specifies whether the output of 
+      %     `func` is uniform. The output of `func` is uniform if each call 
+      %     to `func` yields a labeled object with append-able data and 
+      %     labels. If `isuniform` is false, B is an Mx1 cell array, and
+      %     the original object is unmodified.
+      %
+      %     [B, I] = ... also returns the cell array of uint64 indices `I`
+      %     used to select each subset of `obj`.
+      %
+      %     [B, I, C] = ... also returns the cell array of label
+      %     combinations associated with each index in `I`.
+      %
+      %     See also labeled/each, labeled/eachindex, labeled/findall
+      %
+      %     IN:
+      %       - `categories` (cell array of strings, char)
+      %       - `func` (function_handle)
+      %       - `uniform` (logical) |OPTIONAL|
+      %     OUT:
+      %       - `out` (labeled, cell)
+      %       - `I` (cell array of uint64)
+      %       - `C` (cell array of strings)
+      
+      if ( nargin < 4 )
+        uniform = true;
+      end
+      
+      out = obj;
+      
+      if ( nargin < 3 )
+        I = findall( obj.labels, cats );
+      else
+        [I, C] = findall( obj.labels, cats );
+      end
+      
+      n_inds = numel( I );
+      
+      if ( n_inds == 0 && uniform )
+        keep( obj, [] );
+        return;
+      end
+      
+      if ( ~uniform )
+        out = cell( n_inds, 1 );
+        
+        for i = 1:n_inds
+          out{i} = func( keep(copy(obj), I{i}) );
+        end
+        
+        return;        
+      end
+      
+      for i = 1:n_inds
+        res = func( keep(copy(obj), I{i}) );
+        
+        if ( ~isa(res, 'labeled') )
+          error( ['The output of a function passed to eachobj must be' ...
+            , ' a labeled object; was "%s".'], class(res) );
+        end
+        
+        if ( i == 1 )
+          new_labs = fcat.like( res.labels );
+          new_data = res.data;
+        else
+          append( new_labs, res.labels );
+          new_data = [ new_data; res.data ];
+        end
+      end
+      
+      setall( obj, new_data, new_labs );
+    end
+    
     function obj = subsasgn(obj, s, values)
       
       %   SUBSASGN -- Subscript assignment.
@@ -525,6 +700,19 @@ classdef labeled < handle
       sz = size( obj.data, varargin{:} );
     end
     
+    function s = end(obj, ind, N)
+      
+      %   END -- Get the final index in a given dimension.
+      %
+      %     IN:
+      %       - `ind` (double)
+      %       - `N` (double)
+      %     OUT:
+      %       - `s` (double)
+      
+      s = size( obj.labels, ind );
+    end
+    
     function data = getdata(obj)
       
       %   GETDATA -- Get data.
@@ -710,7 +898,7 @@ classdef labeled < handle
       obj.labels = copy( labels );
     end
     
-    function obj = setall(obj, data, labels)
+    function obj = setall(obj, data, labels, sz_msg)
       
       %   SETALL -- Assign data and labels.
       %
@@ -719,6 +907,10 @@ classdef labeled < handle
       %     IN:
       %       - `data` (/any/)
       %       - `labels` (fcat)
+      
+      if ( nargin < 4 )
+        sz_msg = 'Data must have the same number of rows as labels.';
+      end
       
       dat_sz = size( data, 1 );
       lab_sz = size( labels, 1 );
@@ -735,7 +927,7 @@ classdef labeled < handle
           labs = copy( labels );
           repeat( labs, dat_sz - 1 );
         else
-          error( 'Data must have the same number of rows as labels.' );
+          error( sz_msg );
         end
       end
       
@@ -851,7 +1043,7 @@ classdef labeled < handle
       
       %   DISP -- Pretty-print the object's contents.
       
-      disp( obj.labels, [obj.datatype, ' ', class(obj)] );
+      disp( obj.labels, class(obj) );
     end
     
     function delete(obj)

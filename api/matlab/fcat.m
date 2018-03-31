@@ -921,6 +921,24 @@ classdef fcat < handle
       cat_api( 'fill_cat', obj.id, cat, lab );      
     end
     
+    function obj = replace(obj, from, with)
+      
+      %   REPLACE -- Replace labels with label.
+      %
+      %     replace( obj, 'label1', 'label2' ); replaces occurrences of
+      %     'label1' with 'label2'. If 'label2' exists in `obj`, it must be
+      %     in the same category as 'label1'.
+      %
+      %     replace( obj, {'lab1', 'lab2'}, 'lab3' ); works as above, but
+      %     for multiple labels.
+      %
+      %     IN:
+      %       - `from` (cell array of strings, char)
+      %       - `with` (char)
+      
+      cat_api( 'replace', obj.id, from, with );      
+    end
+    
     function [obj, n] = prune(obj)
       
       %   PRUNE -- Remove labels without rows.
@@ -1252,12 +1270,16 @@ classdef fcat < handle
       %     appropriately called.
       
       if ( numel(stack) == 1 )
-        error( 'Invalid input to fcat().' );
+        %
+        % It should appear to the user as though fcat() is a constructor 
+        % that takes 0 arguments.
+        %
+        error( 'Too many input arguments.' );
       end
       
       if ( numel(stack) >= 2 )
         if ( ~strcmp(stack(2).file, 'fcat.m') )
-          error( 'Invalid input to fcat().' );
+          error( 'Too many input arguments.' );
         end
       end
     end
@@ -1266,8 +1288,19 @@ classdef fcat < handle
       
       %   FROM_CATEGORICAL -- Private utility to convert from categorical
       %     array.
+      %
+      %     IN:
+      %       - `C` (categorical)
+      %       - `cats` (cell array of strings)
+      %     OUT:
+      %       - `obj` (fcat)
       
       nums = double( C );
+      
+      if ( any(any(isnan(nums))) )
+        error( ['Cannot convert from categorical array with <undefined> elements.' ...
+          , ' See: `help categorical/isundefined`.'] );
+      end
       
       if ( max(max(nums)) >= double(intmax('uint32') - 1) )
         error( ['Cannot convert to fcat from categorical because more than' ...
@@ -1283,6 +1316,37 @@ classdef fcat < handle
             , ' an fcat object\n from categorical input:\n\n'] );
         throwAsCaller( err );
       end
+    end
+    
+    function obj = from_sp(sp)
+      
+      %   FROM_SP -- Private utility to convert from SparseLabels object.
+      %
+      %     IN:
+      %       - `sp` (SparseLabels)
+      %     OUT:
+      %       - `obj` (fcat)
+      
+      labs = sp.labels;
+      inds = sp.indices;
+      all_cats = sp.categories;
+      unique_cats = unique( all_cats );
+      
+      if ( numel(labs) >= double(intmax('uint32') - 1) )
+        error( ['Cannot convert to fcat from SparseLabels because more than' ...
+            , ' `intmax(''uint32'')` labels were present in the object.'] );
+      end
+      
+      mat = zeros( size(inds, 1), numel(unique_cats), 'uint32' );
+      
+      for i = 1:numel(labs)
+        rows = inds(:, i);
+        category = all_cats{i};
+        col = strcmp( unique_cats, category );
+        mat(rows, col) = uint32( i );
+      end
+      
+      obj = fcat( cat_api('from_categorical', unique_cats, labs, mat) );
     end
   end
   
@@ -1323,7 +1387,7 @@ classdef fcat < handle
     
     function obj = like(B)
       
-      %   LIKE -- Create fcat with the same categories and labels as another.
+      %   LIKE -- Create fcat with the categories and labels of another fcat.
       %
       %     See also fcat/with, fcat/from
       %
@@ -1341,7 +1405,7 @@ classdef fcat < handle
       
       %   FROM -- Create fcat from compatible source.
       %
-      %     C = fcat.from( c, cats ) creates a fcat object
+      %     C = fcat.from( c, cats ) creates an fcat object
       %     from the Matlab categorical array or cell array of strings
       %     `c` and `cats`. `c` is an MxN categorical array or cell array
       %     of strings whose columns correspond to the categories in 
@@ -1361,10 +1425,13 @@ classdef fcat < handle
       if ( nargin == 1 )        
         if ( isa(arr, 'categorical') || isa(arr, 'cell') )
           cats = arrayfun( @(x) sprintf('cat%d', x), 1:size(arr, 2), 'un', false );
-        end
-        
-        if ( isa(arr, 'SparseLabels') )
-          [arr, cats] = label_mat( arr );
+          
+        elseif ( isa(arr, 'SparseLabels') )
+          obj = fcat.from_sp( arr );
+          return;
+          
+        else
+          error( 'Cannot convert to fcat from objects of type "%s"', class(arr) );
         end
       else
         cats = varargin{2};
@@ -1383,7 +1450,7 @@ classdef fcat < handle
       end
 
       if ( ~ismatrix(arr) )
-        error( 'Input array must be a matrix.' );
+        error( 'Input cannot have more than 2 dimensions.' );
       end
 
       if ( isa(cats, 'categorical') )
@@ -1410,6 +1477,13 @@ classdef fcat < handle
       end
 
       error( 'Cannot convert to fcat from objects of type "%s"', class(arr) );
+    end
+    
+    function test()
+      
+      %   TEST -- Run all tests.
+      
+      cat_testall();      
     end
     
     function build()

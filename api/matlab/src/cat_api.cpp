@@ -49,7 +49,8 @@ namespace util {
             {"progenitors_match",       util::ops::PROGENITORS_MATCH},
             {"add_cat",                 util::ops::ADD_CATEGORY},
             {"in_cats",                 util::ops::IN_CATEGORIES},
-            {"from_categorical",        util::ops::FROM_CATEGORICAL}
+            {"from_categorical",        util::ops::FROM_CATEGORICAL},
+            {"replace",                 util::ops::REPLACE}
                     
         });
         
@@ -112,6 +113,7 @@ void util::init_cat_functions()
     globals::funcs[ops::ADD_CATEGORY] =             &util::add_category;
     globals::funcs[ops::IN_CATEGORIES] =            &util::in_categories;
     globals::funcs[ops::FROM_CATEGORICAL] =         &util::from_categorical;
+    globals::funcs[ops::REPLACE] =                  &util::replace;
     
     globals::INITIALIZED = true;
     

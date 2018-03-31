@@ -1152,6 +1152,111 @@ bool util::categorical::categories_match(const util::categorical &other) const
     return true;
 }
 
+//  replace_labels: Replace label with single label.
+
+util::u32 util::categorical::replace_labels(const std::string& from, const std::string& with)
+{
+    std::vector<std::string> input = { from };
+    return replace_labels(input, with);
+}
+
+//  replace_labels: Replace labels with single label.
+
+util::u32 util::categorical::replace_labels(const std::vector<std::string>& from, const std::string& with)
+{
+    using util::u64;
+    
+    u64 n_from = from.size();
+    
+    if (n_from == 0)
+    {
+        return util::categorical_status::OK;
+    }
+    
+    bool found_cat = false;
+    std::string last_cat;
+    std::unordered_set<u32> replace_ids;
+    
+    for (u64 i = 0; i < n_from; i++)
+    {
+        const std::string& c_from = from[i];
+        
+        if (!has_label(c_from))
+        {
+            continue;
+        }
+        
+        const std::string& c_cat = m_in_category.at(c_from);
+        
+        if (found_cat && c_cat != last_cat)
+        {
+            return util::categorical_status::LABEL_EXISTS_IN_OTHER_CATEGORY;
+        }
+        
+        found_cat = true;
+        
+        last_cat = c_cat;
+        
+        replace_ids.insert(m_label_ids.at(c_from));
+    }
+    
+    //  nothing to replace
+    if (!found_cat)
+    {
+        return util::categorical_status::OK;
+    }
+    
+    bool with_exists = has_label(with);
+    
+    //  otherwise, if `with` exists, make sure it's in the right category
+    if (with_exists && m_in_category.at(with) != last_cat)
+    {
+        return util::categorical_status::LABEL_EXISTS_IN_OTHER_CATEGORY;
+    }
+    
+    if (m_collapsed_expressions.count(with) > 0)
+    {
+        if (with != get_collapsed_expression(last_cat))
+        {
+            return util::categorical_status::COLLAPSED_EXPRESSION_IN_WRONG_CATEGORY;
+        }
+    }
+    
+    u32 with_id;
+    
+    if (with_exists)
+    {
+        with_id = m_label_ids.at(with);
+    }
+    else
+    {
+        with_id = get_next_label_id();
+        m_in_category[with] = last_cat;
+        m_label_ids.insert(with, with_id);
+#ifdef CAT_USE_PROGENITOR_IDS
+        m_progenitor_ids.randomize();
+#endif
+    }
+    
+    u64 cat_index = m_category_indices.at(last_cat);
+    std::vector<u32>& col = m_labels[cat_index];
+    u64 n_rows = col.size();
+    
+    for (u64 i = 0; i < n_rows; i++)
+    {
+        if (replace_ids.count(col[i]) > 0)
+        {
+            col[i] = with_id;
+        }
+    }
+    
+#ifdef CAT_PRUNE_AFTER_ASSIGN
+    prune();
+#endif
+    
+    return util::categorical_status::OK;
+}
+
 //  get_collapsed_expression: Get the string representation of a collapsed category.
 
 std::string util::categorical::get_collapsed_expression(const std::string& for_cat) const
@@ -1563,6 +1668,7 @@ util::u32 util::categorical::assign(const util::categorical& other,
         unchecked_assign_progenitors_match(other, at_indices, index_offset);
         return util::categorical_status::OK;
     }
+    
     m_progenitor_ids.randomize();
 #endif
     

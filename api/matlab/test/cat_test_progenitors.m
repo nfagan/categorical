@@ -43,4 +43,13 @@ rmcat( z, x.f{1} );
 
 assert( ~progenitorsmatch(f2, z), 'Removing category did not change progenitor ids.' );
 
+y = fcat.from( x.c );
+z = fcat.like( y );
+
+assert( progenitorsmatch(y, z) );
+
+append( z, y(1:1e4) );
+
+assert( progenitorsmatch(z, y) );
+
 end

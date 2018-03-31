@@ -97,9 +97,21 @@ void util::from_categorical(int nlhs, mxArray *plhs[], int nrhs, const mxArray *
     
     u64 n_ids = ids.size();
     u64 cols = categories.size();
-    u64 rows = n_ids / cols;
-    
-    from_matlab_categorical(cat, categories, labels, ids.data(), rows, cols);
     
     plhs[0] = detail::ptr_to_mat<categorical>(cat);
+    
+    if (cols == 0)
+    {
+        if (n_ids > 0)
+        {
+            delete cat;
+            mexErrMsgIdAndTxt(func_id, "No categories, but some labels, were given.");
+        }
+        
+        return;
+    }
+    
+    u64 rows = n_ids / cols;
+    
+    from_matlab_categorical(cat, categories, labels, ids.data(), rows, cols);   
 }

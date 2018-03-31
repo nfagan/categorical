@@ -22,6 +22,7 @@ namespace util {
     MEXFUNC(assign_partial);
     MEXFUNC(prune);
     
+    MEXFUNC(replace);
     MEXFUNC(fill_category);
     MEXFUNC(set_category);
     MEXFUNC(set_partial_category);
