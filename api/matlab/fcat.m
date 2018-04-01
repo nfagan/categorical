@@ -632,7 +632,7 @@ classdef fcat < handle
       
       if ( nargout > 1 )
         [I, C] = cat_api( 'find_allc', obj.id, categories );
-        if ( ~ischar(categories) )
+        if ( ~ischar(categories) && numel(categories) > 0 )
           C = reshape( C, numel(categories), numel(C) / numel(categories) );
         else
           C = C(:)';
@@ -1446,6 +1446,13 @@ classdef fcat < handle
       end
 
       if ( numel(cats) ~= size(arr, 2) )
+        if ( numel(cats) == 0 && size(arr, 1) == 0 )
+          %
+          %   no categories and empty label matrix
+          %
+          obj = fcat();
+          return;
+        end
         error( 'Supply one category for each column of the labels matrix.' );
       end
 

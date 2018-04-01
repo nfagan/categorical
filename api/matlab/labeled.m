@@ -58,7 +58,7 @@ classdef labeled < handle
       tf = ~eq( obj, B );
     end
     
-    function obj = eachindex(obj, categories, func)
+    function [obj, I, C] = eachindex(obj, categories, func)
       
       %   EACHINDEX -- Apply function to data, with indices of subsets.
       %
@@ -84,7 +84,12 @@ classdef labeled < handle
         error( 'Third input must be a function_handle; was "%s".', class(func) );
       end
       
-      [new_labs, I] = keepeach( obj.labels, categories );
+      if ( nargout > 2 )
+        [new_labs, I, C] = keepeach( obj.labels, categories );
+      else
+        [new_labs, I] = keepeach( obj.labels, categories );
+      end
+      
       new_data = func( obj.data, I );
       
       sz_msg = [ 'The output of a function called with eachindex or each' ...
@@ -93,7 +98,7 @@ classdef labeled < handle
       setall( obj, new_data, new_labs, sz_msg );
     end
     
-    function obj = each(obj, cats, func, uniform)
+    function [obj, I, C] = each(obj, cats, func, uniform)
       
       %   EACH -- Apply function to subsets of rows of data.
       %
@@ -124,7 +129,11 @@ classdef labeled < handle
         error( 'Third input must be a function_handle; was "%s".', class(func) );
       end
       
-      eachindex( obj, cats, @(x, I) rowop(x, I, func, uniform) );
+      if ( nargout > 2 )
+        [obj, I, C] = eachindex( obj, cats, @(x, I) rowop(x, I, func, uniform) );
+      else
+        [obj, I] = eachindex( obj, cats, @(x, I) rowop(x, I, func, uniform) );
+      end
     end
     
     function [out, I, C] = eachobj(obj, cats, func, uniform)
@@ -166,7 +175,7 @@ classdef labeled < handle
       
       out = obj;
       
-      if ( nargin < 3 )
+      if ( nargout < 3 )
         I = findall( obj.labels, cats );
       else
         [I, C] = findall( obj.labels, cats );

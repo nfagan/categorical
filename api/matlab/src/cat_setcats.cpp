@@ -25,7 +25,12 @@ void util::set_categories(int nlhs, mxArray *plhs[], int nrhs, const mxArray *pr
     
     if (n_cats == 0)
     {
-        mexErrMsgIdAndTxt(func_id, "Cannot assign to 0 categories.");
+        if (n_values != 0)
+        {
+            mexErrMsgIdAndTxt(func_id, "Values exceed categorical dimensions.");
+        }
+        
+        return;
     }
     
     //
