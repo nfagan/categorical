@@ -558,6 +558,18 @@ classdef labeled < handle
       n = ncats( obj.labels );  
     end
     
+    function c = count(obj, labels)
+      
+      %   COUNT -- Count the number of rows associated with labels.
+      %
+      %     IN:
+      %       - `labels` (char, cell array of strings)
+      %     OUT:
+      %       - `c` (uint64)
+      
+      c = count( obj.labels, labels );
+    end
+    
     function obj = only(obj, labels)
       
       %   ONLY -- Retain rows associated with labels.

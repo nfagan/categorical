@@ -480,7 +480,11 @@ classdef plotlabeled < handle
       
       %   GET_LIMS
       
-      l = cell2mat( get(axs(:), kind) );
+      l = get( axs(:), kind );
+      
+      if ( numel(axs) > 1 )
+        l = cell2mat( l );
+      end
     end
     
     function l = get_ylims(obj, axs)
