@@ -553,6 +553,30 @@ classdef plotlabeled < handle
       y = mean( x, 1 );
     end
     
+    function y = nanmean(x)
+      
+      %   NANMEAN -- Mean across the first dimension, excluding NaN.
+      
+      y = nanmean( x, 1 );
+    end
+    
+    function y = nanstd(x)
+      
+      %   NANSTD -- Std across the first dimension, excluding NaN.
+      
+      y = nanstd( x, [], 1 );
+    end
+    
+    function y = nansem(x)
+      
+      %   NANSEM -- Std error across the first dimension, excluding NaN.
+      
+      nans = isnan( x );
+      ns = size( x, 1 ) - sum( nans, 1 );
+      y = nanstd( x, [], 1 ) ./ sqrt( ns );
+      y(:, ns == 0) = NaN;
+    end
+    
     function y = sem(x)
       
       %   SEM -- Standard error across the first dimension.

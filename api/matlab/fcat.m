@@ -1032,6 +1032,20 @@ classdef fcat < handle
       cat_api( 'destroy', obj.id );
     end
     
+    function B = ctranspose(obj)
+      
+      %   CTRANSPOSE -- Overloaded operator copy.
+      %
+      %     B = A'; is syntactic sugar for B = copy( A );
+      %
+      %     See also fcat/copy
+      %
+      %     OUT:
+      %       - `B` (labeled)
+      
+      B = copy( obj );
+    end
+    
     function B = copy(obj)
        
       %   COPY -- Create a copy of the current instance.
