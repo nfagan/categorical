@@ -1509,6 +1509,79 @@ classdef fcat < handle
       error( 'Cannot convert to fcat from objects of type "%s"', class(arr) );
     end
     
+    function obj = create(varargin)
+      
+      %   CREATE -- Create fcat with categories set to labels.
+      %
+      %     obj = fcat.create( 'cat1', 'lab1', 'cat2', 'lab2' )
+      %     creates a 1x2 fcat object with categories 'cat1' and 'cat2',
+      %     whose labels are 'lab1' and 'lab2', respectively.
+      %
+      %     obj = fcat.create( 'cat1', 'lab1', 'cat2', {'lab2', 'lab3'} );
+      %     creates a 2x2 fcat object with categories 'cat1' and 'cat2'.
+      %     Scalar scategories are expanded to match the size of non-scalar
+      %     categories.
+      %
+      %     IN:
+      %       - `varargin` (cell array of strings)
+      %     OUT:
+      %       - `obj` (fcat)
+      
+      n = numel( varargin );
+      
+      try
+        assert( mod(n, 2) == 0, '(category, label) pairs are unbalanced.' );
+        
+        cats = varargin(1:2:n);
+        labs = varargin(2:2:n);
+        
+        cellfun( @(x) assert(ischar(x), 'category names must be char.'), cats );
+        
+        labs = cellfun( @ensure_cell, labs, 'un', false );
+        labs = cellfun( @(x) x(:), labs, 'un', false );
+        
+        cellfun( @(x) assert(iscellstr(x), 'labels must be cellstr or char.'), labs );
+        
+        ns = cellfun( @numel, labs );
+        un_ns = unique( ns );
+        
+        if ( numel(un_ns) > 1 )
+          assert( numel(un_ns) == 2 && any(un_ns) == 1 && all(un_ns > 0) ...
+            , 'labels must either match in number, or be scalar, and cannot be empty.' );
+        end
+        
+        non_scalar_ind = ns > 1;
+        
+        ns_cats = cats( non_scalar_ind );
+        ns_labs = labs( non_scalar_ind );
+        
+        sc_cats = cats( ~non_scalar_ind );
+        sc_labs = labs( ~non_scalar_ind );
+        
+        obj = fcat();
+        
+        %   process non-scalar categories first, to allow assignment from
+        %   empty
+        for i = 1:numel(ns_cats)
+          addcat( obj, ns_cats{i} );
+          setcat( obj, ns_cats{i}, ns_labs{i} );
+        end
+        
+        %   now process scalar categories
+        for i = 1:numel(sc_cats)
+          addcat( obj, sc_cats{i} );
+          setcat( obj, sc_cats{i}, sc_labs{i}{1} );
+        end
+        
+      catch err
+        throwAsCaller( err );
+      end
+      
+      function val = ensure_cell(val)
+        if ( ~iscell(val) ), val = { val }; end
+      end
+    end
+    
     function test()
       
       %   TEST -- Run all tests.
