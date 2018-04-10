@@ -977,6 +977,15 @@ classdef fcat < handle
       cat_api( 'append', obj.id, B.id );
     end
     
+    function obj = extend(obj, varargin)
+      
+      %   EXTEND -- Alias for vertcat.
+      %
+      %     See also fcat/vertcat
+      
+      vertcat( obj, varargin{:} );
+    end
+    
     function obj = vertcat(obj, varargin)
       
       %   VERTCAT -- Append other fcat objects.

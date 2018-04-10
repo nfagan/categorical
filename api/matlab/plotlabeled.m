@@ -248,9 +248,9 @@ classdef plotlabeled < handle
       opts.g_combs = g_combs;
       opts.p_combs = p_combs;
       
-      opts.x_labs = x_labs;
-      opts.g_labs = g_labs;
-      opts.p_labs = p_labs;
+      opts.x_labs = strrep( x_labs, '_', ' ' );
+      opts.g_labs = strrep( g_labs, '_', ' ' );
+      opts.p_labs = strrep( p_labs, '_', ' ' );
       
       opts.c_shape = c_shape;
       opts.n_subplots = n_subplots;
