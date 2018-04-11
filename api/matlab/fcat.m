@@ -103,7 +103,7 @@ classdef fcat < handle
       %     OUT:
       %       - `n` (uint64)
       
-      n = prod( size(varargin{1}) );
+      n = prod( size(varargin{1}) );  %#ok<PSIZE>
     end
     
     function tf = isempty(obj)
@@ -1530,24 +1530,26 @@ classdef fcat < handle
       n = numel( varargin );
       
       try
-        assert( mod(n, 2) == 0, '(category, label) pairs are unbalanced.' );
+        assert( mod(n, 2) == 0, '(category, label) pairs are incomplete.' );
         
         cats = varargin(1:2:n);
         labs = varargin(2:2:n);
         
-        cellfun( @(x) assert(ischar(x), 'category names must be char.'), cats );
+        cellfun( @(x) assert(ischar(x), 'Category names must be char.'), cats );
+        
+        assert( numel(unique(cats)) == numel(cats), 'Category names must be unique.' );
         
         labs = cellfun( @ensure_cell, labs, 'un', false );
         labs = cellfun( @(x) x(:), labs, 'un', false );
         
-        cellfun( @(x) assert(iscellstr(x), 'labels must be cellstr or char.'), labs );
+        cellfun( @(x) assert(iscellstr(x), 'Labels must be cellstr or char.'), labs );
         
         ns = cellfun( @numel, labs );
         un_ns = unique( ns );
         
         if ( numel(un_ns) > 1 )
           assert( numel(un_ns) == 2 && any(un_ns) == 1 && all(un_ns > 0) ...
-            , 'labels must either match in number, or be scalar, and cannot be empty.' );
+            , 'Labels must either match in number, or be scalar, and cannot be empty.' );
         end
         
         non_scalar_ind = ns > 1;
