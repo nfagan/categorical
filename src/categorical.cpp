@@ -1884,7 +1884,213 @@ util::u32 util::categorical::assign(const util::categorical& other,
     return util::categorical_status::OK;
 }
 
-//  bounds_check: Ensure indices are in bounds
+//  merge: Merge array contents.
+
+util::u32 util::categorical::merge(const util::categorical& other)
+{
+    using util::u64;
+    using util::u32;
+    
+    u64 own_sz = size();
+    u64 other_sz = other.size();
+    
+    bool is_scalar = other_sz == 1;
+    bool sizes_match = own_sz == other_sz;
+    
+    if (!sizes_match && !is_scalar)
+    {
+        return util::categorical_status::INCOMPATIBLE_SIZES;
+    }
+    
+    std::unordered_map<u32, u32> replace_other_labs;
+    
+    auto tmp_label_ids = m_label_ids;
+    auto tmp_in_cat = m_in_category;
+    
+    util::u32 new_labels_status = reconcile_new_label_ids(other, tmp_label_ids, tmp_in_cat, replace_other_labs);
+    
+    if (new_labels_status != util::categorical_status::OK)
+    {
+        return new_labels_status;
+    }
+    
+    util::u32 collapsed_cat_status = merge_check_collapsed_expressions(other);
+    
+    if (collapsed_cat_status != util::categorical_status::OK)
+    {
+        return collapsed_cat_status;
+    }
+    
+    util::u32 require_cat_status = merge_require_categories(other);
+    
+    if (require_cat_status != util::categorical_status::OK)
+    {
+        return require_cat_status;
+    }
+    
+    //  if we get here, all is well.
+#ifdef CAT_USE_PROGENITOR_IDS
+    u64 orig_n_labels = m_label_ids.size();
+    u64 new_n_labels = tmp_label_ids.size();
+    
+    if (new_n_labels > orig_n_labels)
+    {
+        m_progenitor_ids.randomize();
+    }
+#endif
+    
+    m_label_ids = std::move(tmp_label_ids);
+    m_in_category = std::move(tmp_in_cat);
+    
+    merge_fill_new_label_ids(other, replace_other_labs, is_scalar, sizes_match, own_sz);
+    
+    return util::categorical_status::OK;
+}
+
+void util::categorical::merge_fill_new_label_ids(const util::categorical& other,
+                                                 std::unordered_map<util::u32, util::u32>& replace_other_labs,
+                                                 bool is_scalar,
+                                                 bool sizes_match,
+                                                 util::u64 own_sz)
+{
+    for (const auto& cats : other.m_category_indices)
+    {
+        u64 own_idx = m_category_indices.at(cats.first);
+        u64 other_idx = cats.second;
+        
+        m_labels[own_idx] = other.m_labels[other_idx];
+        
+        std::vector<u32>& col = m_labels[own_idx];
+        
+        if (is_scalar && !sizes_match)
+        {
+            col.resize(own_sz);
+            std::fill(col.begin(), col.end(), other.m_labels[other_idx][0]);
+        }
+        
+        for (u64 j = 0; j < own_sz; j++)
+        {
+            u32 id = col[j];
+            
+            if (replace_other_labs.count(id) > 0)
+            {
+                col[j] = replace_other_labs.at(id);
+            }
+        }
+    }
+}
+
+util::u32 util::categorical::merge_check_collapsed_expressions(const util::categorical &other) const
+{
+    for (const auto& it : m_category_indices)
+    {
+        const std::string& cat = it.first;
+        
+        std::string collapsed_expression = get_collapsed_expression(cat);
+        
+        if (other.has_label(collapsed_expression) && other.m_in_category.at(collapsed_expression) != cat)
+        {
+            return util::categorical_status::COLLAPSED_EXPRESSION_IN_WRONG_CATEGORY;
+        }
+    }
+    
+    return util::categorical_status::OK;
+}
+
+util::u32 util::categorical::merge_require_categories(const util::categorical& other)
+{
+    std::vector<std::string> new_categories;
+    
+    for (const auto& it : other.m_category_indices)
+    {
+        const std::string& cat = it.first;
+        
+        if (!has_category(cat))
+        {
+            new_categories.push_back(cat);
+        }
+        
+        util::u32 cat_status = require_category(cat);
+        
+        if (cat_status != util::categorical_status::OK)
+        {
+            for (const auto& c_cat : new_categories)
+            {
+                bool dummy;
+                remove_category(c_cat, &dummy);
+            }
+            
+            return cat_status;
+        }
+    }
+    
+    return util::categorical_status::OK;
+}
+
+//  reconcile_new_label_ids: Create new label ids for incoming labels.
+
+util::u32 util::categorical::reconcile_new_label_ids(const util::categorical& other,
+                                                     util::multimap<std::string, util::u32>& tmp_label_ids,
+                                                     std::unordered_map<std::string, std::string>& tmp_in_cat,
+                                                     std::unordered_map<util::u32, util::u32>& replace_other) const
+{
+    std::unordered_set<util::u32> new_label_ids;
+    
+    std::vector<std::string> other_labs = other.m_label_ids.keys();
+    
+    auto own_lab_it_end = m_label_ids.endk();
+    
+    u64 n_other_labs = other_labs.size();
+    
+    for (u64 i = 0; i < n_other_labs; i++)
+    {
+        const std::string& other_lab = other_labs[i];
+        const std::string& other_in_cat = other.m_in_category.at(other_lab);
+        
+        auto own_lab_it = m_label_ids.find(other_lab);
+        util::u32 other_id = other.m_label_ids.at(other_lab);
+        
+        //  this label exists
+        if (own_lab_it != own_lab_it_end)
+        {
+            const std::string& own_in_cat = m_in_category.at(other_lab);
+            
+            if (own_in_cat != other_in_cat)
+            {
+                return util::categorical_status::LABEL_EXISTS_IN_OTHER_CATEGORY;
+            }
+            
+            util::u32 own_id = own_lab_it->second;
+            
+            if (own_id != other_id)
+            {
+                util::u32 replace_id = util::categorical::get_id(this, &other, new_label_ids);
+                new_label_ids.insert(replace_id);
+                replace_other[other_id] = replace_id;
+                tmp_label_ids.insert(other_lab, replace_id);
+            }
+        }
+        else
+        {            
+            //  label is new
+            util::u32 replace_id = other_id;
+            
+            if (m_label_ids.contains(other_id))
+            {
+                replace_id = util::categorical::get_id(this, &other, new_label_ids);
+                new_label_ids.insert(replace_id);
+                replace_other[other_id] = replace_id;
+            }
+            
+            tmp_label_ids.insert(other_lab, replace_id);
+            tmp_in_cat[other_lab] = other_in_cat;
+        }
+    }
+    
+    return util::categorical_status::OK;
+}
+
+//  bounds_check: Ensure indices are in bounds.
 
 util::u32 util::categorical::bounds_check(const std::vector<util::u64>& indices,
                        util::u64 n_check,

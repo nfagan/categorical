@@ -15,6 +15,7 @@ classdef plotlabeled < handle
     points_are = {};
     points_color_map = [];
     x_tick_rotation = 60;
+    main_line_width = 1;
     marker_size = 1;
     marker_type = 'o';
     join_pattern = ' | ';
@@ -107,6 +108,8 @@ classdef plotlabeled < handle
         
         h = plot( xdata, summary_mat );
         
+        set( h, 'linewidth', obj.main_line_width );
+        
         if ( obj.add_errors )
           plotlabeled.plot_error_ribbon( ax, h, xdata, summary_mat, errors_mat );
         end
@@ -183,6 +186,8 @@ classdef plotlabeled < handle
       plotlabeled.assert_isa( obj, 'plotlabeled', 'plot object' );
       
       data = prune( copy(data) );
+      
+      assert( size(data, 1) >= 1, 'Data cannot be empty.' );
       
       [xcats, groups, panels] = plotlabeled.cell( xcats, groups, panels );
       [xcats, groups, panels] = plotlabeled.uniques( xcats, groups, panels );

@@ -44,6 +44,7 @@ namespace util {
         static constexpr util::u32 COLLAPSED_EXPRESSION_IN_WRONG_CATEGORY = 8u;
         static constexpr util::u32 OUT_OF_BOUNDS = 9u;
         static constexpr util::u32 WRONG_INDEX_SIZE = 10u;
+        static constexpr util::u32 INCOMPATIBLE_SIZES = 11u;
     }
     
     util::u32 get_id(std::function<bool(util::u32)> exists_func);
@@ -110,6 +111,8 @@ public:
                                         const std::vector<util::u64>& to_indices,
                                         const std::vector<util::u64>& from_indices,
                                         util::s64 index_offset);
+    
+    util::u32 merge(const util::categorical& other);
     
     bool has_category(const std::string& category) const;
     bool has_label(const std::string& label) const;
@@ -190,6 +193,19 @@ private:
     std::string get_collapsed_expression(const std::string& for_cat) const;
     
     void resize(util::u64 rows);
+    
+    util::u32 reconcile_new_label_ids(const util::categorical& other,
+                                      util::multimap<std::string, util::u32>& tmp_label_ids,
+                                      std::unordered_map<std::string, std::string>& tmp_in_cat,
+                                      std::unordered_map<util::u32, util::u32>& replace_other) const;
+    
+    void merge_fill_new_label_ids(const util::categorical& other,
+                                  std::unordered_map<util::u32, util::u32>& replace_other_labs,
+                                  bool is_scalar,
+                                  bool sizes_match,
+                                  util::u64 own_sz);
+    util::u32 merge_require_categories(const util::categorical& other);
+    util::u32 merge_check_collapsed_expressions(const util::categorical& other) const;
     
     static util::u32 get_id(const categorical* self, const categorical* other,
                 const std::unordered_set<util::u32>& new_ids);

@@ -235,9 +235,40 @@ classdef fcat < handle
       
       %   REPEAT -- Repeat entire contents N times.
       %
-      %     See also fcat/resize, repmat
+      %     repeat( obj, 1 ) is equivalent to [ obj; obj ];
+      %     repeat( obj, 0 ) has no effect.
+      %
+      %     See also fcat/resize, fcat/repmat
+      %
+      %     IN:
+      %       - `n_times` (uint64, double)
       
       cat_api( 'repeat', obj.id, uint64(n_times) );      
+    end
+    
+    function obj = repmat(obj, varargin)
+      
+      %   REPMAT -- Repeat array contents.
+      %
+      %     repmat( obj, 2 ) is equivalent to [ obj; obj ];
+      %     repmat( obj, 1 ) has no effect.
+      %     repmat( obj, 0 ) is equivalent to keep( obj, [] );
+      %
+      %     See also fcat/repeat, fcat/resize
+      %
+      %     IN:
+      %       - `varargin`
+      
+      N = varargin{1};
+      
+      %   replicate behavior of repmat, which creates an empty matrix if a
+      %   size along a dimension is 0.
+      if ( N == 0 )
+        keep( obj, [] );
+        return;
+      end
+      
+      repeat( obj, N-1 );
     end
     
     function obj = subsasgn(obj, s, values)
@@ -975,6 +1006,31 @@ classdef fcat < handle
       end
       
       cat_api( 'append', obj.id, B.id );
+    end
+    
+    function obj = merge(obj, B)
+      
+      %   MERGE -- Merge other's contents.
+      %
+      %     merge( A, B ) merges the contents of B into A. Categories
+      %     of B not present in A are inserted into A; categories
+      %     shared between A and B are set to B's contents. B must have the
+      %     same number of rows of A, or else have a single row, in which
+      %     case B is implicitly expanded to match the size of A.
+      %
+      %     See also fcat/assign, fcat/setcat, fcat/fcat
+      %
+      %     IN:
+      %       - `B` (fcat)
+      
+      if ( ~isa(obj, 'fcat') )
+        error( 'Cannot merge objects of class "%s".', class(obj) );
+      end
+      if ( ~isa(B, 'fcat') )
+        error( 'Cannot merge objects of class "%s".', class(B) );
+      end
+      
+      cat_api( 'merge', obj.id, B.id );
     end
     
     function obj = extend(obj, varargin)

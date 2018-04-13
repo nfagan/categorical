@@ -50,7 +50,8 @@ namespace util {
             {"add_cat",                 util::ops::ADD_CATEGORY},
             {"in_cats",                 util::ops::IN_CATEGORIES},
             {"from_categorical",        util::ops::FROM_CATEGORICAL},
-            {"replace",                 util::ops::REPLACE}
+            {"replace",                 util::ops::REPLACE},
+            {"merge",                   util::ops::MERGE}
                     
         });
         
@@ -114,6 +115,7 @@ void util::init_cat_functions()
     globals::funcs[ops::IN_CATEGORIES] =            &util::in_categories;
     globals::funcs[ops::FROM_CATEGORICAL] =         &util::from_categorical;
     globals::funcs[ops::REPLACE] =                  &util::replace;
+    globals::funcs[ops::MERGE] =                    &util::merge;
     
     globals::INITIALIZED = true;
     
