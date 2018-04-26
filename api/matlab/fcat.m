@@ -813,6 +813,21 @@ classdef fcat < handle
       end
     end
     
+    function str = joincat(obj, categories, pattern)
+      
+      %   JOINCAT -- Join labels in categories to form a single string.
+      %
+      %     IN:
+      %       - `categories` (char, cell array of strings)
+      %       - `pattern` (char) |OPTIONAL|
+      %     OUT:
+      %       - `str` (char)
+      
+      if ( nargin < 3 ), pattern = '_'; end
+      
+      str = strjoin( incat(obj, categories), pattern );
+    end
+    
     function obj = addcat(obj, category)
       
       %   ADDCAT -- Add new category.
@@ -1008,7 +1023,7 @@ classdef fcat < handle
       cat_api( 'append', obj.id, B.id );
     end
     
-    function obj = merge(obj, B)
+    function obj = merge(obj, varargin)
       
       %   MERGE -- Merge other's contents.
       %
@@ -1018,6 +1033,15 @@ classdef fcat < handle
       %     same number of rows of A, or else have a single row, in which
       %     case B is implicitly expanded to match the size of A.
       %
+      %     merge( A, B, C ... ) merges the contents of B, C ... into A, as
+      %     above. Categories shared between B, C ... are set to the 
+      %     contents of the right-most argument.
+      %
+      %     A = fcat.create( 'date', datestr(now) );
+      %     B = fcat.create( 'city', 'New York' );
+      %     repmat( A, 10 );
+      %     merge( A, B )
+      %
       %     See also fcat/assign, fcat/setcat, fcat/fcat
       %
       %     IN:
@@ -1026,11 +1050,19 @@ classdef fcat < handle
       if ( ~isa(obj, 'fcat') )
         error( 'Cannot merge objects of class "%s".', class(obj) );
       end
-      if ( ~isa(B, 'fcat') )
-        error( 'Cannot merge objects of class "%s".', class(B) );
+      
+      try
+        cellfun( @(x) assert(isa(x, 'fcat'), ['Cannot merge objects of' ...
+          , ' class "%s".'], class(x)), varargin );
+      catch err
+        throwAsCaller( err );
       end
       
-      cat_api( 'merge', obj.id, B.id );
+      N = numel( varargin );
+      
+      for i = 1:N
+        cat_api( 'merge', obj.id, varargin{i}.id );
+      end
     end
     
     function obj = extend(obj, varargin)

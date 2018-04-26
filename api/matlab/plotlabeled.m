@@ -80,7 +80,7 @@ classdef plotlabeled < handle
       n_subplots = opts.n_subplots;
       c_shape = opts.c_shape;
       
-      axs = [];
+      axs = gobjects( 1, n_subplots );
       figure( opts.f );
       
       xdata = get_matx( obj, summary_mat );
@@ -289,7 +289,7 @@ classdef plotlabeled < handle
       g_labs = opts.g_labs;
       p_labs = opts.p_labs;
       
-      axs = [];
+      axs = gobjects( 1, n_subplots );
       figure( opts.f );
       
       summary_mat = nan( size(x_combs, 1), size(g_combs, 1) );

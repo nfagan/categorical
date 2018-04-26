@@ -827,6 +827,19 @@ classdef labeled < handle
       C = incat( obj.labels, category );
     end
     
+    function str = joincat(obj, varargin)
+      
+      %   JOINCAT -- Join labels in categories to form a single string.
+      %
+      %     IN:
+      %       - `categories` (char, cell array of strings)
+      %       - `pattern` (char) |OPTIONAL|
+      %     OUT:
+      %       - `str` (char)
+      
+      str = joincat( obj.labels, varargin{:} );
+    end
+    
     function obj = requirecat(obj, category)
       
       %   REQUIRECAT -- Add category if it does not exist.
