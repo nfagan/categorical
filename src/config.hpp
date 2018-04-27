@@ -20,5 +20,3 @@
 //  one row in the array. Otherwise, `m_label_ids` may contain "dangling"
 //  labels.
 //#define CAT_PRUNE_AFTER_ASSIGN
-
-#define CAT_USE_PROGENITOR_IDS

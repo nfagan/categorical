@@ -36,11 +36,7 @@ int main(int argc, char* argv[])
 }
 
 void test_progenitor_ids()
-{
-#ifndef CAT_USE_PROGENITOR_IDS
-    return;
-#endif
-    
+{    
     using namespace util;
     
     categorical cat1;
