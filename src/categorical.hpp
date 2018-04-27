@@ -137,9 +137,7 @@ public:
     util::u64 size() const;
     util::u64 count(const std::string& lab) const;
     
-#ifdef CAT_USE_PROGENITOR_IDS
     bool progenitors_match(const util::categorical& other) const;
-#endif
     
     friend void from_matlab_categorical(util::categorical* self,
                                         const std::vector<std::string>& categories,
@@ -199,6 +197,11 @@ private:
                                       std::unordered_map<std::string, std::string>& tmp_in_cat,
                                       std::unordered_map<util::u32, util::u32>& replace_other) const;
     
+    void append_fill_new_label_ids(const util::categorical& other,
+                                   const std::unordered_map<util::u32, util::u32>& replace_other_labs,
+                                   util::u64 own_sz,
+                                   util::u64 other_sz);
+    
     void merge_fill_new_label_ids(const util::categorical& other,
                                   std::unordered_map<util::u32, util::u32>& replace_other_labs,
                                   bool is_scalar,
@@ -224,7 +227,6 @@ private:
     static util::u64 maximum(const std::vector<util::u64>& indices, util::u64 end);
 
 private:
-#ifdef CAT_USE_PROGENITOR_IDS
     struct progenitor_ids
     {
         progenitor_ids();
@@ -239,5 +241,4 @@ private:
         util::u32 a;
         util::u32 b;
     } m_progenitor_ids;
-#endif
 };

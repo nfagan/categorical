@@ -11,11 +11,7 @@ void util::get_build_config(int nlhs, mxArray *plhs[], int nrhs, const mxArray *
     
     mxArray* conf = mxCreateStructMatrix(1, 1, 2, fieldnames);
     
-#ifdef CAT_USE_PROGENITOR_IDS
     mxArray* use_progenitor_ids = mxCreateLogicalScalar(true);
-#else
-    mxArray* use_progenitor_ids = mxCreateLogicalScalar(false);
-#endif
     
 #ifdef CAT_PRUNE_AFTER_ASSIGN
     mxArray* prune = mxCreateLogicalScalar(true);

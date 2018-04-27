@@ -2,6 +2,7 @@ function cat_testall()
 
 %   CAT_TESTALL -- Run all tests.
 
+cat_test_run( @cat_test_append_create );
 cat_test_run( @cat_test_merge );
 cat_test_run( @cat_test_replace );
 cat_test_run( @cat_test_progenitors );

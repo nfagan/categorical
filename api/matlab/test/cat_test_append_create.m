@@ -25,9 +25,9 @@ append( bounds_labs, labs );
 
 new_name = 'b';
 
-fillcat( bounds_labs, 'unified_filename', new_name );
+a = fillcat( bounds_labs', 'unified_filename', new_name );
 
-categ = fullcat( bounds_labs, 'stim_type' );
+categ = fullcat( a, 'stim_type' );
 
 assert( ~any(strcmp(categ, new_name)), 'Setting category a changed category b.' );
 
