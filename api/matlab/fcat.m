@@ -711,6 +711,18 @@ classdef fcat < handle
       C = cat_api( 'get_cats', obj.id );      
     end
     
+    function C = categories(obj)
+      
+      %   CATEGORIES -- Get category names.
+      %
+      %     See also fcat/getlabs, fcat/fcat
+      %
+      %     OUT:
+      %       - `C` (cell array of strings)
+      
+      C = cat_api( 'get_cats', obj.id );      
+    end
+    
     function L = getlabs(obj)
       
       %   GETLABS -- Get label names.
@@ -816,6 +828,14 @@ classdef fcat < handle
     function str = joincat(obj, categories, pattern)
       
       %   JOINCAT -- Join labels in categories to form a single string.
+      %
+      %     s = joincat( obj, {'cities', 'states'} ); forms a character 
+      %     vector `s` from the labels in categories 'cities' and 'states'.
+      %     Labels are joined with an underscore '_'. The order of labels
+      %     is undefined.
+      %
+      %     s = joincat( ..., PATTERN ); uses PATTERN instead of an
+      %     underscore.
       %
       %     IN:
       %       - `categories` (char, cell array of strings)

@@ -691,6 +691,18 @@ classdef labeled < handle
       C = getcats( obj.labels );
     end
     
+    function C = categories(obj)
+     
+      %   GETCATS -- Get category names.
+      %
+      %     See also fcat/getlabs, fcat/fcat
+      %
+      %     OUT:
+      %       - `C` (cell array of strings)
+      
+      C = categories( obj.labels );
+    end
+    
     function L = getlabs(obj)
       
       %   GETLABS -- Get label names.
