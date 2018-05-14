@@ -1708,6 +1708,19 @@ classdef fcat < handle
       cat_buildall();      
     end
     
+    function r = apiroot()
+      
+      %   APIROOT -- Get the path to the fcat Matlab api directory.
+      %
+      %     See also fcat/buildconfig, fcat/fcat
+      %
+      %     OUT:
+      %       - `r` (char)
+      
+      conf = fcat.buildconfig();
+      r = conf.apiroot;
+    end
+    
     function conf = buildconfig()
       
       %   BUILDCONFIG -- Get config options with which the cat_api was built.

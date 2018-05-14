@@ -7,6 +7,8 @@ function conf = cat_buildconfig()
 
 conf = cat_api( 'get_build_config' );
 
+conf.apiroot = fileparts( which(mfilename) );
+
 %
 % see: #define CAT_PRUNE_AFTER_ASSIGN
 %
