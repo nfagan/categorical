@@ -543,6 +543,25 @@ classdef fcat < handle
       n = 1;
     end
     
+    function tf = trueat(obj, indices)
+      
+      %   TRUEAT -- Create logical index assigned to true at indices.
+      %
+      %     tf = trueat( obj, [1, 2] ) creates an Mx1 logical index
+      %     assigned to true at rows [1] and [2]. M is equal to 
+      %     size( obj, 1 ).
+      %
+      %     See also fcat/find, fcat/keep
+      %
+      %     IN:
+      %       - `indices` (uint64)
+      %     OUT:
+      %       - `tf` (logical)
+      
+      tf = false( size(obj, 1), 1 );
+      tf(indices) = true;
+    end
+    
     function obj = only(obj, labels)
       
       %   ONLY -- Retain rows associated with labels.
@@ -1629,6 +1648,8 @@ classdef fcat < handle
       %     creates a 2x2 fcat object with categories 'cat1' and 'cat2'.
       %     Scalar scategories are expanded to match the size of non-scalar
       %     categories.
+      %
+      %     See also fcat/fcat
       %
       %     IN:
       %       - `varargin` (cell array of strings)
