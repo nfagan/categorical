@@ -58,6 +58,24 @@ classdef labeled < handle
       tf = ~eq( obj, B );
     end
     
+    function tf = trueat(obj, inds)
+      
+      %   TRUEAT -- Create logical index assigned to true at indices.
+      %
+      %     tf = trueat( obj, [1, 2] ) creates an Mx1 logical index
+      %     assigned to true at rows [1] and [2]. M is equal to 
+      %     size( obj, 1 ).
+      %
+      %     See also labeled/find, labeled/keep
+      %
+      %     IN:
+      %       - `indices` (uint64)
+      %     OUT:
+      %       - `tf` (logical)
+      
+      tf = trueat( obj.labels, inds );
+    end
+    
     function [obj, I, C] = eachindex(obj, categories, func)
       
       %   EACHINDEX -- Apply function to data, with indices of subsets.
