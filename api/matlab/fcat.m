@@ -943,6 +943,32 @@ classdef fcat < handle
       cat_api( 'collapse_cat', obj.id, category );
     end
     
+    function s = makecollapsed(obj, categories)
+      
+      %   MAKECOLLAPSED -- Make collapsed expression for category.
+      %
+      %     s = makecollapsed( obj, 'a' ) returns '<a>', the collapsed
+      %     expression for category 'a'.
+      %
+      %     s = makecollapsed( obj, {'a', 'b'} ) returns {'<a>', '<b>'}
+      %
+      %     See also fcat/collapsecat, fcat/keepeach, fcat/one, fcat/fcat
+      %
+      %     IN:
+      %       - `categories` (cell array of strings, char)
+      %     OUT:
+      %       - `s` (cell array of strings, char)
+      
+      func = @(x) sprintf( '<%s>', x );
+      
+      if ( ischar(categories) )
+        s = func( categories );
+        return;
+      end
+      
+      s = cellfun( func, categories, 'un', false );
+    end
+    
     function obj = one(obj)
       
       %   ONE -- Collapse all categories, and retain a single row.
@@ -957,7 +983,7 @@ classdef fcat < handle
       %     none( obj ) keeps 0 rows of `obj`, but does not remove labels
       %     from `obj`, and is equivalent to keep( obj, [] ).
       
-      keep( obj, [] );      
+      keep( obj, [] );
     end
     
     function obj = setcat(obj, category, to, at_indices)
