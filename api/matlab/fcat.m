@@ -26,6 +26,16 @@ classdef fcat < handle
       %     (or labels). Rows of observations can then be identified by a 
       %     given combination of labels across all categories.
       %
+      %     EX //
+      %
+      %     f1 = repmat( fcat.create( ...
+      %         'cities', {'NYC', 'NYC', 'Santa Fe'} ...
+      %       , 'states', {'NY', 'NY', 'NM'} ...
+      %       , 'attractions', {'met', 'moma', 'nmart'} ...
+      %     ), 20 )
+      %
+      %     [y, I, C] = keepeach( copy(f1), getcats(f1) )
+      %
       %     See also fcat/findall, fcat/from, fcat/subsref, categorical/categorical
       
       if ( nargin == 0 )
@@ -615,7 +625,7 @@ classdef fcat < handle
       %     f1 = fcat.create( ...
       %         'cities', {'NYC', 'NYC', 'Santa Fe'} ...
       %       , 'states', {'NY', 'NY', 'NM'} ...
-      %       , 'attractions', {'met', 'moma', 'nmart' } ...
+      %       , 'attractions', {'met', 'moma', 'nmart'} ...
       %     )
       %
       %     f2 = keepeach( copy(f1), 'cities' )
@@ -896,6 +906,17 @@ classdef fcat < handle
       
       %   ADDCAT -- Add new category.
       %
+      %     addcat( obj, 'cities' ) adds the category 'cities' to `obj`, if
+      %     it does not already exist. If `obj` has more than 0 rows, the 
+      %     category will be set to the collapsed expression for that 
+      %     category.
+      %
+      %     If the collapsed expression is already present in a 
+      %     different category, an error will be thrown and the category 
+      %     will not be added.
+      %
+      %     See also fcat/findall, fcat/fcat
+      %
       %     IN:
       %       - `category` (cell array of strings, char)
       
@@ -906,7 +927,7 @@ classdef fcat < handle
       
       %   REQUIRECAT -- Add category if it does not exist.
       %
-      %     See also fcat/findall
+      %     See also fcat/addcat, fcat/findall
       %
       %     IN:
       %       - `category` (char, cell array of strings)
@@ -917,6 +938,14 @@ classdef fcat < handle
     function obj = rmcat(obj, category)
       
       %   RMCAT -- Remove category(ies).
+      %
+      %     rmcat( obj, 'cities' ) removes the category 'cities' from 
+      %     `obj`, throwing an error if it does not exist. 
+      %
+      %     If all categories are removed, `obj` becomes of size 0x0, such
+      %     that isempty(obj) returns true.
+      %
+      %     See also fcat/addcat
       %
       %     IN:
       %       - `category` (char, cell array of strings)
@@ -935,7 +964,7 @@ classdef fcat < handle
       %     collapsecat( obj, {'test1', 'test2'} ) works as above, but for
       %     multiple categories at once.
       %
-      %     See also fcat/requirecat
+      %     See also fcat/addcat, fcat/keepeach
       %
       %     IN:
       %       - `category` (char, cell array of strings)
@@ -951,6 +980,9 @@ classdef fcat < handle
       %     expression for category 'a'.
       %
       %     s = makecollapsed( obj, {'a', 'b'} ) returns {'<a>', '<b>'}
+      %
+      %     Collapsed expressions are placeholder labels used generally to
+      %     indicate the absence of a specific label in that category.
       %
       %     See also fcat/collapsecat, fcat/keepeach, fcat/one, fcat/fcat
       %
@@ -1079,13 +1111,14 @@ classdef fcat < handle
       
       %   PRUNE -- Remove labels without rows.
       %
-      %     prune( obj ) ensures that each label in `obj` is associated
-      %     with at least one row.
+      %     prune( obj ) removes unused labels in `obj`, that is, labels
+      %     that are not associated with any rows of `obj`. An unused label
+      %     `L` is also one for which count(obj, L) returns 0.
       %
       %     [obj, n] = prune( obj ) also returns the number of labels that
       %     were removed.
       %
-      %     See also categorical/removecats
+      %     See also fcat/keep, categorical/removecats
       %
       %     OUT:
       %       - `obj` (fcat)

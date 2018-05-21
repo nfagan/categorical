@@ -4,14 +4,13 @@ function new_data = rowop(data, I, func, uniform)
 %
 %     newdata = rowop( data, I, func ) applys `func` to each subset of rows
 %     of `data` identified by an index in `I`. `I` is a cell array of
-%     numeric indices or logicals. `newdata` is an MxNx ... array of the
-%     same class as `data`, where `M` is equal to `numel(I)`, and Nx ...
-%     are equal to the corresponding dimension of `data`.
+%     numeric indices or logicals. `newdata` is an MxNx ... array where 
+%     `M` is equal to `numel(I)`.
 %
 %     newdata = rowop( ..., false ) indicates that the output of `func` is
-%     non-uniform, i.e., not of the same class as `data`, potentially of
-%     multiple classes, or with a first-dimension size not equal to 1.
-%     In this case `newdata` is an Mx1 cell array.
+%     non-uniform, i.e., potentially of multiple classes, or with a 
+%     first-dimension size not equal to 1. In this case `newdata` is an 
+%     Mx1 cell array.
 %
 %     IN:
 %       - `data` (/T/)
