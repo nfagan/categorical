@@ -596,6 +596,29 @@ classdef fcat < handle
       
       %   KEEPEACH -- Retain one row for each combination of labels.
       %
+      %     keepeach( obj, {'cities', 'states'} ) retains one row of labels
+      %     for each combination of categories 'cities' and 'states'.
+      %     Additional categories of `obj` are collapsed if, for a given
+      %     combination of 'cities' and 'states', more than one label of
+      %     the category is identified by that combination.
+      %
+      %     [f, I] = ... also returns `I`, a cell array of indices
+      %     identifying the rows of `obj` associated with each row of `f`.
+      %
+      %     [..., C] = ... also returns `C`, the cell matrix of label
+      %     combinations associated with each row of `f`.
+      %
+      %     EX //
+      %
+      %     f1 = fcat.create( ...
+      %         'cities', {'NYC', 'NYC', 'Santa Fe'} ...
+      %       , 'states', {'NY', 'NY', 'NM'} ...
+      %       , 'attractions', {'met', 'moma', 'nmart' } ...
+      %     )
+      %
+      %     f2 = keepeach( copy(f1), 'cities' )
+      %     f3 = keepeach( copy(f1), 'attractions' )
+      %
       %     See also fcat/findall
       %
       %     IN:
