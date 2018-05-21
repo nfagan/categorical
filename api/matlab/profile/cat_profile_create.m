@@ -28,5 +28,6 @@ end
 
 fprintf( '\n categorical: %0.3f (ms) [%d]', mean(c1) * 1e3, n_iters );
 fprintf( '\n fcat:        %0.3f (ms) [%d]', mean(c2) * 1e3, n_iters );
+fprintf( '\n' );
 
 end

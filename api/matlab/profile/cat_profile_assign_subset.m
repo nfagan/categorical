@@ -53,5 +53,6 @@ fprintf( '\n categorical         (loop): %0.3f (ms)', c3 * 1e3 );
 fprintf( '\n fcat            (function): %0.3f (ms)', c4 * 1e3 );
 fprintf( '\n fcat                (copy): %0.3f (ms)', c5 * 1e3 );
 fprintf( '\n categorical               : %0.3f (ms)', c6 * 1e3 );
+fprintf( '\n' );
 
 end

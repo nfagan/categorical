@@ -93,5 +93,6 @@ fprintf( '\n fcat:          %0.3f (ms) [%d]', c2 * 1e3, n_iters );
 fprintf( '\n fcat: (subs)   %0.3f (ms) [%d]', c3 * 1e3, n_iters );
 fprintf( '\n fcat: (assign) %0.3f (ms) [%d]', c4 * 1e3, n_iters );
 fprintf( '\n fcat: (assign) %0.3f (ms) [%d]', c5 * 1e3, n_iters );
+fprintf( '\n' );
 
 end

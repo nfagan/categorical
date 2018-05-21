@@ -25,5 +25,6 @@ c2 = toc;
 
 fprintf( '\n fcat:        %0.3f (ms) [%d]', c1 * 1e3, iters );
 fprintf( '\n fcat: (subs) %0.3f (ms) [%d]', c2 * 1e3, iters );
+fprintf( '\n' );
 
 end

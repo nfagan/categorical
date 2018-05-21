@@ -14,5 +14,6 @@ c2 = toc();
 
 fprintf( '\n fcat:          %0.3f (ms)', c1 * 1e3 );
 fprintf( '\n categorical:   %0.3f (ms)', c2 * 1e3 );
+fprintf( '\n' );
 
 end

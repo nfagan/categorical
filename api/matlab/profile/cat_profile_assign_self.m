@@ -38,6 +38,7 @@ fprintf( '\n fcat        (loop): %0.3f (ms)', c1 * 1e3 );
 fprintf( '\n categorical (loop): %0.3f (ms)', c2 * 1e3 );
 fprintf( '\n fcat        (subs): %0.3f (ms)', c3 * 1e3 );
 fprintf( '\n categorical (subs): %0.3f (ms)', c4 * 1e3 );
+fprintf( '\n' );
 
 
 end

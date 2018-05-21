@@ -38,5 +38,6 @@ c2 = toc;
 
 fprintf( '\n categorical (subscripts): %0.3f (ms)', c1 * 1e3 );
 fprintf( '\n fcat        (subscripts): %0.3f (ms)', c2 * 1e3 );
+fprintf( '\n' );
 
 end

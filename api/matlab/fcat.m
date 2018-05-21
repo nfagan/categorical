@@ -478,13 +478,13 @@ classdef fcat < handle
 
               index_or_colon = subs{2};
               is_colon_cat = strcmp( category_or_inds, ':' );
-              is_colon_idx = strcmp( index_or_colon, ':' );
+              is_colon_idx = all( strcmp(index_or_colon, ':') );
               
               if ( isnumeric(category_or_inds) || is_colon_cat )
                 %
-                % obj(1, 'test1') | obj(:, 'test1')
+                % obj(1, 'a') | obj(:, 'a') | obj(1, {'a', 'b'})
                 %
-                if ( ~is_colon_idx && ischar(index_or_colon) )
+                if ( ~is_colon_idx && ~isnumeric(index_or_colon) )
                   if ( is_colon_cat )
                     varargout{1} = fullcat( obj, index_or_colon );
                     return;
@@ -531,6 +531,8 @@ classdef fcat < handle
               [varargout{1:nargout()}] = func( inputs{:} );
               return;
             end
+            
+            error( 'Unrecognized property or method "%s".', subs );
           otherwise
             error( 'Referencing with "%s" is not supported.', type );
         end
@@ -1337,6 +1339,21 @@ classdef fcat < handle
       F = getcats( obj );
     end
     
+    function [d, f] = double(obj)
+      
+      %   DOUBLE -- Convert to Matlab double array.
+      %
+      %     See also fcat/categorical
+      %
+      %     OUT:
+      %       - `d` (double)
+      %       - `c` (cell array of strings)
+      
+      c = categorical( obj );
+      d = double( c ); 
+      f = categories( c );
+    end
+    
     function B = saveobj(obj)
       
       %   SAVEOBJ -- Convert object to struct in order to save.
@@ -1351,6 +1368,28 @@ classdef fcat < handle
   end
   
   methods (Access = private)
+    
+    function inds = checkedfind(obj, tf)
+      
+      %   CHECKEDFIND -- Find indices of logical vector, checking size.
+      %
+      %     inds = checkedfind(obj, [true, false]) returns 1, throwing an
+      %     error if `obj` is not of size 2xN.
+      %
+      %     IN:
+      %       - `tf` (logical)
+      %     OUT:
+      %       - `inds` (uint64)
+      
+      N = size( obj, 1 );
+      n = numel( tf );
+      
+      if ( N ~= n )
+        error( 'Logical index must have %d elements; %d were present.', N, n );
+      end
+      
+      inds = uint64( find(tf) );      
+    end
     
     function dispfull(obj, desktop_exists, link_str, sz_str)
       

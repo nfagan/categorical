@@ -58,5 +58,6 @@ c3 = toc;
 fprintf( '\n categorical     (direct): %0.3f (ms)', c1 * 1e3 );
 fprintf( '\n fcat   (direct, subsref): %0.3f (ms)', c2 * 1e3 );
 fprintf( '\n fcat  (direct, function): %0.3f (ms)', c3 * 1e3 );
+fprintf( '\n' );
 
 end
