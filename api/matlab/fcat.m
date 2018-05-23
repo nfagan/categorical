@@ -221,12 +221,42 @@ classdef fcat < handle
       
       %   COUNT -- Count the number of rows associated with labels.
       %
+      %     See also fcat/find, fcat/prune
+      %
       %     IN:
       %       - `labels` (char, cell array of strings)
       %     OUT:
       %       - `c` (uint64)
       
       c = cat_api( 'count', obj.id, labels );            
+    end
+    
+    function [c, C] = countrows(obj, categories)
+      
+      %   COUNTROWS -- Count rows identified by label combinations.
+      %
+      %     c = countrows( obj, {'cities', 'states'} ) returns the number
+      %     of rows identified by each combination of 'cities' and
+      %     'states'.
+      %
+      %     [ ..., C ] also returns the combinations `C` as a cell array of
+      %     strings. Each column `i` of `C` is associated with each `c(i)`.
+      %
+      %     See also fcat/keepeach, fcat/findall, fcat/count
+      %
+      %     IN:
+      %       - `categories` (cell array of strings, char)
+      %     OUT:
+      %       - `c` (uint64)
+      %       - `C` (cell array of strings)
+      
+      if ( nargout == 1 )
+        I = findall( obj, categories );
+      else
+        [I, C] = findall( obj, categories );
+      end
+      
+      c = cellfun( @numel, I );
     end
     
     function obj = resize(obj, to)
@@ -655,8 +685,8 @@ classdef fcat < handle
       %
       %     keep( obj, 1 ) retains the first row of `obj`.
       %     keep( obj, [1, 3] ) retains the first and third rows of `obj`.
-      %     keep( obj, [3, 1] ) also retains the first and third rows of 
-      %     `obj`; indices are sorted before use.
+      %     keep( obj, [3, 1] ) retains the third and first rows of `obj`,
+      %     in that order.
       %
       %     See also fcat/fcat, fcat/findall
       %
