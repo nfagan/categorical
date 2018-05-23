@@ -1283,6 +1283,52 @@ util::u32 util::categorical::keep(std::vector<util::u64>& at_indices, util::s64 
     return util::categorical_status::OK;
 }
 
+//  remove: Remove rows associated with any among labels.
+
+void util::categorical::remove(const std::vector<std::string>& labels)
+{
+    using util::u64;
+    using util::u32;
+    
+    u64 n_labs = labels.size();
+    u64 sz = size();
+    
+    if (sz == 0)
+    {
+        return;
+    }
+    
+    util::bit_array to_keep(sz, true);
+    
+    auto lab_it_end = m_label_ids.endk();
+    
+    for (u64 i = 0; i < n_labs; i++)
+    {
+        const std::string& lab = labels[i];
+        
+        auto lab_it = m_label_ids.find(lab);
+        
+        //  label doesn't exist
+        if (lab_it == lab_it_end)
+        {
+            continue;
+        }
+        
+        const u32 lab_id = lab_it->second;
+        const std::string& cat = m_in_category.at(lab);
+        const u64 cat_idx = m_category_indices.at(cat);
+        const std::vector<util::u32>& lab_col = m_labels[cat_idx];
+        
+        util::bit_array lab_idx = util::categorical::assign_bit_array(lab_col, lab_id);
+        
+        util::bit_array::unchecked_dot_and_not(to_keep, to_keep, lab_idx, 0, sz);
+    }
+    
+    std::vector<u64> keep_inds = util::bit_array::findv(to_keep);
+    
+    util::categorical::keep(keep_inds);
+}
+
 //  empty: Retain 0 rows, and prune missing labels.
 
 void util::categorical::empty()

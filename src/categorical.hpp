@@ -99,6 +99,7 @@ public:
     void remove_category(const std::string& category, bool* exists);
     
     util::u32 keep(std::vector<util::u64>& at_indices, util::s64 offset = 0);
+    void remove(const std::vector<std::string>& labels);
     
     void reserve(util::u64 rows);
     void repeat(util::u64 times);

@@ -576,16 +576,87 @@ classdef fcat < handle
     
     function obj = only(obj, labels)
       
-      %   ONLY -- Retain rows associated with labels.
+      %   ONLY -- Retain rows identified by label or label combination.
+      %
+      %     only( obj, 'a' ) retains rows identified by the label 'a'.
+      %     only( obj, {'a', 'b'} ) retains rows identified by the label
+      %     combination {'a', 'b'}. If 'a' and 'b' reside in the same
+      %     category, `obj` will have rows associated with 'a' OR 'b'. If
+      %     'a' and 'b' reside in different categories, `obj` will have
+      %     rows associated with 'a' AND 'b'.
+      %
+      %     EX //
+      %
+      %     f = fcat.create( 'a', {'a', 'b'}, 'c', {'c', 'd'} )
+      %     f1 = only( copy(f), {'a', 'b'} )
+      %     f2 = only( copy(f), {'a', 'd'} )
+      %     f3 = only( copy(f), {'a', 'c'} )
       %
       %     See also fcat/keep, fcat/find
+      %
+      %     IN:
+      %       - `labels` (cell array of strings, char)
       
       keep( obj, find(obj, labels) );
+    end
+    
+    function obj = onlynot(obj, labels)
+      
+      %   ONLYNOT -- Retain rows not identified by label or label combination.
+      %
+      %     onlynot( obj, 'a' ) removes rows identified by the label 'a'.
+      %     onlynot( obj, {'a', 'b'} ) removes rows identified by the label
+      %     combination {'a', 'b'}. If 'a' and 'b' reside in the same
+      %     category, `obj` will contain neither 'a' nor 'b'. If 'a' and
+      %     'b' reside in different categories, only rows identified by 'a'
+      %     AND 'b' will be removed.
+      %
+      %     EX //
+      %
+      %     f = fcat.create( 'a', {'a', 'a'}, 'c', {'c', 'd'} )
+      %     f1 = onlynot( copy(f), 'a' )
+      %     f2 = onlynot( copy(f), {'a', 'c'} )
+      %
+      %     See also fcat/only, fcat/keep, fcat/find
+      %
+      %     IN:
+      %       - `labels` (cell array of strings, char)
+      
+      to_rm = find( obj, labels );
+      to_keep = setdiff( 1:size(obj, 1), to_rm );
+      keep( obj, to_keep );
+    end
+    
+    function obj = remove(obj, labels)
+      
+      %   REMOVE -- Remove rows associated with any among labels.
+      %
+      %     remove( obj, 'a' ) removes rows identified by the label 'a'.
+      %     remove( obj, {'a', 'b'} ) removes rows identified by labels 'a'
+      %     OR 'b'.
+      %
+      %     EX //
+      %
+      %     f = fcat.create( 'a', {'a', 'b'}, 'c', {'c', 'd'} )
+      %     f1 = remove( copy(f), 'a' )
+      %     f2 = remove( copy(f), {'a', 'd'} )
+      %
+      %     See also fcat/keep, fcat/find, fcat/only, fcat/onlynot
+      %
+      %     IN:
+      %       - `labels` (cell array of strings, char)
+      
+      cat_api( 'remove', obj.id, labels );
     end
     
     function obj = keep(obj, indices)
       
       %   KEEP -- Retain rows at indices.
+      %
+      %     keep( obj, 1 ) retains the first row of `obj`.
+      %     keep( obj, [1, 3] ) retains the first and third rows of `obj`.
+      %     keep( obj, [3, 1] ) also retains the first and third rows of 
+      %     `obj`; indices are sorted before use.
       %
       %     See also fcat/fcat, fcat/findall
       %

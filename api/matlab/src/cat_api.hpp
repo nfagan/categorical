@@ -47,6 +47,7 @@ namespace util {
     MEXFUNC(one);
     MEXFUNC(empty);
     
+    MEXFUNC(remove_labels);
     MEXFUNC(keep_each);
     MEXFUNC(keep_eachc);
     MEXFUNC(keep);
