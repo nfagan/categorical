@@ -1105,6 +1105,14 @@ classdef fcat < handle
     function obj = one(obj)
       
       %   ONE -- Collapse all categories, and retain a single row.
+      %
+      %     one( obj ) reduces `obj` to a 1xN fcat with N categories. Each
+      %     category with more than one label is collapsed to a single
+      %     label.
+      %
+      %     If `obj` is of size 0xN, this function has no effect.
+      %
+      %     See also fcat/keepeach, fcat/none, fcat/fcat
       
       cat_api( 'one', obj.id );
     end
@@ -1115,6 +1123,8 @@ classdef fcat < handle
       %
       %     none( obj ) keeps 0 rows of `obj`, but does not remove labels
       %     from `obj`, and is equivalent to keep( obj, [] ).
+      %
+      %     See also fcat/one, fcat/fcat
       
       keep( obj, [] );
     end
