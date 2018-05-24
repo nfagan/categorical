@@ -133,7 +133,7 @@ public:
     util::u32 require_category(const std::string& category);
     
     util::u32 replace_labels(const std::string& from, const std::string& with);
-    util::u32 replace_labels(const std::vector<std::string>& from, const std::string& with);
+    util::u32 replace_labels(const std::vector<std::string>& from, const std::string& with, bool test_scalar = true);
     
     util::u64 size() const;
     util::u64 count(const std::string& lab) const;

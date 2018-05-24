@@ -1138,13 +1138,47 @@ bool util::categorical::categories_match(const util::categorical &other) const
 
 util::u32 util::categorical::replace_labels(const std::string& from, const std::string& with)
 {
-    std::vector<std::string> input = { from };
-    return replace_labels(input, with);
+    auto from_it = m_label_ids.find(from);
+    auto with_it = m_label_ids.find(with);
+    auto end_it = m_label_ids.endk();
+    
+    //  to-replace label does not exist
+    if (from_it == end_it)
+    {
+        return util::categorical_status::OK;
+    }
+    
+    //  replace-with label *does* exist, so have to
+    //  merge some labels with the full replace_labels routine
+    if (with_it != end_it)
+    {
+        std::vector<std::string> input = { from };
+        bool test_scalar = false;
+        return replace_labels(input, with, test_scalar);
+    }
+    
+    const std::string c_incat = m_in_category.at(from);
+    
+    //  test whether we're trying to replace a label with the
+    //  collapsed expression for the wrong category
+    if (m_collapsed_expressions.count(with) > 0 && with != get_collapsed_expression(c_incat))
+    {
+        return util::categorical_status::COLLAPSED_EXPRESSION_IN_WRONG_CATEGORY;
+    }
+    
+    //  otherwise, just change from -> with
+    m_label_ids.insert(with, from_it->second);
+    
+    m_in_category.erase(from);
+    m_in_category[with] = c_incat;
+    
+    return util::categorical_status::OK;
 }
 
 //  replace_labels: Replace labels with single label.
 
-util::u32 util::categorical::replace_labels(const std::vector<std::string>& from, const std::string& with)
+util::u32 util::categorical::replace_labels(const std::vector<std::string>& from, const std::string& with,
+                                            bool test_scalar)
 {
     using util::u64;
     
@@ -1153,6 +1187,10 @@ util::u32 util::categorical::replace_labels(const std::vector<std::string>& from
     if (n_from == 0)
     {
         return util::categorical_status::OK;
+    }
+    else if (test_scalar && n_from == 1)
+    {
+        return replace_labels(from[0], with);
     }
     
     bool found_cat = false;
