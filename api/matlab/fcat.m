@@ -1935,6 +1935,28 @@ classdef fcat < handle
       end
     end
     
+    function f = example(varargin)
+      
+      %   EXAMPLE -- Get example fcat object.
+      %
+      %     fcat.example() loads and returns a small fcat object.
+      %     fcat.example( 'small' ) does the same.
+      %     fcat.example( 'large' ) loads and returns a large fcat object.
+      %
+      %     See also fcat/test, fcat/from, fcat/with
+      %
+      %     IN:
+      %       - `kind` (char) |OPTIONAL|
+      %     OUT:
+      %       - `f` (fcat)
+      
+      try
+        f = cat_getexample( varargin{:} );
+      catch err
+        throwAsCaller( err );
+      end
+    end
+    
     function test()
       
       %   TEST -- Run all tests.
