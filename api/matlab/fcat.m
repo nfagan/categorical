@@ -1787,11 +1787,18 @@ classdef fcat < handle
       
       %   FROM -- Create fcat from compatible source.
       %
-      %     C = fcat.from( c, cats ) creates an fcat object
-      %     from the Matlab categorical array or cell array of strings
-      %     `c` and `cats`. `c` is an MxN categorical array or cell array
-      %     of strings whose columns correspond to the categories in 
-      %     `cats`.
+      %     f = fcat.from( c ) constructs an fcat object from the cell
+      %     matrix of strings or categorical matrix `c`. Entries of `c`
+      %     must be unique across columns. For categorical matrices, no
+      %     elements can be <undefined>. Category names are chosen
+      %     automatically using the pattern 'cat%d', where %d is the i-th
+      %     column index of `c`.
+      %
+      %     f = fcat.from( c, cats ) uses the cell array of category names
+      %     `cats` to identify columns of `c`.
+      %
+      %     C = fcat.from( sp ) creates an fcat object from the
+      %     SparseLabels object `sp`.
       %
       %     See also fcat/fcat
       %
@@ -1970,6 +1977,8 @@ classdef fcat < handle
     function test()
       
       %   TEST -- Run all tests.
+      %
+      %     See also fcat/build, fcat/fcat
       
       cat_testall();      
     end
