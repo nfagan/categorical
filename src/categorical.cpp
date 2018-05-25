@@ -354,6 +354,11 @@ util::u32 util::categorical::rename_category(const std::string &from, const std:
         return util::categorical_status::CATEGORY_DOES_NOT_EXIST;
     }
     
+    if (from == to)
+    {
+        return util::categorical_status::OK;
+    }
+    
     if (has_category(to))
     {
         return util::categorical_status::CATEGORY_EXISTS;
@@ -378,6 +383,8 @@ util::u32 util::categorical::rename_category(const std::string &from, const std:
     util::u64 cat_idx = m_category_indices.at(from);
     m_category_indices.erase(from);
     m_category_indices[to] = cat_idx;
+    
+    m_progenitor_ids.randomize();
     
     return util::categorical_status::OK;
 }
