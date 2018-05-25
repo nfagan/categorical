@@ -31,6 +31,7 @@ namespace util {
     void assert_isa(const mxArray *arr, unsigned int class_id, const char* id, const char* msg);
     
     std::string get_error_text_missing_category(const std::string& in_category);
+    std::string get_error_text_present_category(const std::string& in_category);
     std::string get_error_text_label_exists();
 }
 

@@ -51,7 +51,8 @@ namespace util {
         static constexpr uint32_t REPLACE = 44u;
         static constexpr uint32_t MERGE = 45u;
         static constexpr uint32_t REMOVE_LABELS = 46u;
+        static constexpr uint32_t RENAME_CATEGORY = 47u;
         //
-        static constexpr uint32_t N_OPS = 47u;
+        static constexpr uint32_t N_OPS = 48u;
     }
 }

@@ -1054,6 +1054,27 @@ classdef fcat < handle
       cat_api( 'rm_cat', obj.id, category );
     end
     
+    function obj = renamecat(obj, from, to)
+      
+      %   RENAMECAT -- Rename category.
+      %
+      %     renamecat( obj, 'cities', 'city' ) renames the category
+      %     'cities' to 'city'.
+      %
+      %     The to-be-renamed category must exist; the incoming category
+      %     must not exist. Additionally, if the collapsed expression for 
+      %     the incoming category is a present label, then it must reside 
+      %     in the to-be-renamed category.
+      %
+      %     See also fcat/addcat, fcat/fcat, fcat/collapsecat
+      %
+      %     IN:
+      %       - `from` (char)
+      %       - `to` (char)
+      
+      cat_api( 'rename_cat', obj.id, from, to );
+    end
+    
     function obj = collapsecat(obj, category)
       
       %   COLLAPSECAT -- Collapse category to single label.
@@ -1210,6 +1231,8 @@ classdef fcat < handle
       %
       %     replace( obj, {'lab1', 'lab2'}, 'lab3' ); works as above, but
       %     for multiple labels.
+      %
+      %     See also fcat/fillcat, fcat/renamecat
       %
       %     IN:
       %       - `from` (cell array of strings, char)

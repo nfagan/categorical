@@ -345,6 +345,43 @@ void util::categorical::unchecked_add_category(const std::string& category,
     }
 }
 
+//  rename_category: Replace old category name with new category name.
+
+util::u32 util::categorical::rename_category(const std::string &from, const std::string &to)
+{
+    if (!has_category(from))
+    {
+        return util::categorical_status::CATEGORY_DOES_NOT_EXIST;
+    }
+    
+    if (has_category(to))
+    {
+        return util::categorical_status::CATEGORY_EXISTS;
+    }
+    
+    const std::string clpsed = get_collapsed_expression(to);
+    
+    if (has_label(clpsed) && m_in_category.at(clpsed) != from)
+    {
+        return util::categorical_status::COLLAPSED_EXPRESSION_IN_WRONG_CATEGORY;
+    }
+    
+    std::vector<std::string> labs = in_category(from);
+    
+    for (const auto& lab : labs)
+    {
+        const util::u32 lab_id = m_label_ids.at(lab);
+        m_label_ids.insert(lab, lab_id);
+        m_in_category[lab] = to;
+    }
+    
+    util::u64 cat_idx = m_category_indices.at(from);
+    m_category_indices.erase(from);
+    m_category_indices[to] = cat_idx;
+    
+    return util::categorical_status::OK;
+}
+
 //  unchecked_insert_label [private]: Internally add label and id to array.
 
 void util::categorical::unchecked_insert_label(const std::string& lab,

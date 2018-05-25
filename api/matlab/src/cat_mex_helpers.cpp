@@ -6,6 +6,12 @@ std::string util::get_error_text_missing_category(const std::string& category)
     return msg;
 }
 
+std::string util::get_error_text_present_category(const std::string& category)
+{
+    std::string msg = "The category '" + category + "' already exists.";
+    return msg;
+}
+
 std::string util::get_error_text_label_exists()
 {
     return "A given label already exists in another category.";
