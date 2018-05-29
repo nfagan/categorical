@@ -882,7 +882,7 @@ classdef fcat < handle
       
       %   GETLABS -- Get label names.
       %
-      %     See also fcat/getcats
+      %     See also fcat/getcats, fcat/fcat
       %
       %     OUT:
       %       - `L` (cell array of strings)
@@ -894,6 +894,8 @@ classdef fcat < handle
       
       %   GETID -- Get unique instance id.
       %
+      %     See also fcat/getlabs
+      %
       %     OUT:
       %       - `id` (uint64)
       
@@ -903,6 +905,8 @@ classdef fcat < handle
     function tf = haslab(obj, labels)
       
       %   HASLAB -- True if the label(s) exists.
+      %
+      %     See also fcat/hascat, fcat/fcat
       %
       %     IN:
       %       - `labels` (char, cell array of strings)
@@ -915,6 +919,8 @@ classdef fcat < handle
     function tf = hascat(obj, categories)
       
       %   HASLAB -- True if the category(ies) exists.
+      %
+      %     See also fcat/haslab, fcat/fcat
       %
       %     IN:
       %       - `categories` (char, cell array of strings)
@@ -945,6 +951,8 @@ classdef fcat < handle
     function C = partcat(obj, categories, indices)
       
       %   PARTCAT -- Get part of a category or categories.
+      %
+      %     See also fcat/fullcat, fcat/fcat
       %
       %     IN:
       %       - `categories` (char)
