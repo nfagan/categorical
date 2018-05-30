@@ -2061,5 +2061,45 @@ classdef fcat < handle
       
       conf = cat_buildconfig();      
     end
+    
+    function strs = joindim(C, dim, pattern)
+      
+      %   JOINDIM -- Join array of strings, across dimension.
+      %
+      %     strs = ... joindim( C ) produces a 1xN cell array of strings
+      %     `strs`, whose elements are the elements of `C` joined along
+      %     columns.
+      %
+      %     strs = ... joindim( ..., DIM ) operates along dimension `DIM`.
+      %
+      %     strs = ... joindim( ..., PATTERN ) uses `PATTERN` to join
+      %     elements of `C`.
+      %
+      %     See also fcat/combs
+      %
+      %     IN:
+      %       - `C` (cell array of strings)
+      %       - `dim` (double)
+      %       - `pattern` (char) |OPTIONAL|
+      
+      if ( nargin < 3 ), pattern = '_'; end
+      if ( nargin < 2 ), dim = 2; end
+      
+      N = size( C, dim );
+      n = ndims( C );
+      
+      indices = repmat( {':'}, 1, n );
+      
+      sizes = ones( 1, n );
+      sizes( dim ) = N;
+      
+      strs = cell( sizes );
+      
+      for i = 1:N
+        indices{dim} = i;
+        joined = strjoin( C(indices{:}), pattern );
+        strs(indices{:}) = { joined };
+      end      
+    end
   end
 end
