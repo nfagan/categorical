@@ -2023,6 +2023,15 @@ classdef fcat < handle
       cat_buildall();      
     end
     
+    function addpath()
+      
+      %   ADDPATH -- Add all dependencies to Matlab search path.
+      %
+      %     See also fcat/apiroot
+      
+      addpath( genpath(fcat.apiroot()) );
+    end
+    
     function r = apiroot()
       
       %   APIROOT -- Get the path to the fcat Matlab api directory.

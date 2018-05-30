@@ -843,6 +843,10 @@ util::u32 util::categorical::set_category(const std::string &category,
         {
             is_scalar = true;
         }
+        else if (n_indices == 0)
+        {
+            return util::categorical_status::OK;
+        }
         else
         {
             return util::categorical_status::WRONG_INDEX_SIZE;
