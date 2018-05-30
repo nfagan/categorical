@@ -604,7 +604,7 @@ classdef fcat < handle
       tf(indices) = true;
     end
     
-    function obj = only(obj, labels)
+    function [obj, I] = only(obj, labels)
       
       %   ONLY -- Retain rows identified by label or label combination.
       %
@@ -614,6 +614,9 @@ classdef fcat < handle
       %     category, `obj` will have rows associated with 'a' OR 'b'. If
       %     'a' and 'b' reside in different categories, `obj` will have
       %     rows associated with 'a' AND 'b'.
+      %
+      %     [..., I] = only(obj, ...) also returns `I`, the uint64 indices 
+      %     used to select rows of `obj`.
       %
       %     EX //
       %
@@ -626,8 +629,12 @@ classdef fcat < handle
       %
       %     IN:
       %       - `labels` (cell array of strings, char)
+      %     OUT:
+      %       - `obj` (fcat)
+      %       - `I` (uint64)
       
-      keep( obj, find(obj, labels) );
+      I = find( obj, labels );
+      keep( obj, I );
     end
     
     function obj = onlynot(obj, labels)
