@@ -649,7 +649,7 @@ classdef fcat < handle
       %     AND 'b' will be removed.
       %
       %     [..., I] = onlynot(obj, ...) also returns `I`, the uint64 
-      %     indices of the rows of `obj` that were kept. 
+      %     indices of the rows of `obj` that were kept.
       %
       %     Use `setdiff( 1:rows(obj), I )` to get the indices of the
       %     rows of `obj` that were removed.
@@ -673,13 +673,19 @@ classdef fcat < handle
       keep( obj, to_keep );
     end
     
-    function obj = remove(obj, labels)
+    function [obj, I] = remove(obj, labels)
       
       %   REMOVE -- Remove rows associated with any among labels.
       %
       %     remove( obj, 'a' ) removes rows identified by the label 'a'.
       %     remove( obj, {'a', 'b'} ) removes rows identified by labels 'a'
       %     OR 'b'.
+      %
+      %     [..., I] = remove(obj, ...) also returns `I`, the uint64 
+      %     indices of the rows of `obj` that were kept.
+      %
+      %     Use `setdiff( 1:rows(obj), I )` to get the indices of the
+      %     rows of `obj` that were removed.
       %
       %     EX //
       %
@@ -691,8 +697,11 @@ classdef fcat < handle
       %
       %     IN:
       %       - `labels` (cell array of strings, char)
+      %     OUT:
+      %       - `obj` (fcat)
+      %       - `I` (uint64)
       
-      cat_api( 'remove', obj.id, labels );
+      I = cat_api( 'remove', obj.id, labels );
     end
     
     function obj = keep(obj, indices)

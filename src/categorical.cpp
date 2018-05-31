@@ -1371,18 +1371,13 @@ util::u32 util::categorical::keep(std::vector<util::u64>& at_indices, util::s64 
 
 //  remove: Remove rows associated with any among labels.
 
-void util::categorical::remove(const std::vector<std::string>& labels)
+std::vector<util::u64> util::categorical::remove(const std::vector<std::string>& labels)
 {
     using util::u64;
     using util::u32;
     
     u64 n_labs = labels.size();
     u64 sz = size();
-    
-    if (sz == 0)
-    {
-        return;
-    }
     
     util::bit_array to_keep(sz, true);
     
@@ -1413,6 +1408,8 @@ void util::categorical::remove(const std::vector<std::string>& labels)
     std::vector<u64> keep_inds = util::bit_array::findv(to_keep);
     
     util::categorical::keep(keep_inds);
+    
+    return keep_inds;
 }
 
 //  empty: Retain 0 rows, and prune missing labels.
