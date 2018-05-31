@@ -637,7 +637,7 @@ classdef fcat < handle
       keep( obj, I );
     end
     
-    function obj = onlynot(obj, labels)
+    function [obj, to_keep] = onlynot(obj, labels)
       
       %   ONLYNOT -- Retain rows not identified by label or label combination.
       %
@@ -647,6 +647,12 @@ classdef fcat < handle
       %     category, `obj` will contain neither 'a' nor 'b'. If 'a' and
       %     'b' reside in different categories, only rows identified by 'a'
       %     AND 'b' will be removed.
+      %
+      %     [..., I] = onlynot(obj, ...) also returns `I`, the uint64 
+      %     indices of the rows of `obj` that were kept. 
+      %
+      %     Use `setdiff( 1:rows(obj), I )` to get the indices of the
+      %     rows of `obj` that were removed.
       %
       %     EX //
       %
@@ -658,6 +664,9 @@ classdef fcat < handle
       %
       %     IN:
       %       - `labels` (cell array of strings, char)
+      %     OUT:
+      %       - `obj` (fcat)
+      %       - `I` (uint64)
       
       to_rm = find( obj, labels );
       to_keep = setdiff( 1:size(obj, 1), to_rm );
