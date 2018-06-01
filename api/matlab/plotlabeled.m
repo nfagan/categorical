@@ -117,10 +117,7 @@ classdef plotlabeled < handle
         summary_mat(:) = NaN;
         errors_mat(:) = NaN;
         
-        if ( obj.add_legend && (~obj.one_legend || i == 1))
-          legend( h, opts.g_labs );
-        end
-        
+        conditional_add_legend( obj, h, opts.g_labs, i == 1 );
         title( opts.p_labs(i, :) );
         
         axs(i) = ax;
@@ -174,15 +171,139 @@ classdef plotlabeled < handle
       
       axs = groupplot( obj, 'errorbar', data, xcat, groups, panels );
     end
+    
+    function [axs, identifiers] = scatter(obj, X, Y, labels, groups, panels)
+      
+      %   SCATTER -- Create grouped scatter plots for subsets of data.
+      %
+      %     scatter( pl, X, Y, labels, groups, panels ) scatters subsets of
+      %     data `X` and `Y`, grouping points for each label or label
+      %     combination in `groups`, separately for each `panels`.
+      %     Combinations are identified by the fcat object `labels`.
+      %
+      %     `X` and `Y` must be column vectors of the same size; `labels`
+      %     must be an fcat object with the same number of rows as `X` and
+      %     `Y`.
+      %
+      %     axs = scatter(...) returns an array of axes handles `axs`.
+      %
+      %     [..., ids] = scatter(...) also returns `ids`, a struct array
+      %     containing information about the plotted subsets. Each element
+      %     of `ids` has fields 'index', 'selectors', and 'axes'. 'index'
+      %     is the array of uint64 indices used to select rows of `X` and
+      %     `Y`. 'selectors' is the cell array of string labels that
+      %     generated that index. 'axes' is a handle to the axis in which 
+      %     the subsets of `X` and `Y` are scattered.
+      %
+      %     See also plotlabeled/lines, plotlabeled/bar
+      %
+      %     IN:
+      %       - `X` (/T/)
+      %       - `Y` (/T/)
+      %       - `labels` (fcat)
+      %       - `groups` (cell array of strings, char)
+      %       - `panels` (cell array of strings, char)
+      %     OUT:
+      %       - `axs` (axes)
+      %       - `ids` (array of struct)
+      
+      validate_scatter( obj, X, Y, labels );
+      
+      summarize = false;
+      opts = matplotopts( obj, labels, {}, groups, panels, summarize );
+      
+      n_subplots = opts.n_subplots;
+      c_shape = opts.c_shape;
+      
+      g_combs = opts.g_combs;
+      p_combs = opts.p_combs;
+      
+      g_labs = opts.g_labs;
+      p_labs = opts.p_labs;
+      
+      axs = gobjects( 1, n_subplots );
+      figure( opts.f );
+      
+      n_groups = double( size(g_combs, 1) );
+      colors = obj.color_func( n_groups );
+      
+      identifiers = struct( 'axes', {}, 'index', {}, 'selectors', {} );
+      stp = 1;
+      
+      for i = 1:n_subplots
+        ax = subplot( c_shape(1), c_shape(2), i );
+        set( ax, 'nextplot', 'add' );
+        
+        p_ind = find( labels, p_combs(i, :) );
+        
+        h = gobjects(1, n_groups);
+        
+        for j = 1:n_groups
+          g_ind = intersect( p_ind, find(labels, g_combs(j, :)) );
+          color = repmat( colors(j, :), numel(g_ind), 1 );
+          h(j) = scatter( ax, X(g_ind), Y(g_ind), obj.marker_size, color );
+          
+          %   only add identifiers if requested
+          if ( nargout > 1 )
+            identifiers(stp) = struct( ...
+                'axes', ax ...
+              , 'index', g_ind ...
+              , 'selectors', { [g_combs(j, :), p_combs(i, :)] } ...
+              );
+            stp = stp + 1;
+          end
+        end
+        
+        conditional_add_legend( obj, h, g_labs, i == 1 );
+        title( ax, p_labs(i, :) );
+        axs(i) = ax;
+      end
+      
+      set_lims( obj, axs, 'ylim', get_ylims(obj, axs) );
+    end
   end
   
   methods (Access = private)
     
-    function opts = matplotopts(obj, data, xcats, groups, panels)
+    function conditional_add_legend(obj, handles, g_labs, first_loop)
+      
+      %   CONDITIONAL_ADD_LEGEND -- Internal utility to add legend if
+      %     requested.
+      
+      if ( obj.add_legend && (~obj.one_legend || first_loop) )
+        legend( handles, g_labs );
+      end
+    end
+    
+    function validate_scatter(obj, X, Y, labels)
+      
+      %   VALIDATE_SCATTER -- Internal utility to validate scatter plot
+      %     input.
+      
+      try
+        plotlabeled.assert_isa( labels, 'fcat', 'data labels' );
+
+        dim_msg = ['X and Y data must be column vectors with the same number' ...
+          , ' of rows as labels.'];
+
+        assert( isvector(X) && isvector(Y) && size(labels, 1) == numel(X) && ...
+          isequal(size(X), size(Y)) && size(X, 2) == 1, dim_msg );
+      catch err
+        throwAsCaller( err );
+      end
+    end
+    
+    function opts = matplotopts(obj, data, xcats, groups, panels, summarize)
       
       %   MATPLOTOPTS -- Internal utility to obtain data subsets.
       
-      plotlabeled.assert_isa( data, 'labeled', 'plotted data' );
+      if ( nargin < 6 )
+        summarize = true;
+        plotlabeled.assert_isa( data, 'labeled', 'plotted data' );
+      else
+        plotlabeled.assert_isa( data, 'fcat', 'data labels' );
+      end
+      
       plotlabeled.assert_isa( obj, 'plotlabeled', 'plot object' );
       
       data = prune( copy(data) );
@@ -194,15 +315,22 @@ classdef plotlabeled < handle
       
       specificity = [ xcats, groups, panels ];
       
-      [summary, I, C] = each( copy(data), specificity, obj.summary_func );
-      errors = each( copy(data), specificity, obj.error_func );
-      
-      summary_data = summary.data;
-      errors_data = errors.data;
-      
-      if ( ~isequal(size(summary_data), size(errors_data)) )
-        error( ['The output of the summary function and error function' ...
-          , ' must produce data of the same size.'] );
+      if ( summarize )
+        [summary, I, C] = each( copy(data), specificity, obj.summary_func );
+        errors = each( copy(data), specificity, obj.error_func );
+
+        summary_data = summary.data;
+        errors_data = errors.data;
+
+        if ( ~isequal(size(summary_data), size(errors_data)) )
+          error( ['The output of the summary function and error function' ...
+            , ' must produce data of the same size.'] );
+        end
+      else
+        [I, C] = findall( data, specificity );
+        
+        summary_data = [];
+        errors_data = [];
       end
       
       C = C';
@@ -335,9 +463,7 @@ classdef plotlabeled < handle
         summary_mat(:) = NaN;
         errors_mat(:) = NaN;
         
-        if ( obj.add_legend && (~obj.one_legend || i == 1))
-          legend( h, g_labs );
-        end
+        conditional_add_legend( obj, h, g_labs, i == 1 );
         
         n_ticks = size( summary_mat, 1 );
         

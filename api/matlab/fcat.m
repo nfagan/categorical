@@ -128,6 +128,21 @@ classdef fcat < handle
       tf = numel( obj ) == 0;      
     end
     
+    function l = length(obj)
+      
+      %   LENGTH -- Number of rows in the object.
+      %
+      %     l = length(obj) returns the number of rows in `obj`, and is
+      %     equivalent to `size(obj, 1)`.
+      %
+      %     See also fcat/size
+      %
+      %     OUT:
+      %       - `l` (uint64)
+      
+      l = size( obj, 1 );
+    end
+    
     function sz = size(obj, dim)
       
       %   SIZE -- Get the number of rows in the object.
@@ -262,6 +277,13 @@ classdef fcat < handle
     function obj = resize(obj, to)
       
       %   RESIZE -- Expand or contract object.
+      %
+      %     resize( obj, 100 ) expands or contracts `obj` to contain 100
+      %     rows. If `obj` originally had fewer than 100 rows, additional
+      %     rows will contain the collapsed expression for each category.
+      %     If `obj` originally had more than 100 rows, it will now contain
+      %     the first 100 rows. If `obj` has no categories, resizing has no
+      %     effect.
       %
       %     See also fcat/size
       %
@@ -857,17 +879,25 @@ classdef fcat < handle
       
       %   FIND -- Get indices associated with labels.
       %
-      %     Within a category, indices are calculated via an `or` operation.
-      %     Across categories, indices are calculated via an `and` operation.
+      %     I = find( obj, 'a' ) returns indices of rows identified by the 
+      %     label 'a'.
       %
-      %     E.g., if `obj` is a fcat with labels '0' and '1' in 
-      %     category '0', then find( obj, {'0', '1'} ) returns rows 
-      %     associated with '0' OR '1'.
+      %     I = find( obj, {'a', 'b'} ) returns indices of rows identified 
+      %     by the label combination {'a', 'b'}. If 'a' and 'b' reside in 
+      %     the same category, `I` will index rows associated with 'a' OR 
+      %     'b'. If 'a' and 'b' reside in different categories, `I` will 
+      %     index rows associated with 'a' AND 'b'.
       %
-      %     But if `obj` is a fcat with labels '0' and '1' in 
-      %     categories '0' and '1', respectively, then 
-      %     find( obj, {'0', '1'} ) returns the subset of rows associated 
-      %     with '0' AND '1'.
+      %     Formally, within a category, indices are calculated via an 
+      %     `or` operation; across categories, indices are calculated via 
+      %     an `and` operation.
+      %
+      %     EX //
+      %
+      %     f = fcat.create( 'a', {'a', 'b'}, 'c', {'c', 'd'} )
+      %     find( f, {'a', 'b'} )
+      %     find( f, {'a', 'd'} )
+      %     find( f, {'a', 'c'} )
       %
       %     See also fcat/getlabs, fcat/getcats
       %
