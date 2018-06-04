@@ -12,6 +12,7 @@ classdef plotlabeled < handle
     add_errors = true;
     add_smoothing = false;
     add_points = false;
+    plot_empties = true;
     points_are = {};
     points_color_map = [];
     x_tick_rotation = 60;
@@ -189,11 +190,25 @@ classdef plotlabeled < handle
       %
       %     [..., ids] = scatter(...) also returns `ids`, a struct array
       %     containing information about the plotted subsets. Each element
-      %     of `ids` has fields 'index', 'selectors', and 'axes'. 'index'
-      %     is the array of uint64 indices used to select rows of `X` and
-      %     `Y`. 'selectors' is the cell array of string labels that
-      %     generated that index. 'axes' is a handle to the axis in which 
-      %     the subsets of `X` and `Y` are scattered.
+      %     of `ids` has fields 'index', 'selectors', 'axes', and 'series'.
+      %     'index' is the array of uint64 indices used to select rows of 
+      %     `X` and `Y`. 'selectors' is the cell array of string labels 
+      %     that generated that index. 'axes' is a handle to the axis in 
+      %     which the subsets of `X` and `Y` are scattered. 'series' is a
+      %     handle to the scatter plotted data series.
+      %
+      %     EX //
+      %
+      %     pl = plotlabeled()
+      %
+      %     X = rand( 1000, 1 );
+      %     Y = rand( 1000, 1 ) * 10;
+      %
+      %     f = fcat.example();
+      %     ind = randperm( length(f), 1000 );
+      %     keep( f, ind )
+      %
+      %     pl.scatter( X, Y, f, 'dose', 'monkey' )
       %
       %     See also plotlabeled/lines, plotlabeled/bar
       %
@@ -210,7 +225,12 @@ classdef plotlabeled < handle
       validate_scatter( obj, X, Y, labels );
       
       summarize = false;
-      opts = matplotopts( obj, labels, {}, groups, panels, summarize );
+      
+      try
+        opts = matplotopts( obj, labels, {}, groups, panels, summarize );
+      catch err
+        throwAsCaller( err );
+      end
       
       n_subplots = opts.n_subplots;
       c_shape = opts.c_shape;
@@ -227,7 +247,9 @@ classdef plotlabeled < handle
       n_groups = double( size(g_combs, 1) );
       colors = obj.color_func( n_groups );
       
-      identifiers = struct( 'axes', {}, 'index', {}, 'selectors', {} );
+      non_empties = true( size(g_labs) );
+      
+      identifiers = get_identifiers();
       stp = 1;
       
       for i = 1:n_subplots
@@ -237,16 +259,26 @@ classdef plotlabeled < handle
         p_ind = find( labels, p_combs(i, :) );
         
         h = gobjects(1, n_groups);
+        non_empties(:) = true;
         
         for j = 1:n_groups
           g_ind = intersect( p_ind, find(labels, g_combs(j, :)) );
+          
+          %   don't include empties
+          if ( isempty(g_ind) && ~obj.plot_empties )
+            non_empties(j) = false;
+            continue;
+          end
+          
           color = repmat( colors(j, :), numel(g_ind), 1 );
+          
           h(j) = scatter( ax, X(g_ind), Y(g_ind), obj.marker_size, color );
           
           %   only add identifiers if requested
           if ( nargout > 1 )
             identifiers(stp) = struct( ...
                 'axes', ax ...
+              , 'series', h(j) ...
               , 'index', g_ind ...
               , 'selectors', { [g_combs(j, :), p_combs(i, :)] } ...
               );
@@ -254,12 +286,16 @@ classdef plotlabeled < handle
           end
         end
         
-        conditional_add_legend( obj, h, g_labs, i == 1 );
+        conditional_add_legend( obj, h(non_empties), g_labs(non_empties), i == 1 );
         title( ax, p_labs(i, :) );
         axs(i) = ax;
       end
       
       set_lims( obj, axs, 'ylim', get_ylims(obj, axs) );
+      
+      function s = get_identifiers()
+        s = struct( 'axes', {}, 'series', {}, 'index', {}, 'selectors', {} );
+      end
     end
   end
   
@@ -314,6 +350,9 @@ classdef plotlabeled < handle
       [xcats, groups, panels] = plotlabeled.uniques( xcats, groups, panels );
       
       specificity = [ xcats, groups, panels ];
+      
+      %   ensure all categories exist.
+      validate_categories( data, specificity );
       
       if ( summarize )
         [summary, I, C] = each( copy(data), specificity, obj.summary_func );
@@ -388,6 +427,17 @@ classdef plotlabeled < handle
       opts.c_shape = c_shape;
       opts.n_subplots = n_subplots;
       opts.f = f;
+      
+      function validate_categories(obj, spec)
+        % 
+        %   Ensure categories exist
+        %
+        cats_exist = hascat( obj, spec );
+        if ( ~all(cats_exist) )
+          missing = strjoin( spec(~cats_exist), ' | ' );
+          error( 'The following categories do not exist: \n\n%s', missing );
+        end       
+      end
     end
     
     function axs = groupplot(obj, func_name, data, xcats, groups, panels)

@@ -1886,6 +1886,10 @@ classdef fcat < handle
       %     C = fcat.from( sp ) creates an fcat object from the
       %     SparseLabels object `sp`.
       %
+      %     EX //
+      %
+      %     f = fcat.from({'NY', 'NYC'; 'CA', 'LA'}, {'State', 'City'})
+      %
       %     See also fcat/fcat
       %
       %     IN:
