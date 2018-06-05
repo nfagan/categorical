@@ -1345,7 +1345,7 @@ classdef fcat < handle
     
     function obj = merge(obj, varargin)
       
-      %   MERGE -- Merge other's contents.
+      %   MERGE -- Merge other's contents, overwriting present categories.
       %
       %     merge( A, B ) merges the contents of B into A. Categories
       %     of B not present in A are inserted into A; categories
@@ -1357,12 +1357,14 @@ classdef fcat < handle
       %     above. Categories shared between B, C ... are set to the 
       %     contents of the right-most argument.
       %
+      %     EX //
+      %
       %     A = fcat.create( 'date', datestr(now) );
       %     B = fcat.create( 'city', 'New York' );
       %     repmat( A, 10 );
       %     merge( A, B )
       %
-      %     See also fcat/assign, fcat/setcat, fcat/fcat
+      %     See also fcat/mergenew, fcat/assign, fcat/setcat, fcat/fcat
       %
       %     IN:
       %       - `B` (fcat)
@@ -1382,6 +1384,52 @@ classdef fcat < handle
       
       for i = 1:N
         cat_api( 'merge', obj.id, varargin{i}.id );
+      end
+    end
+    
+    function obj = mergenew(obj, varargin)
+      
+      %   MERGENEW -- Merge other's contents, preserving present categories.
+      %
+      %     mergenew( A, B ) merges into A categories of B not present in
+      %     A. B must have the same number of rows of A, or else have a 
+      %     single row, in which case B is implicitly expanded to match the
+      %     size of A.
+      %
+      %     mergenew( A, B ) is equivalent to merge( A, B ) when A and B
+      %     have no shared categories.
+      %
+      %     mergenew( A, B, C ... ) merges the contents of B, C ... into A, 
+      %     as above.
+      %
+      %     EX //
+      %
+      %     A = fcat.create( 'date', datestr(now), 'city', 'Buffalo' );
+      %     B = fcat.create( 'city', 'New York', 'state', 'NY' );
+      %     repmat( A, 10 );
+      %     C = mergenew( copy(A), B )
+      %     D = merge( copy(A), B )
+      %
+      %     See also fcat/merge, fcat/assign, fcat/setcat, fcat/fcat
+      %
+      %     IN:
+      %       - `B` (fcat)
+      
+      if ( ~isa(obj, 'fcat') )
+        error( 'Cannot merge objects of class "%s".', class(obj) );
+      end
+      
+      try
+        cellfun( @(x) assert(isa(x, 'fcat'), ['Cannot merge objects of' ...
+          , ' class "%s".'], class(x)), varargin );
+      catch err
+        throwAsCaller( err );
+      end
+      
+      N = numel( varargin );
+      
+      for i = 1:N
+        cat_api( 'merge_new', obj.id, varargin{i}.id );
       end
     end
     

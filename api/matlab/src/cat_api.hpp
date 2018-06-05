@@ -18,6 +18,7 @@ namespace util {
     MEXFUNC(copy);
     
     MEXFUNC(merge);
+    MEXFUNC(merge_new);
     MEXFUNC(append);
     MEXFUNC(assign);
     MEXFUNC(assign_partial);

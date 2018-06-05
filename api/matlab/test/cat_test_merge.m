@@ -34,4 +34,17 @@ assert( all(hascat(y3, [getcats(y2), getcats(z)])) ...
 
 assert( isequal(find(y3, 'f')', 1:size(y3, 1)), 'Assignment failed.' );
 
+
+f1 = fcat.create( 'a', '<b>', 'c', 'd' );
+f2 = fcat.create( 'b', 'c', 'c', 'd' );
+
+try
+  f3 = merge( copy(f1), f2 );
+  error( 'failed' );
+catch err
+  if ( strcmp(err.message, 'failed') )
+    error( 'Merge succeeded with collapsed expression in wrong category.' );
+  end
+end
+
 end

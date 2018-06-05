@@ -114,6 +114,7 @@ public:
                                         util::s64 index_offset);
     
     util::u32 merge(const util::categorical& other);
+    util::u32 merge_new(const util::categorical& other);
     
     bool has_category(const std::string& category) const;
     bool has_label(const std::string& label) const;
@@ -197,20 +198,26 @@ private:
     util::u32 reconcile_new_label_ids(const util::categorical& other,
                                       util::multimap<std::string, util::u32>& tmp_label_ids,
                                       std::unordered_map<std::string, std::string>& tmp_in_cat,
-                                      std::unordered_map<util::u32, util::u32>& replace_other) const;
+                                      std::unordered_map<util::u32, util::u32>& replace_other,
+                                      const bool overwrite_existing_categories = true) const;
     
     void append_fill_new_label_ids(const util::categorical& other,
                                    const std::unordered_map<util::u32, util::u32>& replace_other_labs,
                                    util::u64 own_sz,
                                    util::u64 other_sz);
     
+    util::u32 merge(const util::categorical& other, const bool overwrite_existing_cats);
+    
     void merge_fill_new_label_ids(const util::categorical& other,
+                                  const std::vector<std::string>& categories,
                                   std::unordered_map<util::u32, util::u32>& replace_other_labs,
                                   bool is_scalar,
                                   bool sizes_match,
                                   util::u64 own_sz);
-    util::u32 merge_require_categories(const util::categorical& other);
-    util::u32 merge_check_collapsed_expressions(const util::categorical& other) const;
+    
+    util::u32 merge_require_categories(const util::categorical& other, std::vector<std::string>& new_categories);
+    util::u32 merge_check_collapsed_expressions(const util::categorical& other,
+                                                const bool overwrite_existing_categories = true) const;
     
     static util::u32 get_id(const categorical* self, const categorical* other,
                 const std::unordered_set<util::u32>& new_ids);

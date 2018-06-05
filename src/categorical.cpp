@@ -1938,9 +1938,7 @@ util::u32 util::categorical::assign(const util::categorical& other,
     return util::categorical_status::OK;
 }
 
-//  merge: Merge array contents.
-
-util::u32 util::categorical::merge(const util::categorical& other)
+util::u32 util::categorical::merge(const util::categorical& other, const bool overwrite_existing_cats)
 {
     using util::u64;
     using util::u32;
@@ -1961,21 +1959,23 @@ util::u32 util::categorical::merge(const util::categorical& other)
     auto tmp_label_ids = m_label_ids;
     auto tmp_in_cat = m_in_category;
     
-    util::u32 new_labels_status = reconcile_new_label_ids(other, tmp_label_ids, tmp_in_cat, replace_other_labs);
+    util::u32 new_labels_status = reconcile_new_label_ids(other, tmp_label_ids, tmp_in_cat,
+                                                          replace_other_labs, overwrite_existing_cats);
     
     if (new_labels_status != util::categorical_status::OK)
     {
         return new_labels_status;
     }
     
-    util::u32 collapsed_cat_status = merge_check_collapsed_expressions(other);
+    util::u32 collapsed_cat_status = merge_check_collapsed_expressions(other, overwrite_existing_cats);
     
     if (collapsed_cat_status != util::categorical_status::OK)
     {
         return collapsed_cat_status;
     }
     
-    util::u32 require_cat_status = merge_require_categories(other);
+    std::vector<std::string> new_categories;
+    util::u32 require_cat_status = merge_require_categories(other, new_categories);
     
     if (require_cat_status != util::categorical_status::OK)
     {
@@ -1994,21 +1994,41 @@ util::u32 util::categorical::merge(const util::categorical& other)
     m_label_ids = std::move(tmp_label_ids);
     m_in_category = std::move(tmp_in_cat);
     
-    merge_fill_new_label_ids(other, replace_other_labs, is_scalar, sizes_match, own_sz);
+    const auto& cats_to_check = overwrite_existing_cats ? other.get_categories() : new_categories;
+    
+    merge_fill_new_label_ids(other, cats_to_check, replace_other_labs,
+                             is_scalar, sizes_match, own_sz);
     
     return util::categorical_status::OK;
 }
 
+//  merge: Merge array contents.
+
+util::u32 util::categorical::merge(const util::categorical& other)
+{
+    const bool overwrite_existing_cats = true;
+    return merge(other, overwrite_existing_cats);
+}
+
+//  merge_new: Merge array contents, preserving existing categories.
+
+util::u32 util::categorical::merge_new(const util::categorical& other)
+{
+    const bool overwrite_existing_cats = false;
+    return merge(other, overwrite_existing_cats);
+}
+
 void util::categorical::merge_fill_new_label_ids(const util::categorical& other,
+                                                 const std::vector<std::string>& categories,
                                                  std::unordered_map<util::u32, util::u32>& replace_other_labs,
                                                  bool is_scalar,
                                                  bool sizes_match,
                                                  util::u64 own_sz)
 {
-    for (const auto& cats : other.m_category_indices)
+    for (const auto& cat : categories)
     {
-        u64 own_idx = m_category_indices.at(cats.first);
-        u64 other_idx = cats.second;
+        u64 own_idx = m_category_indices.at(cat);
+        u64 other_idx = other.m_category_indices.at(cat);
         
         m_labels[own_idx] = other.m_labels[other_idx];
         
@@ -2032,7 +2052,8 @@ void util::categorical::merge_fill_new_label_ids(const util::categorical& other,
     }
 }
 
-util::u32 util::categorical::merge_check_collapsed_expressions(const util::categorical &other) const
+util::u32 util::categorical::merge_check_collapsed_expressions(const util::categorical &other,
+                                                               const bool overwrite_existing_categories) const
 {
     for (const auto& it : m_category_indices)
     {
@@ -2040,19 +2061,25 @@ util::u32 util::categorical::merge_check_collapsed_expressions(const util::categ
         
         std::string collapsed_expression = get_collapsed_expression(cat);
         
-        if (other.has_label(collapsed_expression) && other.m_in_category.at(collapsed_expression) != cat)
+        if (other.has_label(collapsed_expression))
         {
-            return util::categorical_status::COLLAPSED_EXPRESSION_IN_WRONG_CATEGORY;
+            const std::string& other_cat = other.m_in_category.at(collapsed_expression);
+            
+            bool wrong_cat = other_cat != cat && (overwrite_existing_categories || !has_category(other_cat));
+            
+            if (wrong_cat)
+            {
+                return util::categorical_status::COLLAPSED_EXPRESSION_IN_WRONG_CATEGORY;
+            }
         }
     }
     
     return util::categorical_status::OK;
 }
 
-util::u32 util::categorical::merge_require_categories(const util::categorical& other)
+util::u32 util::categorical::merge_require_categories(const util::categorical& other,
+                                                      std::vector<std::string>& new_categories)
 {
-    std::vector<std::string> new_categories;
-    
     for (const auto& it : other.m_category_indices)
     {
         const std::string& cat = it.first;
@@ -2084,7 +2111,8 @@ util::u32 util::categorical::merge_require_categories(const util::categorical& o
 util::u32 util::categorical::reconcile_new_label_ids(const util::categorical& other,
                                                      util::multimap<std::string, util::u32>& tmp_label_ids,
                                                      std::unordered_map<std::string, std::string>& tmp_in_cat,
-                                                     std::unordered_map<util::u32, util::u32>& replace_other) const
+                                                     std::unordered_map<util::u32, util::u32>& replace_other,
+                                                     const bool overwrite_existing_categories) const
 {
     std::unordered_set<util::u32> new_label_ids;
     
@@ -2098,6 +2126,11 @@ util::u32 util::categorical::reconcile_new_label_ids(const util::categorical& ot
     {
         const std::string& other_lab = other_labs[i];
         const std::string& other_in_cat = other.m_in_category.at(other_lab);
+        
+        if (!overwrite_existing_categories && has_category(other_in_cat))
+        {
+            continue;
+        }
         
         auto own_lab_it = m_label_ids.find(other_lab);
         util::u32 other_id = other.m_label_ids.at(other_lab);
@@ -2117,10 +2150,6 @@ util::u32 util::categorical::reconcile_new_label_ids(const util::categorical& ot
             if (own_id != other_id)
             {
                 replace_other[other_id] = own_id;
-//                util::u32 replace_id = util::categorical::get_id(this, &other, new_label_ids);
-//                new_label_ids.insert(replace_id);
-//                replace_other[other_id] = replace_id;
-//                tmp_label_ids.insert(other_lab, replace_id);
             }
         }
         else
