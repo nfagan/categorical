@@ -752,7 +752,7 @@ classdef fcat < handle
       cat_api( 'empty', obj.id );
     end
     
-    function [obj, I, C] = keepeach(obj, categories)
+    function [obj, I, C] = keepeach(obj, categories, inds)
       
       %   KEEPEACH -- Retain one row for each combination of labels.
       %
@@ -762,7 +762,10 @@ classdef fcat < handle
       %     combination of 'cities' and 'states', more than one label of
       %     the category is identified by that combination.
       %
-      %     [f, I] = ... also returns `I`, a cell array of indices
+      %     keepeach( ..., inds ) restricts the search to the subset of
+      %     rows identified by the uint64 index vector `inds`.
+      %
+      %     [..., I] = ... also returns `I`, a cell array of indices
       %     identifying the rows of `obj` associated with each row of `f`.
       %
       %     [..., C] = ... also returns `C`, the cell matrix of label
@@ -789,13 +792,22 @@ classdef fcat < handle
       %       - `C` (cell array of strings)
       
       if ( nargout > 2 )
-        [I, C] = cat_api( 'keep_eachc', obj.id, categories );
+        
+        if ( nargin == 3 )
+          [I, C] = cat_api( 'keep_eachc', obj.id, categories, uint64(inds) );
+        else
+          [I, C] = cat_api( 'keep_eachc', obj.id, categories );
+        end          
         
         if ( ~ischar(categories) )
           C = reshape( C, numel(categories), numel(C) / numel(categories) );
         end
       else
-        I = cat_api( 'keep_each', obj.id, categories );
+        if ( nargin == 3 )
+          I = cat_api( 'keep_each', obj.id, categories, uint64(inds) );
+        else
+          I = cat_api( 'keep_each', obj.id, categories );
+        end
       end
     end
     

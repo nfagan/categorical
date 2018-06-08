@@ -89,8 +89,19 @@ public:
     
     std::vector<std::vector<util::u64>> keep_each(const std::vector<std::string>& categories,
                                        util::u64 index_offset = 0);
+    
+    std::vector<std::vector<util::u64>> keep_each(const std::vector<std::string>& categories,
+                                                  const std::vector<util::u64>& indices,
+                                                  util::u32* status,
+                                                  util::u64 index_offset = 0);
+    
     util::combinations_t keep_eachc(const std::vector<std::string>& categories,
                                    util::u64 index_offset = 0);
+    
+    util::combinations_t keep_eachc(const std::vector<std::string>& categories,
+                                    const std::vector<util::u64>& indices,
+                                    util::u32* status,
+                                    util::u64 index_offset = 0);
     
     void one();
     void empty();

@@ -900,6 +900,28 @@ std::vector<std::vector<util::u64>> util::categorical::keep_each(const std::vect
     return indices;
 }
 
+//  keep_each: Retain one row for each combination of labels, from subset.
+//
+//      keep_each returns the indices used to generate each row of
+//      the modified object
+
+std::vector<std::vector<util::u64>> util::categorical::keep_each(const std::vector<std::string>& categories,
+                                              const std::vector<util::u64>& indices,
+                                              util::u32* status,
+                                              util::u64 index_offset)
+{
+    std::vector<std::vector<util::u64>> out_indices = find_all(categories, indices, status, index_offset);
+    
+    if (*status != util::categorical_status::OK)
+    {
+        return out_indices;
+    }
+    
+    unchecked_keep_each(out_indices, index_offset);
+    
+    return out_indices;
+}
+
 //  keep_eachc: Retain one row for each combination of labels.
 //
 //      keep_eachc also returns the label combinations associated with
@@ -909,6 +931,28 @@ util::combinations_t util::categorical::keep_eachc(const std::vector<std::string
                                                   util::u64 index_offset)
 {
     util::combinations_t combs = find_allc(categories, index_offset);
+    
+    unchecked_keep_each(combs.indices, index_offset);
+    
+    return combs;
+}
+
+//  keep_eachc: Retain one row for each combination of labels, from subset.
+//
+//      keep_eachc also returns the label combinations associated with
+//      each row.
+
+util::combinations_t util::categorical::keep_eachc(const std::vector<std::string> &categories,
+                                                   const std::vector<util::u64>& indices,
+                                                   util::u32* status,
+                                                   util::u64 index_offset)
+{
+    util::combinations_t combs = find_allc(categories, indices, status, index_offset);
+    
+    if (*status != util::categorical_status::OK)
+    {
+        return combs;
+    }
     
     unchecked_keep_each(combs.indices, index_offset);
     
