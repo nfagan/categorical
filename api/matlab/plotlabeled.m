@@ -771,6 +771,21 @@ classdef plotlabeled < handle
       y = std( x, [], 1 ) / sqrt( N );
     end
     
+    function y = norm01(x)
+      
+      %   NORM01 -- Normalize data between 0 and 1, across first dimension.
+      %
+      %     IN:
+      %       - `x` (double) -- Data.
+      %     OUT:
+      %     - `y` (double) -- Matrix of the same size as `x`.
+      
+      maxs = max( x, [], 2 );
+      mins = min( x, [], 2 );
+      
+      y = bsxfun( @rdivide, bsxfun(@minus, x, mins), (maxs-mins) );
+    end
+    
     function shape = get_subplot_shape(N)
       
       %   GET_SUPLOT_SHAPE -- Get MxN subplot shape from linear size.

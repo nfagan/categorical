@@ -2090,6 +2090,29 @@ classdef fcat < handle
       end
     end
     
+    function fs = empties(varargin)
+      
+      %   EMPTIES -- Create cell array of empty fcat objects.
+      %
+      %     fs = fcat.empties( 1, 2 ) creates a 1x2 cell array of empty
+      %     fcat objects.
+      %
+      %     fs = fcat.empties( [1, 2] ) does the same.
+      %
+      %     fs = fcat.empties( M, N, P, ... ) or 
+      %     fcat.empties( [M, N, P, ...] ) creates an MxNxP... cell array
+      %     of empty fcat objects.
+      %
+      %     IN:
+      %       - `sz` (double)
+      %     OUT:
+      %       - `fs` (cell array of fcat)
+      
+      %   leverage varargin input handling of zeros function
+      z = zeros( varargin{:} );
+      fs = arrayfun( @(x) fcat(), z, 'un', false );   
+    end
+    
     function f = example(varargin)
       
       %   EXAMPLE -- Get example fcat object.
