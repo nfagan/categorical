@@ -22,7 +22,7 @@ void util::keep(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     
     if (status == util::categorical_status::OUT_OF_BOUNDS)
     {
-        mexErrMsgIdAndTxt(func_id, "Indices exceed Categorical dimensions.");
+        mexErrMsgIdAndTxt(func_id, "Indices exceed categorical dimensions.");
     }
     
     mexErrMsgIdAndTxt(func_id, "An unknown error occurred.");

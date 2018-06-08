@@ -810,7 +810,7 @@ classdef fcat < handle
       keepeach( obj, getcats(obj) );
     end
     
-    function C = combs(obj, categories)
+    function C = combs(obj, categories, inds)
       
       %   COMBS -- Get present combinations of labels in categories.
       %
@@ -821,6 +821,9 @@ classdef fcat < handle
       %
       %     C = combs( obj, {'cat1', 'cat2'} ) returns a 2xN cell array of
       %     N label combinations in categories 'cat1' and 'cat2'.
+      %
+      %     C = combs( ..., inds ) returns the combinations in the subset
+      %     of rows identified by the uint64 index vector `inds`.
       %
       %     See also fcat/findall
       %
@@ -833,16 +836,23 @@ classdef fcat < handle
         categories = getcats( obj );
       end
       
-      [~, C] = findall( obj, categories );
+      if ( nargin == 3 )
+        [~, C] = findall( obj, categories, inds );
+      else
+        [~, C] = findall( obj, categories );
+      end
     end
     
-    function [I, C] = findall(obj, categories)
+    function [I, C] = findall(obj, categories, inds)
       
       %   FINDALL -- Get indices of combinations of labels in categories.
       %
-      %     I = findall( obj, ['test1', 'test2'] ) returns a cell array of
-      %     uint64 indices `I`, where each index in I identifies a unique
-      %     combination of labels in categories 'test1' and 'test2'
+      %     I = findall( obj, {'a', 'b'} ) returns a cell array of uint64 
+      %     indices `I`, where each index in I identifies a unique
+      %     combination of labels in categories 'a' and 'b'.
+      %
+      %     I = findall( ..., inds ) searches the subset of rows identified
+      %     by the uint64 index vector `inds`.
       %
       %     I = findall( obj ) finds all possible combinations of labels in
       %     all categories.
@@ -864,18 +874,27 @@ classdef fcat < handle
       end
       
       if ( nargout > 1 )
-        [I, C] = cat_api( 'find_allc', obj.id, categories );
+        if ( nargin == 3 )
+          [I, C] = cat_api( 'find_allc', obj.id, categories, uint64(inds) );
+        else
+          [I, C] = cat_api( 'find_allc', obj.id, categories );
+        end
+        
         if ( ~ischar(categories) && numel(categories) > 0 )
           C = reshape( C, numel(categories), numel(C) / numel(categories) );
         else
           C = C(:)';
         end
       else
-        I = cat_api( 'find_all', obj.id, categories );
+        if ( nargin == 3 )
+          I = cat_api( 'find_all', obj.id, categories, uint64(inds) );
+        else
+          I = cat_api( 'find_all', obj.id, categories );
+        end
       end
     end
     
-    function I = find(obj, labels)
+    function I = find(obj, labels, inds)
       
       %   FIND -- Get indices associated with labels.
       %
@@ -887,6 +906,9 @@ classdef fcat < handle
       %     the same category, `I` will index rows associated with 'a' OR 
       %     'b'. If 'a' and 'b' reside in different categories, `I` will 
       %     index rows associated with 'a' AND 'b'.
+      %
+      %     I = find( ..., inds ) restricts the search to the subset of
+      %     rows identified by the uint64 index vector `inds`.
       %
       %     Formally, within a category, indices are calculated via an 
       %     `or` operation; across categories, indices are calculated via 
@@ -906,7 +928,11 @@ classdef fcat < handle
       %     OUT:
       %       - `inds` (uint32)
       
-      I = cat_api( 'find', obj.id, labels );
+      if ( nargin < 3 )
+        I = cat_api( 'find', obj.id, labels );
+      else
+        I = cat_api( 'find', obj.id, labels, uint64(inds) );
+      end
     end
     
     function C = getcats(obj)

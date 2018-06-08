@@ -62,9 +62,29 @@ public:
     std::vector<util::u64> find(const std::vector<std::string>& labels,
                                 util::u64 index_offset = 0) const;
     
+    std::vector<util::u64> find(const std::vector<std::string>& labels,
+                                const std::vector<util::u64>& indices,
+                                util::u32* status,
+                                util::u64 index_offset = 0) const;
+    
     std::vector<std::vector<util::u64>> find_all(const std::vector<std::string>& categories,
                                     util::u64 index_offset = 0) const;
+    
+    std::vector<std::vector<util::u64>> find_all(const std::vector<std::string>& categories,
+                                                 const std::vector<util::u64>& indices,
+                                                 util::u64 index_offset = 0) const;
+    
+    std::vector<std::vector<util::u64>> find_all(const std::vector<std::string>& categories,
+                                                 const std::vector<util::u64>& indices,
+                                                 util::u32* status,
+                                                 util::u64 index_offset = 0) const;
+    
     util::combinations_t find_allc(const std::vector<std::string>& categories,
+                                   util::u64 index_offset = 0) const;
+    
+    util::combinations_t find_allc(const std::vector<std::string>& categories,
+                                   const std::vector<util::u64>& indices,
+                                   util::u32* status,
                                    util::u64 index_offset = 0) const;
     
     std::vector<std::vector<util::u64>> keep_each(const std::vector<std::string>& categories,
@@ -184,6 +204,21 @@ private:
     
     bool categories_match(const categorical& other) const;
     
+    std::vector<util::u64> find_impl(const std::vector<std::string>& labels,
+                                     const bool use_indices,
+                                     const std::vector<util::u64>& indices,
+                                     util::u32* status,
+                                     util::u64 index_offset = 0) const;
+    
+    util::combinations_t find_allc_impl(const std::vector<std::string>& categories,
+                                        const bool use_indices,
+                                        const std::vector<util::u64>& indices,
+                                        util::u32* status,
+                                        util::u64 index_offset = 0) const;
+    
+    std::vector<util::u64> get_category_indices(const std::vector<std::string>& cats,
+                                                const util::u64 n_cats, bool* exist) const;
+    
     void set_collapsed_expressions(std::vector<util::u32>& labs,
                                    const std::string& category,
                                    const std::string& collapsed_expression,
@@ -227,6 +262,11 @@ private:
                                const std::unordered_map<util::u32, util::u32>& replace_map);
     
     static util::bit_array assign_bit_array(const std::vector<util::u32>& labels, util::u32 lab);
+    static util::bit_array assign_bit_array(const std::vector<util::u32>& labels,
+                                            util::u32 lab,
+                                            const std::vector<util::u64>& indices,
+                                            util::u32* status,
+                                            util::u64 index_offset = 0);
     
     static util::u32 bounds_check(const std::vector<util::u64>& indices,
                                   util::u64 n_check,

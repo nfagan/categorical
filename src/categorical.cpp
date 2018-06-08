@@ -442,6 +442,29 @@ void util::categorical::set_all_collapsed_expressions(util::u64 start_offset)
 std::vector<util::u64> util::categorical::find(const std::vector<std::string>& labels,
                                                util::u64 index_offset) const
 {
+    std::vector<util::u64> dummy_indices;
+    util::u32 dummy_status;
+    return find_impl(labels, false, dummy_indices, &dummy_status, index_offset);
+}
+
+//  find: Get indices of labels, from subsets of rows.
+
+std::vector<util::u64> util::categorical::find(const std::vector<std::string>& labels,
+                            const std::vector<util::u64>& indices,
+                            util::u32* status,
+                            util::u64 index_offset) const
+{
+    return find_impl(labels, true, indices, status, index_offset);
+}
+
+//  find_impl [private]: Private implementation of find, with and without subsets
+
+std::vector<util::u64> util::categorical::find_impl(const std::vector<std::string>& labels,
+                                 const bool use_indices,
+                                 const std::vector<util::u64>& indices,
+                                 util::u32* status,
+                                 util::u64 index_offset) const
+{
     using util::u64;
     using util::bit_array;
     
@@ -449,6 +472,8 @@ std::vector<util::u64> util::categorical::find(const std::vector<std::string>& l
     
     const u64 n_in = labels.size();
     const u64 sz = size();
+    
+    *status = util::categorical_status::OK;
     
     if (n_in == 0 || sz == 0)
     {
@@ -473,7 +498,22 @@ std::vector<util::u64> util::categorical::find(const std::vector<std::string>& l
         const std::string& cat = m_in_category.at(lab);
         u64 cat_idx = m_category_indices.at(cat);
         
-        bit_array index = util::categorical::assign_bit_array(m_labels[cat_idx], lab_id);
+        bit_array index;
+        
+        if (use_indices)
+        {
+            index = util::categorical::assign_bit_array(m_labels[cat_idx], lab_id,
+                                                        indices, status, index_offset);
+            
+            if (*status != util::categorical_status::OK)
+            {
+                return out;
+            }
+        }
+        else
+        {
+            index = util::categorical::assign_bit_array(m_labels[cat_idx], lab_id);
+        }
         
         if (index_map.find(cat) == index_map.end())
         {
@@ -515,6 +555,66 @@ util::bit_array util::categorical::assign_bit_array(const std::vector<util::u32>
     return out;
 }
 
+util::bit_array util::categorical::assign_bit_array(const std::vector<util::u32>& labels,
+                                        util::u32 lab,
+                                        const std::vector<util::u64>& indices,
+                                        util::u32* status,
+                                        util::u64 index_offset)
+{
+    *status = util::categorical_status::OK;
+    
+    util::u64 sz = labels.size();
+    util::bit_array out(sz, false);
+    util::u64 n_inds = indices.size();
+    
+    for (util::u64 i = 0; i < n_inds; i++)
+    {
+        const util::u64 idx = indices[i] - index_offset;
+        
+        if (idx >= sz)
+        {
+            *status = util::categorical_status::OUT_OF_BOUNDS;
+            return out;
+        }
+        
+        if (labels[idx] == lab)
+        {
+            out.unchecked_place(true, idx);
+        }
+    }
+    
+    return out;
+}
+
+//  find_all_check_categories_exist: Check whether all categories exist
+
+std::vector<util::u64> util::categorical::get_category_indices(const std::vector<std::string>& cats,
+                                                               const util::u64 n_cats,
+                                                               bool* exist) const
+{
+    using util::u64;
+    
+    std::vector<u64> category_inds;
+    
+    *exist = true;
+    
+    for (u64 i = 0; i < n_cats; i++)
+    {
+        auto category_idx_it = m_category_indices.find(cats[i]);
+        
+        //  if a category doesn't exist, no combinations can exist with it.
+        if (category_idx_it == m_category_indices.end())
+        {
+            *exist = false;
+            return std::vector<u64>();
+        }
+        
+        category_inds.push_back(category_idx_it->second);
+    }
+    
+    return category_inds;
+}
+
 //  find_all: Get indices of all possible unique combinations of labels.
 //
 //      find_all does not return the combinations.
@@ -528,25 +628,12 @@ std::vector<std::vector<util::u64>> util::categorical::find_all(const std::vecto
     std::vector<std::vector<u64>> result;
     
     u64 n_cats_in = categories.size();
+    bool cats_exist;
+    std::vector<u64> category_inds = get_category_indices(categories, n_cats_in, &cats_exist);
     
-    if (n_cats_in == 0)
+    if (n_cats_in == 0 || !cats_exist)
     {
         return result;
-    }
-    
-    std::vector<u32> category_inds;
-    
-    for (u64 i = 0; i < n_cats_in; i++)
-    {
-        auto category_idx_it = m_category_indices.find(categories[i]);
-        
-        //  if a category doesn't exist, no combinations can exist with it.
-        if (category_idx_it == m_category_indices.end())
-        {
-            return result;
-        }
-        
-        category_inds.push_back(category_idx_it->second);
     }
     
     size_t size_int = sizeof(u32);
@@ -593,6 +680,98 @@ std::vector<std::vector<util::u64>> util::categorical::find_all(const std::vecto
     return result;
 }
 
+//  find_all: Get indices of all possible unique combinations of labels, from subset,
+//      without bounds check
+//
+//      find_all does not return the combinations.
+
+std::vector<std::vector<util::u64>> util::categorical::find_all(const std::vector<std::string>& categories,
+                                                                const std::vector<util::u64>& indices,
+                                                                util::u64 index_offset) const
+{
+    util::u32 dummy_status;
+    return find_all(categories, indices, &dummy_status, index_offset);
+}
+
+//  find_all: Get indices of all possible unique combinations of labels, from subset,
+//      with bounds check.
+//
+//      find_all does not return the combinations.
+
+std::vector<std::vector<util::u64>> util::categorical::find_all(const std::vector<std::string>& categories,
+                                             const std::vector<util::u64>& indices,
+                                                                util::u32* status,
+                                                                util::u64 index_offset) const
+{
+    using util::u64;
+    using util::u32;
+    
+    *status = util::categorical_status::OK;
+    std::vector<std::vector<u64>> result;
+    
+    u64 n_cats_in = categories.size();
+    bool cats_exist;
+    std::vector<u64> category_inds = get_category_indices(categories, n_cats_in, &cats_exist);
+    
+    if (n_cats_in == 0 || !cats_exist)
+    {
+        return result;
+    }
+    
+    size_t size_int = sizeof(u32);
+    std::string hash_code(n_cats_in * size_int, 'a');
+    char* hash_code_ptr = &hash_code[0];
+    
+    const u64 rows = indices.size();
+    const u64 sz = size();
+    
+    std::unordered_map<std::string, u64> combination_exists;
+    u64 next_id = 0;
+    
+    for (u64 i = 0; i < rows; i++)
+    {
+        util::u64 input_idx = indices[i];
+        util::u64 internal_idx = input_idx - index_offset;
+        
+        if (internal_idx >= sz)
+        {
+            *status = util::categorical_status::OUT_OF_BOUNDS;
+            return result;
+        }
+        
+        for (u64 j = 0; j < n_cats_in; j++)
+        {
+            const std::vector<u32>& full_cat = m_labels[category_inds[j]];
+            //  copy bits to string
+            std::memcpy(hash_code_ptr + j * size_int, &full_cat[internal_idx], size_int);
+        }
+        
+        auto c_it = combination_exists.find(hash_code);
+        bool c_exists = c_it != combination_exists.end();
+        u64 comb_idx;
+        
+        if (!c_exists)
+        {
+            combination_exists[hash_code] = next_id;
+            
+            comb_idx = next_id;
+            
+            next_id++;
+            
+            result.push_back(std::vector<u64>());
+        }
+        else
+        {
+            comb_idx = c_it->second;
+        }
+        
+        std::vector<u64>& inds_ptr = result[comb_idx];
+        inds_ptr.push_back(input_idx);
+    }
+    
+    return result;
+}
+
 //  find_allc: Get indices of all possible unique combinations of labels.
 //
 //      find_allc also returns the combinations.
@@ -600,49 +779,78 @@ std::vector<std::vector<util::u64>> util::categorical::find_all(const std::vecto
 util::combinations_t util::categorical::find_allc(const std::vector<std::string>& categories,
                                                   util::u64 index_offset) const
 {
+    util::u32 dummy_status;
+    std::vector<util::u64> dummy_indices;
+    return find_allc_impl(categories, false, dummy_indices, &dummy_status, index_offset);
+}
+
+//  find_allc: Get indices of all possible unique combinations of labels, from subset.
+//
+//      find_allc also returns the combinations.
+
+util::combinations_t util::categorical::find_allc(const std::vector<std::string>& categories,
+                               const std::vector<util::u64>& indices,
+                               util::u32* status,
+                               util::u64 index_offset) const
+{
+    return find_allc_impl(categories, true, indices, status, index_offset);
+}
+
+//  find_allc_impl [private]: Implementation of find_allc and findall_c [indexed]
+
+util::combinations_t util::categorical::find_allc_impl(const std::vector<std::string>& categories,
+                                    const bool use_indices,
+                                    const std::vector<util::u64>& indices,
+                                    util::u32* status,
+                                    util::u64 index_offset) const
+{
     using util::u64;
     using util::u32;
     
     util::combinations_t result;
+    *status = util::categorical_status::OK;
     
     u64 n_cats_in = categories.size();
+    bool cats_exist;
+    std::vector<u64> category_inds = get_category_indices(categories, n_cats_in, &cats_exist);
     
-    if (n_cats_in == 0)
+    if (n_cats_in == 0 || !cats_exist)
     {
         return result;
-    }
-    
-    std::vector<u32> category_inds;
-    
-    for (u64 i = 0; i < n_cats_in; i++)
-    {
-        auto category_idx_it = m_category_indices.find(categories[i]);
-        
-        //  if a category doesn't exist, no combinations can exist with it.
-        if (category_idx_it == m_category_indices.end())
-        {
-            return result;
-        }
-        
-        category_inds.push_back(category_idx_it->second);
     }
     
     size_t size_int = sizeof(u32);
     std::string hash_code(n_cats_in * size_int, 'a');
     char* hash_code_ptr = &hash_code[0];
     
-    const u64 rows = size();
+    const u64 sz = size();
+    const u64 rows = use_indices ? indices.size() : sz;
     
     std::unordered_map<std::string, u64> combination_exists;
     u64 next_id = 0;
     
     for (u64 i = 0; i < rows; i++)
     {
+        u64 input_idx = i + index_offset;
+        u64 internal_idx = i;
+        
+        if (use_indices)
+        {
+            input_idx = indices[i];
+            internal_idx = input_idx - index_offset;
+            
+            if (internal_idx >= sz)
+            {
+                *status = util::categorical_status::OUT_OF_BOUNDS;
+                return result;
+            }
+        }
+        
         for (u64 j = 0; j < n_cats_in; j++)
         {
             const std::vector<u32>& full_cat = m_labels[category_inds[j]];
             //  copy bits to string
-            std::memcpy(hash_code_ptr + j * size_int, &full_cat[i], size_int);
+            std::memcpy(hash_code_ptr + j * size_int, &full_cat[internal_idx], size_int);
         }
         
         auto c_it = combination_exists.find(hash_code);
@@ -654,7 +862,7 @@ util::combinations_t util::categorical::find_allc(const std::vector<std::string>
             for (u64 j = 0; j < n_cats_in; j++)
             {
                 const std::vector<u32>& full_cat = m_labels[category_inds[j]];
-                result.combinations.push_back(m_label_ids.at(full_cat[i]));
+                result.combinations.push_back(m_label_ids.at(full_cat[internal_idx]));
             }
             
             combination_exists[hash_code] = next_id;
@@ -671,7 +879,7 @@ util::combinations_t util::categorical::find_allc(const std::vector<std::string>
         }
         
         std::vector<u64>& inds_ptr = result.indices[comb_idx];
-        inds_ptr.push_back(i + index_offset);
+        inds_ptr.push_back(input_idx);
     }
     
     return result;

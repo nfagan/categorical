@@ -1,4 +1,29 @@
 %%
+cat_profile_findall( false );
+
+% true:
+% fcat        (findall): 589.617 (ms)
+% categorical (findall): 2576.871 (ms)
+
+% false:
+% fcat        (findall): 1020.463 (ms)
+% categorical (findall): 4550.681 (ms)
+
+%%
+cat_profile_findallc( false );
+
+% false:
+% fcat        (findall): 2426.098 (ms)
+% categorical (findall): 4562.582 (ms)
+
+%%
+cat_profile_find( false );
+
+% true:
+% fcat (find): 672.728 (ms)
+% false:
+% fcat (find): 1475.400 (ms)
+%%
 cat_profile_append
 
 %  categorical:   6249.876 (ms) [10000]
