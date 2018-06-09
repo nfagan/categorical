@@ -64,7 +64,11 @@ classdef plotlabeled < handle
       %     OUT:
       %       - `axs` (axes)
       
-      opts = matplotopts( obj, data, {}, groups, panels );
+      try
+        opts = matplotopts( obj, data, {}, groups, panels );
+      catch err
+        throw( err );
+      end
       
       summary_data = opts.summary_data;
       errors_data = opts.errors_data;
@@ -147,7 +151,11 @@ classdef plotlabeled < handle
       %     OUT:
       %       - `axs` (axes)
       
-      axs = groupplot( obj, 'bar', data, xcat, groups, panels );
+      try
+        axs = groupplot( obj, 'bar', data, xcat, groups, panels );
+      catch err
+        throw( err );
+      end
     end
     
     function axs = errorbar(obj, data, xcat, groups, panels)
@@ -170,7 +178,11 @@ classdef plotlabeled < handle
       %     OUT:
       %       - `axs` (axes)
       
-      axs = groupplot( obj, 'errorbar', data, xcat, groups, panels );
+      try
+        axs = groupplot( obj, 'errorbar', data, xcat, groups, panels );
+      catch err
+        throw( err );
+      end
     end
     
     function [axs, identifiers] = scatter(obj, X, Y, labels, groups, panels)

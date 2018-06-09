@@ -14,17 +14,17 @@ classdef fcat < handle
     
     function obj = fcat(id)
       
-      %   FCAT -- Create fcat object.
+      %   FCAT -- Create empty fcat object.
       %
       %     FCAT objects are meant to group and identify subsets of data, 
       %     in the vein of categorical arrays.
       %
       %     FCAT objects are essentially categorical matrices whose
-      %     elements are unique across, but not necessarily within,
-      %     columns. In this way, each column of an FCAT object constitutes 
-      %     a category (or dimension) with an arbitrary number of levels 
-      %     (or labels). Rows of observations can then be identified by a 
-      %     given combination of labels across all categories.
+      %     elements are unique across columns. In this way, each column of 
+      %     an FCAT object constitutes a category (or dimension) with an 
+      %     arbitrary number of levels (or labels). Rows of observations 
+      %     can then be identified by a given combination of labels across 
+      %     all categories.
       %
       %     EX //
       %
@@ -36,7 +36,7 @@ classdef fcat < handle
       %
       %     [y, I, C] = keepeach( copy(f1), getcats(f1) )
       %
-      %     See also fcat/findall, fcat/from, fcat/subsref, categorical/categorical
+      %     See also fcat/create, fcat/from, fcat/findall, categorical/categorical
       
       if ( nargin == 0 )
         obj.id = cat_api( 'create' );
@@ -1482,7 +1482,13 @@ classdef fcat < handle
     
     function obj = vertcat(obj, varargin)
       
-      %   VERTCAT -- Append other fcat objects.
+      %   VERTCAT -- Append fcat object(s).
+      %
+      %     [A; B] appends B to A.
+      %
+      %     [A; B; C ...] appends B, C, ... to A.
+      %
+      %     Note that A will be modified unless explicitly copied. 
       %
       %     See also fcat/append
       %
@@ -1491,6 +1497,20 @@ classdef fcat < handle
       
       for i = 1:numel(varargin)
         append( obj, varargin{i} );
+      end
+    end
+    
+    function obj = horzcat(obj, varargin)
+      
+      %   HORZCAT -- Horizontal conatenation is not supported.
+      %
+      %     C = [A, B] is an error. Use C = [A; B], or append(A, B)
+      %
+      %     See also fcat/append, fcat/vertcat
+      
+      if ( numel(varargin) > 0 )
+        error( ['Horizontal concatenation of fcat objects is not supported.' ...
+          , ' Use vertical concatenation or the `append` method.'] );
       end
     end
     
@@ -1528,9 +1548,9 @@ classdef fcat < handle
       
       %   DELETE -- Delete object and free memory.
       %
-      %     See also fcat/fcat
-      %
       %     Calling `clear obj` also deletes the object.
+      %
+      %     See also fcat/fcat
       
       cat_api( 'destroy', obj.id );
     end
@@ -1570,10 +1590,10 @@ classdef fcat < handle
       %     contents of the object.
       %
       %     setdisp( obj, 'full' ) displays the full contents of `obj` as
-      %     if it were a cell array of strings.
+      %     if it were a categorical matrix.
       %
       %     setdisp( obj, 'auto' ) displays 'full' when the number of rows
-      %     is less than 100, and 'short' otherwise.
+      %     is less than 1000, and 'short' otherwise.
       %
       %     See also fcat/cellstr, fcat/categorical
       %
@@ -2120,7 +2140,7 @@ classdef fcat < handle
         end
         
       catch err
-        throwAsCaller( err );
+        throw( err );
       end
       
       function val = ensure_cell(val)
@@ -2155,18 +2175,19 @@ classdef fcat < handle
       
       %   EXAMPLE -- Get example fcat object or data.
       %
-      %     fcat.example() loads and returns a small fcat object.
+      %     fcat.example() returns a small fcat object.
       %     fcat.example( 'small' ) does the same.
-      %     fcat.example( 'large' ) loads and returns a large fcat object.
-      %     fcat.example( 'smalldata' ) loads and returns a small column
-      %     vector of data.
+      %     fcat.example( 'large' ) returns a large fcat object.
+      %
+      %     fcat.example( 'smalldata' ) returns a small vector of data.
+      %     fcat.example( 'largedata' ) returns a large vector of data.
       %
       %     See also fcat/test, fcat/from, fcat/with
       %
       %     IN:
       %       - `kind` (char) |OPTIONAL|
       %     OUT:
-      %       - `f` (fcat)
+      %       - `f` (fcat, double)
       
       try
         f = cat_getexample( varargin{:} );
