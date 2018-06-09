@@ -2153,11 +2153,13 @@ classdef fcat < handle
     
     function f = example(varargin)
       
-      %   EXAMPLE -- Get example fcat object.
+      %   EXAMPLE -- Get example fcat object or data.
       %
       %     fcat.example() loads and returns a small fcat object.
       %     fcat.example( 'small' ) does the same.
       %     fcat.example( 'large' ) loads and returns a large fcat object.
+      %     fcat.example( 'smalldata' ) loads and returns a small column
+      %     vector of data.
       %
       %     See also fcat/test, fcat/from, fcat/with
       %
