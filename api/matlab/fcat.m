@@ -26,7 +26,17 @@ classdef fcat < handle
       %     can then be identified by a given combination of labels across 
       %     all categories.
       %
-      %     EX //
+      %     The FCAT constructor generates an empty object into which
+      %     categories and labels can be inserted. To directly construct an
+      %     FCAT object with categories set to values, see the static
+      %     method `create`.
+      %
+      %     EX 1 //
+      %
+      %     f = setcat( addcat(fcat, 'cities'), 'cities', {'ny' 'la' 'sf'} )
+      %     find( f, {'ny' 'la'} )
+      %
+      %     EX 2 //
       %
       %     f1 = repmat( fcat.create( ...
       %         'cities', {'NYC', 'NYC', 'Santa Fe'} ...
@@ -36,7 +46,7 @@ classdef fcat < handle
       %
       %     [y, I, C] = keepeach( copy(f1), getcats(f1) )
       %
-      %     See also fcat/create, fcat/from, fcat/findall, categorical/categorical
+      %     See also fcat/create, fcat/from, fcat/with, fcat/findall
       
       if ( nargin == 0 )
         obj.id = cat_api( 'create' );
