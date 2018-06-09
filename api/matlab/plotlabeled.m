@@ -220,7 +220,7 @@ classdef plotlabeled < handle
       %     ind = randperm( length(f), 1000 );
       %     keep( f, ind )
       %
-      %     pl.scatter( X, Y, f, 'dose', 'monkey' )
+      %     [axs, ids] = pl.scatter( X, Y, f, 'dose', 'monkey' )
       %
       %     See also plotlabeled/lines, plotlabeled/bar
       %

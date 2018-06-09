@@ -802,13 +802,11 @@ classdef fcat < handle
       %       - `C` (cell array of strings)
       
       if ( nargout > 2 )
-        
         if ( nargin == 3 )
           [I, C] = cat_api( 'keep_eachc', obj.id, categories, uint64(inds) );
         else
           [I, C] = cat_api( 'keep_eachc', obj.id, categories );
-        end          
-        
+        end
         if ( ~ischar(categories) )
           C = reshape( C, numel(categories), numel(C) / numel(categories) );
         end
@@ -1574,7 +1572,7 @@ classdef fcat < handle
       %     See also fcat/copy
       %
       %     OUT:
-      %       - `B` (labeled)
+      %       - `B` (fcat)
       
       B = copy( obj );
     end
