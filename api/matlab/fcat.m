@@ -1685,11 +1685,10 @@ classdef fcat < handle
       %     category with the fewest unique labels, and rows are the
       %     remaining categories.
       %
-      %     [T, rc] = tabular(...) also returns cell arrays of
-      %     strings that identify each row and column of `T`. The i-th
-      %     column of `rowc` (rc{1}) is the set of labels that identify the 
-      %     i-th row of `T`; the j-th column of `colc` (rc{2}) identifies 
-      %     the j-th column of `T`.
+      %     [T, rc] = tabular(...) also returns cell arrays of fcat objects 
+      %     that identify each row and column of `T`. The i-th row of rc{1}
+      %     is the set of labels that identify the i-th row of `T`; the 
+      %     j-th row of rc{2} identifies the j-th column of `T`.
       %
       %     Use the fcat.table function to convert the output of this
       %     function to a table.
@@ -1728,10 +1727,10 @@ classdef fcat < handle
       rowi = 1:NR;
       coli = NR+1:NR+NC;
      
-      [rowf, ~, rowc] = keepeach( fcat.from(C(:, rowi), rows), rows );
-      [colf, ~, colc] = keepeach( fcat.from(C(:, coli), cols), cols );
+      rowf = keepeach( fcat.from(C(:, rowi), rows), rows );
+      colf = keepeach( fcat.from(C(:, coli), cols), cols );
       
-      tbl = cell( size(rowc, 2), size(colc, 2) );
+      tbl = cell( length(rowf), length(colf) );
       
       for i = 1:numel(I)
         r = find( rowf, C(i, rowi) );
@@ -1739,7 +1738,7 @@ classdef fcat < handle
         tbl{r, c} = I{i};
       end
       
-      rc = { rowc, colc };
+      rc = { rowf, colf };
       
       function [r, c] = getrc(obj, cats)
         %   GETRC -- Get rows and cols, if some are emptied or unspecified.
@@ -2356,36 +2355,71 @@ classdef fcat < handle
       %   TABLE -- Convert tabular cell array to table.
       %
       %     tbl = fcat.table( T, rowc, colc ) constructs a table `tbl`
-      %     from the cell matrix `T` and row and column labels `rowc` and
-      %     `colc`. `rowc` is an MxN matrix of M labels in N rows of `T`; 
-      %     `colc` is a PxQ matrix of P labels in Q columns of `T`.
+      %     from the matrix `T` and row and column labels `rowc` and 
+      %     `colc`. `rowc` and `colc` can be fcat objects or cell arrays of 
+      %     strings.
       %
-      %     f = fcat.create( ...
-      %         'cities', {'nyc' 'la', 'sf'} ...
-      %       , 'states', {'ny' 'ca' 'ca'} ...
-      %       , 'countries', 'usa' ...
-      %     )
+      %     If `rowc` is an fcat object, it must have the same number of
+      %     rows as `T` has rows; if `colc` is an fcat object, it must have
+      %     the same number of rows as `T` as cols. In this case, each row
+      %     of `rowc` identifies a row of `T`; each row of `colc`
+      %     identifies a column of `T`.
+      %
+      %     If `rowc` is a cell array of strings, it is of size MxN, where 
+      %     N is equal to the number of rows of `T`. If `colc` is a
+      %     cell array of strings, it is of size PxQ, where Q is equal to
+      %     the number of columns of `T`.
+      %
+      %     labs = fcat.example();
+      %     dat = fcat.example( 'smalldata' );
       %   
-      %     [t, rc] = tabular( f, 'cities', 'states' )
+      %     [t, rc] = tabular( labs, 'monkey', 'dose' )
       %
-      %     fcat.table( t, rc{:} )
+      %     d = arrayfun( @(x) mean(dat(x{1})), t );
+      %
+      %     fcat.table( d, rc{:} )
       %
       %     See also fcat/tabular
       %
       %     IN:
-      %       - `T` (cell array)
-      %       - `rowc` (cell array of strings)
-      %       - `colc` (cell array of strings)
+      %       - `T` (/any/)
+      %       - `rowc` (fcat, cell array of strings)
+      %       - `colc` (fcat, cell array of strings)
       
       try
+        if ( isa(rowc, 'fcat') ), rowc = cellstr( rowc )'; end
+        if ( isa(colc, 'fcat') ), colc = cellstr( colc )'; end
+        
+        validate( T, rowc, colc );
+        
         rowlabs = fcat.join( rowc, [], ' | ' );
         collabs = fcat.join( colc, [], ' | ' );
-
         collabs = cellfun( @matlab.lang.makeValidName, collabs, 'un', false );
+        
+        inputs = { 'RowNames', rowlabs, 'VariableNames', collabs };
 
-        T = cell2table( T, 'RowNames', rowlabs, 'VariableNames', collabs );
+        if ( iscell(T) )
+          T = cell2table( T, inputs{:} );
+        elseif ( isnumeric(T) )
+          T = array2table( T, inputs{:} );
+        else
+          T = arrayfun( @(x) {x}, T );
+          T = cell2table( T, inputs{:} );
+        end
       catch err
         throw( err );
+      end
+      
+      function validate(T, rowc, colc)
+        n1 = size( rowc, 2 );
+        n2 = size( colc, 2 );
+        
+        msg = '%s combinations must have %d elements; %d were present.';
+        
+        [row, col] = size( T );
+        
+        assert( n1 == row, msg, 'Row', row, n1 );
+        assert( n2 == col, msg, 'Column', col, n2 );        
       end
     end
     
