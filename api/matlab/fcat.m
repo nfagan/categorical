@@ -807,7 +807,7 @@ classdef fcat < handle
         else
           [I, C] = cat_api( 'keep_eachc', obj.id, categories );
         end
-        if ( ~ischar(categories) )
+        if ( ~ischar(categories) && numel(categories) > 0 )
           C = reshape( C, numel(categories), numel(C) / numel(categories) );
         end
       else
@@ -1670,6 +1670,103 @@ classdef fcat < handle
       error( 'Unrecognized display mode "%s".', obj.displaymode );      
     end
     
+    function [tbl, rc] = tabular(obj, rows, cols)
+      
+      %   TABULAR -- Produce tabular cell matrix of indices.
+      %
+      %     T = tabular( obj, 'a', 'b' ) produces an MxN cell array of
+      %     uint64 indices, where rows are composed of indices associated
+      %     with each unique label in category 'a', and where columns are
+      %     composed of indices associated with each unique label in
+      %     category 'b'.
+      %
+      %     T = tabular( obj, {'a', 'b', 'c'} ) produces an array as
+      %     above, except that columns are chosen automatically as the
+      %     category with the fewest unique labels, and rows are the
+      %     remaining categories.
+      %
+      %     [T, rc] = tabular(...) also returns cell arrays of
+      %     strings that identify each row and column of `T`. The i-th
+      %     column of `rowc` (rc{1}) is the set of labels that identify the 
+      %     i-th row of `T`; the j-th column of `colc` (rc{2}) identifies 
+      %     the j-th column of `T`.
+      %
+      %     Use the fcat.table function to convert the output of this
+      %     function to a table.
+      %
+      %     See also fcat.table, fcat/findall
+      %
+      %     IN:
+      %       - `rows` (cell array of strings, char)
+      %       - `cols` (cell array of strings, char)
+      
+      if ( nargin == 1 )
+        rows = getcats( obj );
+      end
+      
+      if ( nargin < 3 || isempty(cols) )
+        [rows, cols] = getrc( obj, mkcell(rows) );
+      elseif ( isempty(rows) )
+        [rows, cols] = getrc( obj, mkcell(cols) );
+      else
+        rows = mkcell( rows );
+        cols = mkcell( cols );
+      end
+      
+      rows = unique( rows );
+      cols = unique( cols );
+      
+      spec = [ rows, cols ];
+      
+      [I, C] = findall( obj, spec );
+      
+      C = C';
+      
+      NR = numel( rows );
+      NC = numel( cols );
+      
+      rowi = 1:NR;
+      coli = NR+1:NR+NC;
+     
+      [rowf, ~, rowc] = keepeach( fcat.from(C(:, rowi), rows), rows );
+      [colf, ~, colc] = keepeach( fcat.from(C(:, coli), cols), cols );
+      
+      tbl = cell( size(rowc, 2), size(colc, 2) );
+      
+      for i = 1:numel(I)
+        r = find( rowf, C(i, rowi) );
+        c = find( colf, C(i, coli) );
+        tbl{r, c} = I{i};
+      end
+      
+      rc = { rowc, colc };
+      
+      function [r, c] = getrc(obj, cats)
+        %   GETRC -- Get rows and cols, if some are emptied or unspecified.
+        ns = cellfun( @(x) numel(findall(obj, x)), cats );
+        [~, min_ind] = min( ns );
+        keep_vec = true( size(ns) );
+        keep_vec(min_ind) = false;
+        
+        r = cats( keep_vec );
+        c = cats( min_ind );
+        
+        if ( isempty(r) && ~isempty(c) )
+          r = c(1);
+        elseif ( isempty(c) && ~isempty(r) )
+          c = r(1);
+        end
+        
+        r = r(:)';
+        c = c(:)';
+      end
+      
+      function x = mkcell(x)
+        %   MKCELL -- Ensure input is cell row vector.
+        if ( ~iscell(x) ), x = { x }; x = x(:)'; end
+      end
+    end
+    
     %
     %   CONVERSION
     %
@@ -2254,6 +2351,73 @@ classdef fcat < handle
       conf = cat_buildconfig();      
     end
     
+    function T = table(T, rowc, colc)
+      
+      %   TABLE -- Convert tabular cell array to table.
+      %
+      %     tbl = fcat.table( T, rowc, colc ) constructs a table `tbl`
+      %     from the cell matrix `T` and row and column labels `rowc` and
+      %     `colc`. `rowc` is an MxN matrix of M labels in N rows of `T`; 
+      %     `colc` is a PxQ matrix of P labels in Q columns of `T`.
+      %
+      %     f = fcat.create( ...
+      %         'cities', {'nyc' 'la', 'sf'} ...
+      %       , 'states', {'ny' 'ca' 'ca'} ...
+      %       , 'countries', 'usa' ...
+      %     )
+      %   
+      %     [t, rc] = tabular( f, 'cities', 'states' )
+      %
+      %     fcat.table( t, rc{:} )
+      %
+      %     See also fcat/tabular
+      %
+      %     IN:
+      %       - `T` (cell array)
+      %       - `rowc` (cell array of strings)
+      %       - `colc` (cell array of strings)
+      
+      try
+        rowlabs = fcat.join( rowc, [], ' | ' );
+        collabs = fcat.join( colc, [], ' | ' );
+
+        collabs = cellfun( @matlab.lang.makeValidName, collabs, 'un', false );
+
+        T = cell2table( T, 'RowNames', rowlabs, 'VariableNames', collabs );
+      catch err
+        throw( err );
+      end
+    end
+    
+    function str = trim(str)
+      
+      %   TRIM -- Remove select characters and whitespace from string.
+      %
+      %     s = fcat.trim( '<drugs>. ' ) returns 'drugs', stripping '<',
+      %     '>', ' ', and '.' from `s`.
+      %
+      %     s = fcat.trim( C ) trims all strings in the cell array of
+      %     strings `C`, returning a cell array of the same size as `C`.
+      %
+      %     IN:
+      %       - `str` (cell array of strings, char)
+      %     OUT:
+      %       - `str` (cell array of strings, char)
+      
+      if ( iscell(str) )
+        str = cellfun( @trim_func, str, 'un', false );
+      else
+        str = trim_func( str );
+      end
+      
+      function str = trim_func(str)
+        ind = regexp( str, '[<>. ]' );
+        inds = true( 1, numel(str) );
+        inds(ind) = false;
+        str = str(inds);        
+      end
+    end
+    
     function strs = join(C, dim, pattern)
       
       %   JOIN -- Join array of strings, across dimension.
@@ -2275,7 +2439,7 @@ classdef fcat < handle
       %       - `pattern` (char) |OPTIONAL|
       
       if ( nargin < 3 ), pattern = '_'; end
-      if ( nargin < 2 ), dim = 2; end
+      if ( nargin < 2 || isempty(dim) ), dim = 2; end
       
       N = size( C, dim );
       n = ndims( C );
