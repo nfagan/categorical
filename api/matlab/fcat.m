@@ -1439,33 +1439,14 @@ classdef fcat < handle
       
       %   MERGENEW -- Join other's contents, preserving present categories.
       %
-      %     MERGENEW is not recommended. See fcat/join.
+      %     MERGENEW is not recommended. Use `join` instead.
       %
-      %     mergenew( A, B ) merges into A categories of B not present in
-      %     A. B must have the same number of rows of A, or else have a 
-      %     single row, in which case B is implicitly expanded to match the
-      %     size of A.
-      %
-      %     mergenew( A, B ) is equivalent to merge( A, B ) when A and B
-      %     have no shared categories.
-      %
-      %     mergenew( A, B, C ... ) merges the contents of B, C ... into A, 
-      %     as above.
-      %
-      %     EX //
-      %
-      %     A = fcat.create( 'date', datestr(now), 'city', 'Buffalo' );
-      %     B = fcat.create( 'city', 'New York', 'state', 'NY' );
-      %     repmat( A, 10 );
-      %     C = mergenew( copy(A), B )
-      %     D = merge( copy(A), B )
-      %
-      %     See also fcat/merge, fcat/assign, fcat/setcat, fcat/fcat
+      %     See also fcat/join.
       %
       %     IN:
       %       - `B` (fcat)
       
-      obj = join( obj, varargin{:} );      
+      obj = join( obj, varargin{:} );
     end
     
     function obj = join(obj, varargin)
