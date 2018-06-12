@@ -1,4 +1,4 @@
-eglabs = fcat.example();
+eglabs = fcat.example( 'small');
 egdat = fcat.example( 'smalldata' );
 
 %%
@@ -9,7 +9,7 @@ egdat = fcat.example( 'smalldata' );
 labs = eglabs';
 dat = egdat;
 
-[~, I] = only( labs, {'ubdn'} );
+[~, I] = only( labs, {'ubdn', 'ugit'} );
 dat = dat(I);
 
 prune( labs );
@@ -27,14 +27,14 @@ tbl = fcat.table( means, rc{:} )
 
 N = size( t, 1 );
 
-rowlabs = rc{1}';
-collabs = rc{2}';
+rlabs = rc{1}';
+clabs = rc{2}';
 
-addcat( repmat(rowlabs, 2), 'measure' );
-setcat( rowlabs, 'measure', 'mean', 1:N );
-setcat( rowlabs, 'measure', 'std', N+1:N*2 );
+addcat( repmat(rlabs, 2), 'measure' );
+setcat( rlabs, 'measure', 'mean', 1:N );
+setcat( rlabs, 'measure', 'std', N+1:N*2 );
 
 means = cellfun( @(x) mean(egdat(x)), t, 'un', false );
 devs = cellfun( @(x) std(egdat(x)), t, 'un', false );
 
-tbl2 = fcat.table( [means; devs], rowlabs, collabs )
+tbl2 = fcat.table( [means; devs], rlabs, clabs )

@@ -1101,6 +1101,8 @@ classdef fcat < handle
       %     s = joincat( ..., PATTERN ); uses PATTERN instead of an
       %     underscore.
       %
+      %     See also fcat/incat, fcat/combs
+      %
       %     IN:
       %       - `categories` (char, cell array of strings)
       %       - `pattern` (char) |OPTIONAL|
@@ -1410,7 +1412,7 @@ classdef fcat < handle
       %     repmat( A, 10 );
       %     merge( A, B )
       %
-      %     See also fcat/mergenew, fcat/assign, fcat/setcat, fcat/fcat
+      %     See also fcat/join, fcat/assign, fcat/setcat, fcat/fcat
       %
       %     IN:
       %       - `B` (fcat)
@@ -1435,7 +1437,9 @@ classdef fcat < handle
     
     function obj = mergenew(obj, varargin)
       
-      %   MERGENEW -- Merge other's contents, preserving present categories.
+      %   MERGENEW -- Join other's contents, preserving present categories.
+      %
+      %     MERGENEW is not recommended. See fcat/join.
       %
       %     mergenew( A, B ) merges into A categories of B not present in
       %     A. B must have the same number of rows of A, or else have a 
@@ -1461,12 +1465,43 @@ classdef fcat < handle
       %     IN:
       %       - `B` (fcat)
       
+      obj = join( obj, varargin{:} );      
+    end
+    
+    function obj = join(obj, varargin)
+      
+      %   JOIN -- Join other's contents, preserving present categories.
+      %
+      %     join( A, B ) adds into A categories of B not present in
+      %     A. B must have the same number of rows of A, or else have a 
+      %     single row, in which case B is implicitly expanded to match the
+      %     size of A.
+      %
+      %     join( A, B ) is equivalent to merge( A, B ) when A and B
+      %     have no shared categories.
+      %
+      %     join( A, B, C ... ) adds the contents of B, C ... into A, 
+      %     as above.
+      %
+      %     EX //
+      %
+      %     A = fcat.create( 'date', datestr(now), 'city', 'Buffalo' );
+      %     B = fcat.create( 'city', 'New York', 'state', 'NY' );
+      %     repmat( A, 10 );
+      %     C = join( copy(A), B )
+      %     D = merge( copy(A), B )
+      %
+      %     See also fcat/merge, fcat/assign, fcat/setcat, fcat/fcat
+      %
+      %     IN:
+      %       - `B` (fcat)
+      
       if ( ~isa(obj, 'fcat') )
-        error( 'Cannot merge objects of class "%s".', class(obj) );
+        error( 'Cannot join objects of class "%s".', class(obj) );
       end
       
       try
-        cellfun( @(x) assert(isa(x, 'fcat'), ['Cannot merge objects of' ...
+        cellfun( @(x) assert(isa(x, 'fcat'), ['Cannot join objects of' ...
           , ' class "%s".'], class(x)), varargin );
       catch err
         throwAsCaller( err );
@@ -2352,7 +2387,7 @@ classdef fcat < handle
     
     function T = table(T, rowc, colc)
       
-      %   TABLE -- Convert tabular cell array to table.
+      %   TABLE -- Convert matrix to table, with row and column labels.
       %
       %     tbl = fcat.table( T, rowc, colc ) constructs a table `tbl`
       %     from the matrix `T` and row and column labels `rowc` and 
@@ -2370,6 +2405,8 @@ classdef fcat < handle
       %     cell array of strings, it is of size PxQ, where Q is equal to
       %     the number of columns of `T`.
       %
+      %     EX //
+      %
       %     labs = fcat.example();
       %     dat = fcat.example( 'smalldata' );
       %   
@@ -2386,17 +2423,21 @@ classdef fcat < handle
       %       - `rowc` (fcat, cell array of strings)
       %       - `colc` (fcat, cell array of strings)
       
+      import matlab.lang.makeValidName;
+      
       try
         if ( isa(rowc, 'fcat') ), rowc = cellstr( rowc )'; end
         if ( isa(colc, 'fcat') ), colc = cellstr( colc )'; end
         
         validate( T, rowc, colc );
         
-        rowlabs = fcat.join( rowc, [], ' | ' );
-        collabs = fcat.join( colc, [], ' | ' );
-        collabs = cellfun( @matlab.lang.makeValidName, collabs, 'un', false );
+        pattern = ' | ';
         
-        inputs = { 'RowNames', rowlabs, 'VariableNames', collabs };
+        rlabs = fcat.strjoin( rowc, [], pattern );
+        clabs = fcat.strjoin( colc, [], pattern );
+        clabs = cellfun( @(x) makeValidName(fcat.trim(x)), clabs, 'un', false );
+        
+        inputs = { 'RowNames', rlabs, 'VariableNames', clabs };
 
         if ( iscell(T) )
           T = cell2table( T, inputs{:} );
@@ -2433,6 +2474,8 @@ classdef fcat < handle
       %     s = fcat.trim( C ) trims all strings in the cell array of
       %     strings `C`, returning a cell array of the same size as `C`.
       %
+      %     See also fcat.strjoin, fcat/joincat
+      %
       %     IN:
       %       - `str` (cell array of strings, char)
       %     OUT:
@@ -2445,24 +2488,21 @@ classdef fcat < handle
       end
       
       function str = trim_func(str)
-        ind = regexp( str, '[<>. ]' );
-        inds = true( 1, numel(str) );
-        inds(ind) = false;
-        str = str(inds);        
+        str = regexprep( str, '[<>. ]', '' );
       end
     end
     
-    function strs = join(C, dim, pattern)
+    function strs = strjoin(C, dim, pattern)
       
-      %   JOIN -- Join array of strings, across dimension.
+      %   STRJOIN -- Join array of strings, across dimension.
       %
-      %     strs = ... join( C ) produces a 1xN cell array of strings
+      %     strs = ... strjoin( C ) produces a 1xN cell array of strings
       %     `strs`, whose elements are the elements of `C` joined along
       %     columns.
       %
-      %     strs = ... join( ..., DIM ) operates along dimension `DIM`.
+      %     strs = ... strjoin( ..., DIM ) operates along dimension `DIM`.
       %
-      %     strs = ... join( ..., PATTERN ) uses `PATTERN` to join
+      %     strs = ... strjoin( ..., PATTERN ) uses `PATTERN` to join
       %     elements of `C`.
       %
       %     See also fcat/combs
