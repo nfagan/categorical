@@ -1548,6 +1548,10 @@ classdef fcat < handle
       %     assign( obj, B, 1:10, 11:20 ) assigns rows 11:20 of `B` to rows
       %     1:10 of `obj`.
       %
+      %     assign( obj, B, 1:10, 8 ) assigns row 8 of `B` to rows 1:10 of
+      %     `obj`. In this case, the single row of `B` is implicitly
+      %     repeated 10 times.
+      %
       %     IN:
       %       - `B` (fcat)
       %       - `to_indices` (uint64)

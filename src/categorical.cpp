@@ -1905,7 +1905,8 @@ void util::categorical::unchecked_assign_progenitors_match(const util::categoric
 void util::categorical::unchecked_assign_progenitors_match(const util::categorical &other,
                                                            const std::vector<util::u64> &to_indices,
                                                            const std::vector<util::u64> &from_indices,
-                                                           util::s64 index_offset)
+                                                           util::s64 index_offset,
+                                                           bool is_scalar)
 {
     using util::u32;
     using util::u64;
@@ -1920,7 +1921,8 @@ void util::categorical::unchecked_assign_progenitors_match(const util::categoric
         
         for (u64 j = 0; j < n_indices; j++)
         {
-            u64 from_idx = from_indices[j] + index_offset;
+            const u64 ind_from = is_scalar ? 0 : j;
+            u64 from_idx = from_indices[ind_from] + index_offset;
             u64 to_idx = to_indices[j] + index_offset;
             own_labs[to_idx] = other_labs[from_idx];
         }
@@ -2078,10 +2080,20 @@ util::u32 util::categorical::assign(const util::categorical& other,
     u64 own_sz = size();
     u64 other_sz = other.size();
     
-    //  error if n from indices does not match n to indices
+    bool is_scalar = false;
+    
+    //  error if n from indices does not match n to indices,
+    //  and n_from_indices isn't scalar
     if (n_to_indices != n_from_indices)
     {
-        return util::categorical_status::WRONG_INDEX_SIZE;
+        if (n_from_indices == 1)
+        {
+            is_scalar = true;
+        }
+        else
+        {
+            return util::categorical_status::WRONG_INDEX_SIZE;
+        }
     }
     
     //  bounds check
@@ -2096,7 +2108,7 @@ util::u32 util::categorical::assign(const util::categorical& other,
     
     if (m_progenitor_ids == other.m_progenitor_ids)
     {
-        unchecked_assign_progenitors_match(other, to_indices, from_indices, index_offset);
+        unchecked_assign_progenitors_match(other, to_indices, from_indices, index_offset, is_scalar);
         return util::categorical_status::OK;
     }
     m_progenitor_ids.randomize();
@@ -2123,7 +2135,8 @@ util::u32 util::categorical::assign(const util::categorical& other,
         
         for (u64 i = 0; i < n_to_indices; i++)
         {
-            const u64 from_idx = from_indices[i] + index_offset;
+            const u64 index_from = is_scalar ? 0 : i;
+            const u64 from_idx = from_indices[index_from] + index_offset;
             const u64 to_idx = to_indices[i] + index_offset;
             
             const u32 other_lab_id = other_labs[from_idx];

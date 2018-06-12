@@ -211,7 +211,8 @@ private:
     void unchecked_assign_progenitors_match(const util::categorical& other,
                      const std::vector<util::u64>& to_indices,
                      const std::vector<util::u64>& from_indices,
-                     util::s64 index_offset);
+                     util::s64 index_offset,
+                                            bool is_scalar);
     
     bool categories_match(const categorical& other) const;
     
