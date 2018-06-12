@@ -66,6 +66,17 @@ classdef fcat < handle
       
       %   PROGENITORSMATCH -- True if two fcats have the same source.
       %
+      %     Internally, fcat objects house matrices of uint32 ids mapped to
+      %     string labels. Ids are chosen randomly upon insertion of new
+      %     labels, such that two objects with semantically identical
+      %     contents might have different string-label to uint32 id
+      %     mappings. Reconciling these potential differences can be
+      %     expensive during `append`, `assign`, etc. operations between
+      %     objects, and is unnecessary in the case that the mappings
+      %     match. fcat objects thus keep track of their progenitor -- the
+      %     source of their label mapping -- and employ faster between-
+      %     object functions if those progenitors match.
+      %
       %     See also fcat/eq, fcat/findall
       %
       %     IN:
