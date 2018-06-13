@@ -35,7 +35,11 @@ if ( ~uniform )
 end
 
 if ( isnumeric(data) )
-  new_data = numeric_rowop( data, I, func );
+  if ( ismatrix(data) )
+    new_data = numeric_matrowop( data, I, func );
+  else
+    new_data = numeric_rowop( data, I, func );
+  end
 else
   new_data = generic_rowop( data, I, func );
 end
@@ -64,6 +68,17 @@ new_data = data( [], colons{:} );
 
 for i = 1:n_inds
   new_data(i, colons{:}) = func( data(I{i}, colons{:}) );
+end
+
+end
+
+function new_data = numeric_matrowop(data, I, func)
+
+n_inds = numel( I );
+new_data = zeros( n_inds, size(data, 2) );
+
+for i = 1:n_inds
+  new_data(i, :) = func( data(I{i}, :) );
 end
 
 end

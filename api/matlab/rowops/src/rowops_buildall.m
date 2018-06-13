@@ -1,7 +1,10 @@
 function rowops_buildall()
 
-rowops_build( 'rowmean.cpp' );
-rowops_build( 'rownanmean.cpp' );
-rowops_build( 'rowstd.cpp' );
+p = fileparts( which(mfilename) );
+
+rowops_build( p, 'rowmean.cpp' );
+rowops_build( p, 'rownanmean.cpp' );
+rowops_build( p, 'rowstd.cpp' );
+rowops_build( p, 'rownanstd.cpp' );
 
 end
