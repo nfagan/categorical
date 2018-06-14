@@ -26,16 +26,9 @@ void util::full_category(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prh
         
         std::vector<std::string> full_cat = cat->full_category(c_cat, &cat_exists);
         
-        //
         //  cleanup created arrays
-        //
         if (!cat_exists)
-        {
-            for (u64 j = 0; j < assign_at; j++)
-            {
-                mxDestroyArray(mxGetCell(strs, j));
-            }
-            
+        {            
             mxDestroyArray(strs);
             std::string msg = util::get_error_text_missing_category(c_cat);
             mexErrMsgIdAndTxt(func_id, msg.c_str());

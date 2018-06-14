@@ -3,6 +3,11 @@
 namespace impl {
     void add_cat(util::categorical* cat, const std::string& cat_name, const char* func_id)
     {
+        if (cat_name == ":")
+        {
+            mexErrMsgIdAndTxt(func_id, "Invalid category name ':'.");
+        }
+        
         util::u32 status = cat->require_category(cat_name);     
         
         if (status == util::categorical_status::OK)

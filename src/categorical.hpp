@@ -111,6 +111,8 @@ public:
     std::vector<std::string> get_labels() const;
     util::labels_t get_labels_and_ids() const;
     std::vector<const std::vector<util::u32>*> get_label_mat() const;
+    std::vector<const std::vector<util::u32>*> get_label_mat(const std::vector<std::string>& categories,
+                                                             bool* exists) const;
     
     std::vector<std::string> full_category(const std::string& category, bool* exists) const;
     std::vector<std::string> full_category(const std::string& category) const;

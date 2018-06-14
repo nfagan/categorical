@@ -193,7 +193,7 @@ classdef fcat < handle
       
       if ( dim > 2 )
         if ( isvalid(obj) )
-          sz = 1;
+          sz = uint64( 1 );
         else
           sz = 0;
         end
@@ -510,6 +510,11 @@ classdef fcat < handle
       %     of `obj`. The order of categories is consistent with the output
       %     of `getcats()`.
       %
+      %     Reference with curly braces "{}" is also supported in the same
+      %     manner as with parentheses "()". In this case, however, the 
+      %     output is a categorical matrix, rather than a cell matrix of 
+      %     strings.
+      %
       %     c = obj(:, 1) returns the first full category of `obj`.
       %
       %     c = obj(1:10) returns a copied fcat object whose elements are
@@ -603,6 +608,38 @@ classdef fcat < handle
               
               error( 'Invalid reference signature.' );
             end
+          case '{}'
+            %
+            % f{:} | f{'days'} | f{{'days', 'doses'}}
+            %
+            if ( n_subs == 1 )
+              if ( strcmp(subs{1}, ':') )
+                varargout{1} = categorical( obj );
+              else
+                varargout{1} = categorical( incat(obj, subs{1}) );
+              end
+              return;
+            end
+            
+            %
+            % f{1, :} | f{:, :} | f{1, 2} | f{1, 'cities'} ..
+            %
+            
+            assert( n_subs == 2, 'Too many subscripts.' );
+            
+            rows = subs{1};
+            cats = subs{2};
+            
+            if ( numel(cats) == 1 && strcmp(cats, ':') )
+              cats = getcats( obj );
+            end
+            
+            if ( numel(rows) == 1 && strcmp(rows, ':') )
+              varargout{1} = categorical( obj, cats );
+              return;
+            end
+            
+            varargout{1} = categorical( obj, cats, rows );
           case '.'
             if ( any(strcmp(methods(obj), subs)) )
               func = eval( sprintf('@%s', subs) );
@@ -1137,6 +1174,10 @@ classdef fcat < handle
       %     If the collapsed expression is already present in a 
       %     different category, an error will be thrown and the category 
       %     will not be added.
+      %
+      %     The category name ':' is reserved to avoid conflict with 
+      %     indexing operations that make use of the colon operator.
+      %     Attempting to add ':' as a category is an error.
       %
       %     See also fcat/findall, fcat/fcat
       %
@@ -1821,19 +1862,52 @@ classdef fcat < handle
       C = fullcat( obj, F );
     end
     
-    function [C, F] = categorical(obj)
+    function [C, cats] = categorical(obj, cats, inds)
       
-      %   CATEGORICAL -- Convert to Matlab categorical array.
+      %   CATEGORICAL -- Convert to Matlab categorical matrix.
+      %
+      %     C = categorical( obj ) converts `obj` to a Matlab categorical
+      %     matrix. Columns in `C` are in an order consistent with the
+      %     output of `getcats(obj)`.
+      %
+      %     [..., cats] = categorical( obj ) also returns the categories of
+      %     `obj` as a cell array of strings.
+      %
+      %     C = categorical( obj, 'cities' ) returns the category 'cities',
+      %     only.
+      %
+      %     C = categorical( obj, 1 ) returns the first category in `obj`.
+      %     The order of categories is consistent with the output of
+      %     `getcats(obj)`.
+      %
+      %     C = categorical( ..., INDS ) returns the subset of rows at
+      %     indices `INDS`.
       %
       %     See also fcat/cellstr
       %
+      %     IN:
+      %       - `cats` (cell array of strings, numeric) |OPTIONAL|
+      %       - `inds` (uint64) |OPTIONAL|
       %     OUT:
       %       - `C` (categorical)
-      %       - `F` (cell array of strings)
+      %       - `cats` (cell array of strings)
       
-      [N, labs, ids] = cat_api( 'to_numeric_mat', obj.id );
+      if ( nargin == 1 )
+        [N, labs, ids] = cat_api( 'to_numeric_mat', obj.id );
+        cats = getcats( obj );
+      else
+        if ( isnumeric(cats) )
+          c = getcats( obj );
+          cats = c(cats);
+        end
+        if ( nargin == 2 )
+          [N, labs, ids] = cat_api( 'to_numeric_mat', obj.id, cats );
+        else
+          [N, labs, ids] = cat_api( 'to_numeric_mat', obj.id, cats, uint64(inds) );
+        end        
+      end
+      
       C = categorical( N, ids, labs );
-      F = getcats( obj );
     end
     
     function [d, f] = double(obj)

@@ -38,15 +38,6 @@ void util::partial_category(int nlhs, mxArray *plhs[], int nrhs, const mxArray *
             assign_at += part_cat.size();
             continue;
         }
-        
-        //
-        //  otherwise, we have to cleanup
-        //
-        
-        for (u64 j = 0; j < assign_at; j++)
-        {
-            mxDestroyArray(mxGetCell(strs, j));
-        }
 
         mxDestroyArray(strs);
 

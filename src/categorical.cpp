@@ -2522,16 +2522,33 @@ util::labels_t util::categorical::get_labels_and_ids() const
 
 std::vector<const std::vector<util::u32>*> util::categorical::get_label_mat() const
 {
-    std::vector<std::string> cats = get_categories();
+    bool dummy;
+    return get_label_mat(get_categories(), &dummy);
+}
+
+//  get_label_mat: Get a reference to the labels array, in subset of categories.
+
+std::vector<const std::vector<util::u32>*> util::categorical::get_label_mat(const std::vector<std::string>& cats,
+                                                                            bool* exists) const
+{
+    *exists = true;
+    util::u64 n_cats = cats.size();
+    std::vector<const std::vector<util::u32>*> res(n_cats);
+    auto cat_end = m_category_indices.end();
     
-    std::vector<const std::vector<util::u32>*> res(cats.size());
-    
-    util::u64 out_idx = 0;
-    
-    for (const auto& cat : cats)
+    for (util::u64 i = 0; i < n_cats; i++)
     {
-        util::u64 cat_idx = m_category_indices.at(cat);
-        res[out_idx++] = &m_labels[cat_idx];
+        auto it = m_category_indices.find(cats[i]);
+        
+        if (it == cat_end)
+        {
+            *exists = false;
+        }
+        else
+        {
+            util::u64 cat_idx = it->second;
+            res[i] = &m_labels[cat_idx];
+        }
     }
     
     return res;
