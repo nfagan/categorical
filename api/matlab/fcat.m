@@ -1428,7 +1428,12 @@ classdef fcat < handle
       
       %   APPEND -- Append another fcat object.
       %
-      %     See also fcat/fcat
+      %     append( A, B ) appends the contents of `B` to `A`. 
+      %
+      %     Categories must match between objects; labels shared between 
+      %     objects must reside in consistent categories.
+      %
+      %     See also fcat/join, fcat/fcat
       %
       %     IN:
       %       - `B` (fcat)

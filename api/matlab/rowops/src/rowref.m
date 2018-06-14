@@ -17,7 +17,6 @@ function d = rowref(data, I)
 %     OUT:
 %       - `d` (/T/)
 
-colons = repmat( {':'}, 1, ndims(data)-1 );
-d = data(I, colons{:});
+d = dimref( data, I, 1 );
 
 end
