@@ -14,9 +14,12 @@ function d = dimref(data, I, dim)
 %     IN:
 %       - `data` (/T/)
 %       - `I` (double, uint64, logical)
+%       - `dim` (double)
 %     OUT:
 %       - `d` (/T/)
 
+assert( isscalar(dim) && dim > 0 && dim <= ndims(data) ...
+  , 'Dimension must be an integer scalar within indexing range.' ); 
 indices = repmat( {':'}, 1, ndims(data) );
 indices{dim} = I;
 d = data(indices{:});

@@ -122,6 +122,8 @@ public:
                                               util::u32* status,
                                               util::s64 index_offset = 0) const;
     
+    bool is_uniform_category(const std::string& cat, bool* exists) const;
+    
     std::vector<std::string> in_category(const std::string& category, bool* exists) const;
     std::vector<std::string> in_category(const std::string& category) const;
     std::vector<std::string> in_categories(const std::vector<std::string>& categories, bool* exist) const;
@@ -131,20 +133,29 @@ public:
     
     void remove_category(const std::string& category, bool* exists);
     
-    util::u32 keep(std::vector<util::u64>& at_indices, util::s64 offset = 0);
+    util::u32 keep(const std::vector<util::u64>& at_indices, util::s64 offset = 0);
     std::vector<util::u64> remove(const std::vector<std::string>& labels);
     
     void reserve(util::u64 rows);
     void repeat(util::u64 times);
     
-    util::u32 append(const categorical& other);
+    util::u32 append(const util::categorical& other);
+    util::u32 append(const util::categorical &other,
+                     const std::vector<util::u64>& indices,
+                     util::s64 index_offset = 0);
+    
+    util::u32 append_one(const util::categorical& other);
+    util::u32 append_one(const util::categorical& other,
+                         const std::vector<util::u64>& indices,
+                         util::s64 index_offset = 0);
+    
     util::u32 assign(const util::categorical& other,
                      const std::vector<util::u64>& to_indices,
-                     util::s64 index_offset);
+                     util::s64 index_offset = 0);
     util::u32 assign(const util::categorical& other,
-                                        const std::vector<util::u64>& to_indices,
-                                        const std::vector<util::u64>& from_indices,
-                                        util::s64 index_offset);
+                     const std::vector<util::u64>& to_indices,
+                     const std::vector<util::u64>& from_indices,
+                     util::s64 index_offset = 0);
     
     util::u32 merge(const util::categorical& other);
     util::u32 merge_new(const util::categorical& other);
@@ -182,9 +193,6 @@ public:
                                         util::u64 rows,
                                         util::u64 cols);
 private:
-    util::u64 m_size;
-    util::u32 m_next_id;
-    
     std::vector<std::vector<util::u32>> m_labels;
     std::unordered_map<std::string, util::u64> m_category_indices;
     util::multimap<std::string, util::u32> m_label_ids;
@@ -207,16 +215,36 @@ private:
     void unchecked_append_progenitors_match(const util::categorical& other,
                                             util::u64 own_sz,
                                             util::u64 other_sz);
+    util::u32 unchecked_append_progenitors_match_indexed(const util::categorical& other,
+                                                         util::u64 own_sz,
+                                                         util::u64 other_sz,
+                                                         const std::vector<util::u64>& indices,
+                                                         util::s64 index_offset);
     void unchecked_assign_progenitors_match(const util::categorical& other,
                                             const std::vector<util::u64>& to_indices,
                                             util::s64 index_offset);
     void unchecked_assign_progenitors_match(const util::categorical& other,
-                     const std::vector<util::u64>& to_indices,
-                     const std::vector<util::u64>& from_indices,
-                     util::s64 index_offset,
+                                            const std::vector<util::u64>& to_indices,
+                                            const std::vector<util::u64>& from_indices,
+                                            util::s64 index_offset,
                                             bool is_scalar);
     
+    util::u32 append_impl(const util::categorical& other,
+                          const bool use_indices,
+                          const std::vector<util::u64>& indices,
+                          util::s64 index_offset);
+    
+    util::u32 append_one_impl(const util::categorical& other,
+                              const bool use_indices,
+                              const std::vector<util::u64>& indices,
+                              util::s64 index_offset);
+    
     bool categories_match(const categorical& other) const;
+    bool is_uniform(const std::vector<util::u32>& lab_ids) const;
+    bool is_uniform(const std::vector<util::u32>& lab_ids,
+                    const std::vector<util::u64>& indices,
+                    util::u32* status,
+                    util::s64 index_offset) const;
     
     std::vector<util::u64> find_impl(const std::vector<std::string>& labels,
                                      const bool use_indices,
@@ -254,6 +282,12 @@ private:
                                    const std::unordered_map<util::u32, util::u32>& replace_other_labs,
                                    util::u64 own_sz,
                                    util::u64 other_sz);
+    util::u32 append_fill_new_label_ids_indexed(const util::categorical& other,
+                                                const std::unordered_map<util::u32, util::u32>& replace_other_labs,
+                                                util::u64 own_sz,
+                                                util::u64 other_sz,
+                                                const std::vector<util::u64>& indices,
+                                                util::s64 index_offset);
     
     util::u32 merge(const util::categorical& other, const bool overwrite_existing_cats);
     
@@ -269,7 +303,7 @@ private:
                                                 const bool overwrite_existing_categories = true) const;
     
     static util::u32 get_id(const categorical* self, const categorical* other,
-                const std::unordered_set<util::u32>& new_ids);
+                            const std::unordered_set<util::u32>& new_ids);
     
     static void replace_labels(std::vector<std::vector<util::u32>>& labels,
                                util::u64 start, util::u64 stop,

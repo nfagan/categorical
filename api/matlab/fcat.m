@@ -1249,7 +1249,10 @@ classdef fcat < handle
       %     collapsecat( obj, {'test1', 'test2'} ) works as above, but for
       %     multiple categories at once.
       %
-      %     See also fcat/addcat, fcat/keepeach
+      %     Collapsed expressions are placeholder labels used generally to
+      %     indicate the absence of a specific label in that category.
+      %
+      %     See also fcat/addcat, fcat/makecollapsed, fcat/keepeach
       %
       %     IN:
       %       - `category` (char, cell array of strings)
@@ -1424,19 +1427,25 @@ classdef fcat < handle
       n = cat_api( 'prune', obj.id );
     end
     
-    function obj = append(obj, B)
+    function obj = append(obj, B, inds)
       
       %   APPEND -- Append another fcat object.
       %
-      %     append( A, B ) appends the contents of `B` to `A`. 
+      %     append( A, B ) appends the contents of `B` to `A`.
+      %
+      %     append( A, B, inds ) appends the subset of rows of `B`
+      %     identified by the uint64 index vector `inds`. This syntax is
+      %     equivalent to append( A, B(inds) ), but is generally much
+      %     faster, since it avoids copying `B`.
       %
       %     Categories must match between objects; labels shared between 
       %     objects must reside in consistent categories.
       %
-      %     See also fcat/join, fcat/fcat
+      %     See also fcat/join, fcat/append1, fcat/fcat
       %
       %     IN:
       %       - `B` (fcat)
+      %       - `inds` (uint64) |OPTIONAL|
       
       if ( ~isa(obj, 'fcat') )
         error( 'Cannot append objects of class "%s".', class(obj) );
@@ -1445,7 +1454,53 @@ classdef fcat < handle
         error( 'Cannot append objects of class "%s".', class(B) );
       end
       
-      cat_api( 'append', obj.id, B.id );
+      if ( nargin == 2 )
+        cat_api( 'append', obj.id, B.id );
+      else
+        cat_api( 'append', obj.id, B.id, uint64(inds) );
+      end
+    end
+    
+    function obj = append1(obj, B, inds)
+      
+      %   APPEND1 -- Append single collapsed fcat object.
+      %
+      %     append1( A, B ) appends a single collapsed row of `B` to `A`,
+      %     without modifying `B`. For each category in `A` and `B`, either
+      %     the collapsed expression for the category, or the single label
+      %     in the category (i.e., if it is uniform), will be added to `A`.
+      %
+      %     append1( A, B, I ) considers only the rows of `B` identified by
+      %     the uint64 index vector `I`.
+      %
+      %     append1( A, B ) is the same as append( A, one(B(:)) ), but
+      %     is generally much faster, since it avoids copying `B`.
+      %
+      %     append1( A, B, 1:10 ) is the same as append( A, one(B(1:10)) ).
+      %
+      %     EX //
+      %
+      %     A = fcat.example;
+      %     B = fcat.example;
+      %
+      %     See also fcat/one, fcat/append, fcat/collapsecat
+      %
+      %     IN:
+      %       - `B` (fcat)
+      %       - `inds` (uint64) |OPTIONAL|
+      
+      if ( ~isa(obj, 'fcat') )
+        error( 'Cannot append objects of class "%s".', class(obj) );
+      end
+      if ( ~isa(B, 'fcat') )
+        error( 'Cannot append objects of class "%s".', class(B) );
+      end
+      
+      if ( nargin == 2 )
+        cat_api( 'append_one', obj.id, B.id );
+      else
+        cat_api( 'append_one', obj.id, B.id, uint64(inds) );
+      end
     end
     
     function obj = merge(obj, varargin)

@@ -12,8 +12,7 @@
 
 util::categorical::categorical()
 {
-    m_size = 0;
-    m_next_id = 1;
+    //
 }
 
 util::categorical::~categorical()
@@ -1053,7 +1052,12 @@ void util::categorical::one()
     
     for (const auto& it : m_category_indices)
     {
-        collapse_category(it.first);
+        const std::vector<u32>& ids = m_labels[it.second];
+        
+        if (!is_uniform(ids))
+        {
+            collapse_category(it.first);
+        }
     }
     
     if (size() <= 1)
@@ -1584,7 +1588,7 @@ std::string util::categorical::get_collapsed_expression(const std::string& for_c
 
 //  keep: Retain rows at indices.
 
-util::u32 util::categorical::keep(std::vector<util::u64>& at_indices, util::s64 offset)
+util::u32 util::categorical::keep(const std::vector<util::u64>& at_indices, util::s64 offset)
 {
     using util::u64;
     using util::u32;
@@ -1723,6 +1727,8 @@ void util::categorical::unchecked_append_progenitors_match(const util::categoric
                                                            util::u64 own_sz,
                                                            util::u64 other_sz)
 {
+    using util::u64;
+    
     resize(own_sz + other_sz);
     
     u64 n_cols = m_labels.size();
@@ -1737,14 +1743,164 @@ void util::categorical::unchecked_append_progenitors_match(const util::categoric
     }
 }
 
+util::u32 util::categorical::unchecked_append_progenitors_match_indexed(const util::categorical& other,
+                                                                        util::u64 own_sz,
+                                                                        util::u64 other_sz,
+                                                                        const std::vector<util::u64>& indices,
+                                                                        util::s64 index_offset)
+{
+    using util::u64;
+    
+    u64 indices_sz = indices.size();
+    
+    resize(own_sz + indices_sz);
+    
+    u64 n_cols = m_labels.size();
+    
+    for (u64 i = 0; i < n_cols; i++)
+    {
+        util::u32* dest_ptr = m_labels[i].data();
+        const util::u32* src_ptr = other.m_labels[i].data();
+        
+        for (u64 j = 0; j < indices_sz; j++)
+        {
+            const u64 idx = indices[j] + index_offset;
+            
+            if (idx >= other_sz)
+            {
+                resize(own_sz);
+                return util::categorical_status::OUT_OF_BOUNDS;
+            }
+            
+            dest_ptr[own_sz + j] = src_ptr[idx];
+        }
+    }
+    
+    return util::categorical_status::OK;
+}
+
+//  append_one: Append another categorical object, collapsing
+//      its non-uniform categories
+
+util::u32 util::categorical::append_one(const util::categorical& other)
+{
+    return append_one_impl(other, false, std::vector<util::u64>(), 0);
+}
+
+//  append_one: Append another categorical object, collapsing
+//      its non-uniform categories, for indexed subset.
+
+util::u32 util::categorical::append_one(const util::categorical& other,
+                                        const std::vector<util::u64>& indices,
+                                        util::s64 index_offset)
+{
+    return append_one_impl(other, true, indices, index_offset);
+}
+
+util::u32 util::categorical::append_one_impl(const util::categorical& other,
+                                             const bool use_indices,
+                                             const std::vector<util::u64>& indices,
+                                             util::s64 index_offset)
+{
+    using util::categorical;
+    using util::u32;
+    
+    if (other.size() == 0)
+    {
+        return util::categorical_status::OK;
+    }
+    
+    if (use_indices && indices.size() == 0)
+    {
+        return util::categorical_status::OK;
+    }
+    
+    categorical tmp;
+    
+    for (const auto& cat_it : other.m_category_indices)
+    {
+        const std::string& cat = cat_it.first;
+        
+        tmp.require_category(cat);
+        
+        const std::vector<u32>& ids = other.m_labels[cat_it.second];
+        
+        bool is_uniform;
+        
+        if (use_indices)
+        {
+            u32 status;
+            is_uniform = other.is_uniform(ids, indices, &status, index_offset);
+            
+            if (status != util::categorical_status::OK)
+            {
+                return status;
+            }
+        }
+        else
+        {
+            is_uniform = other.is_uniform(ids);
+        }
+        
+        std::string assign_lab;
+        
+        if (is_uniform)
+        {
+            u64 idx = 0;
+            
+            if (use_indices)
+            {
+                idx = indices[0] + index_offset;
+            }
+            
+            assign_lab = other.m_label_ids.at(ids[idx]);
+        }
+        else
+        {
+            assign_lab = other.get_collapsed_expression(cat);
+        }
+        
+        tmp.set_category(cat, {assign_lab});
+    }
+    
+    tmp.prune();
+    
+    return append(tmp);
+}
+
 //  append: Append one categorical object to another.
 
 util::u32 util::categorical::append(const util::categorical &other)
 {
+    return append_impl(other, false, std::vector<util::u64>(), 0);
+}
+
+util::u32 util::categorical::append(const util::categorical &other,
+                                    const std::vector<util::u64>& indices,
+                                    util::s64 index_offset)
+{
+    return append_impl(other, true, indices, index_offset);
+}
+
+util::u32 util::categorical::append_impl(const util::categorical& other,
+                                         const bool use_indices,
+                                         const std::vector<util::u64>& indices,
+                                         util::s64 index_offset)
+{
     using util::u32;
     using util::u64;
     
-    u64 other_sz = other.size();
+    u64 other_sz;
+    
+    if (use_indices)
+    {
+        other_sz = indices.size();
+    }
+    else
+    {
+        other_sz = other.size();
+    }
+    
     u64 own_sz = size();
     
     if (other_sz == 0)
@@ -1754,7 +1910,24 @@ util::u32 util::categorical::append(const util::categorical &other)
     
     if (own_sz == 0)
     {
-        *this = other;
+        if (use_indices)
+        {
+            util::categorical tmp = other;
+            
+            u32 status = tmp.keep(indices, index_offset);
+            
+            if (status != util::categorical_status::OK)
+            {
+                return status;
+            }
+            
+            *this = std::move(tmp);
+        }
+        else
+        {
+            *this = other;
+        }
+        
         return util::categorical_status::OK;
     }
     
@@ -1772,8 +1945,15 @@ util::u32 util::categorical::append(const util::categorical &other)
     
     if (m_progenitor_ids == other.m_progenitor_ids)
     {
-        unchecked_append_progenitors_match(other, own_sz, other_sz);
-        return util::categorical_status::OK;
+        if (use_indices)
+        {
+            return unchecked_append_progenitors_match_indexed(other, own_sz, other.size(), indices, index_offset);
+        }
+        else
+        {
+            unchecked_append_progenitors_match(other, own_sz, other_sz);
+            return util::categorical_status::OK;
+        }
     }
     
     std::unordered_map<u32, u32> replace_other_labs;
@@ -1809,9 +1989,23 @@ util::u32 util::categorical::append(const util::categorical &other)
     
     resize(own_sz + other_sz);
     
-    append_fill_new_label_ids(other, replace_other_labs, own_sz, other_sz);
-    
-    return util::categorical_status::OK;
+    if (use_indices)
+    {
+        util::u32 status = append_fill_new_label_ids_indexed(other, replace_other_labs, own_sz,
+                                                 other.size(), indices, index_offset);
+        
+        if (status != util::categorical_status::OK)
+        {
+            resize(own_sz);
+        }
+        
+        return status;
+    }
+    else
+    {
+        append_fill_new_label_ids(other, replace_other_labs, own_sz, other_sz);
+        return util::categorical_status::OK;
+    }
 }
 
 void util::categorical::append_fill_new_label_ids(const util::categorical& other,
@@ -1842,6 +2036,50 @@ void util::categorical::append_fill_new_label_ids(const util::categorical& other
             }
         }
     }
+}
+
+util::u32 util::categorical::append_fill_new_label_ids_indexed(const util::categorical& other,
+                                            const std::unordered_map<util::u32, util::u32>& replace_other_labs,
+                                            util::u64 own_sz,
+                                            util::u64 other_sz,
+                                            const std::vector<util::u64>& indices,
+                                            util::s64 index_offset)
+{
+    using util::u64;
+    using util::u32;
+    
+    u64 n_indices = indices.size();
+    
+    for (const auto& it : m_category_indices)
+    {
+        const std::string& cat = it.first;
+        const u64 own_idx = it.second;
+        const u64 other_idx = other.m_category_indices.at(cat);
+        
+        const u32* src = other.m_labels[other_idx].data();
+        u32* dest = m_labels[own_idx].data();
+        
+        for (u64 i = 0; i < n_indices; i++)
+        {
+            u64 idx = indices[i] + index_offset;
+            
+            if (idx >= other_sz)
+            {
+                return util::categorical_status::OUT_OF_BOUNDS;
+            }
+            
+            u32 id = src[idx];
+            
+            if (replace_other_labs.count(id) > 0)
+            {
+                id = replace_other_labs.at(id);
+            }
+            
+            dest[i + own_sz] = id;
+        }
+    }
+    
+    return util::categorical_status::OK;
 }
 
 //  replace_labels: Helper function to replace outgoing label ids with new ids.
@@ -2645,6 +2883,108 @@ std::vector<std::string> util::categorical::full_category(const std::string &cat
     return full_category(category, &dummy);
 }
 
+//  is_uniform_category: True if the category has a single label id.
+
+bool util::categorical::is_uniform_category(const std::string& cat, bool* exists) const
+{
+    using util::u64;
+    using util::u32;
+    
+    *exists = true;
+    
+    auto cat_it = m_category_indices.find(cat);
+    
+    if (cat_it == m_category_indices.end())
+    {
+        *exists = false;
+        return false;
+    }
+    
+    const std::vector<u32>& lab_ids = m_labels[cat_it->second];
+    
+    return is_uniform(lab_ids);
+}
+
+bool util::categorical::is_uniform(const std::vector<util::u32>& lab_ids) const
+{
+    using util::u64;
+    using util::u32;
+    
+    const u64 sz = lab_ids.size();
+    
+    if (sz == 0)
+    {
+        return true;
+    }
+    
+    u32 last = lab_ids[0];
+    
+    for (u64 i = 1; i < sz; i++)
+    {
+        u32 curr = lab_ids[i];
+        
+        if (curr != last)
+        {
+            return false;
+        }
+        
+        last = curr;
+    }
+    
+    return true;
+}
+
+bool util::categorical::is_uniform(const std::vector<util::u32>& lab_ids,
+                                   const std::vector<util::u64>& indices,
+                                   util::u32* status,
+                                   util::s64 index_offset) const
+{
+    using util::u64;
+    using util::u32;
+    
+    const u64 n_indices = indices.size();
+    const u64 sz = lab_ids.size();
+    
+    *status = util::categorical_status::OK;
+    
+    if (n_indices == 0)
+    {
+        return false;
+    }
+    
+    u64 first = indices[0] + index_offset;
+    
+    if (first >= sz)
+    {
+        *status = util::categorical_status::OUT_OF_BOUNDS;
+        return false;
+    }
+    
+    u32 last = lab_ids[first];
+    
+    for (u64 i = 1; i < n_indices; i++)
+    {
+        u64 idx = indices[i] + index_offset;
+        
+        if (idx >= sz)
+        {
+            *status = util::categorical_status::OUT_OF_BOUNDS;
+            return false;
+        }
+        
+        u32 curr = lab_ids[idx];
+        
+        if (curr != last)
+        {
+            return false;
+        }
+        
+        last = curr;
+    }
+    
+    return true;
+}
+
 
 //  in_category: Get all labels in a category.
 //
@@ -2825,8 +3165,7 @@ void util::categorical::collapse_category(const std::string& category)
 
 //  get_next_label_id: Get the next label id.
 //
-//      The next label id is either m_next_id + 1, or a random
-//      32-bit unsigned integer, if m_next_id is at integer capacity.
+//      The next label id is a random 32 bit unsigned int
 
 util::u32 util::categorical::get_next_label_id()
 {

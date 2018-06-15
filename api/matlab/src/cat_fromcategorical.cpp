@@ -24,8 +24,6 @@ void util::from_matlab_categorical(util::categorical* self,
     
     std::unordered_map<u32, u32> visited;
     
-    u32 max = 0;
-    
     for (u64 i = 0; i < cols; i++)
     {
         const std::string& category = categories[i];
@@ -66,17 +64,10 @@ void util::from_matlab_categorical(util::categorical* self,
             self->m_in_category[lab] = category;
 
             visited[val] = i;
-
-            if (val > max)
-            {
-                max = val;
-            }
             
             dest[j] = val;
         }
     }
-    
-    self->m_next_id = max + 2;
 }
 
 void util::from_categorical(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])

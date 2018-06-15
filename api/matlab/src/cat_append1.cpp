@@ -1,12 +1,12 @@
 #include "cat_api.hpp"
 
-void util::append(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
+void util::append_one(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {
     using util::u32;
     using util::u64;
     using util::s64;
     
-    const char* func_id = "categorical:append";
+    const char* func_id = "categorical:append1";
     
     util::assert_nrhs(3, 4, nrhs, func_id);
     util::assert_nlhs(nlhs, 0, func_id);
@@ -18,7 +18,7 @@ void util::append(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     
     if (nrhs == 3)
     {
-        status = cat_a->append(*cat_b);
+        status = cat_a->append_one(*cat_b);
     }
     else
     {
@@ -26,7 +26,7 @@ void util::append(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         
         std::vector<u64> indices = util::numeric_array_to_vector64(prhs[3], func_id);
         
-        status = cat_a->append(*cat_b, indices, index_offset);
+        status = cat_a->append_one(*cat_b, indices, index_offset);
     }
     
     if (status == util::categorical_status::OK)

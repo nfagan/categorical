@@ -2,6 +2,8 @@ function cat_testall()
 
 %   CAT_TESTALL -- Run all tests.
 
+cat_test_run( @cat_test_append1 );
+cat_test_run( @cat_test_append_indexed );
 cat_test_run( @cat_test_assign_scalar );
 cat_test_run( @cat_test_keepeach_indexed );
 cat_test_run( @cat_test_find );

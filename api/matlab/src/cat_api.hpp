@@ -20,6 +20,7 @@ namespace util {
     MEXFUNC(merge);
     MEXFUNC(merge_new);
     MEXFUNC(append);
+    MEXFUNC(append_one);
     MEXFUNC(assign);
     MEXFUNC(assign_partial);
     MEXFUNC(prune);
