@@ -184,6 +184,8 @@ public:
     util::u64 size() const;
     util::u64 count(const std::string& lab) const;
     
+    static util::categorical empty_copy(const util::categorical& to_copy);
+    
     bool progenitors_match(const util::categorical& other) const;
     
     friend void from_matlab_categorical(util::categorical* self,

@@ -1483,6 +1483,10 @@ classdef fcat < handle
       %     A = fcat.example;
       %     B = fcat.example;
       %
+      %     C = append1( A', B )
+      %     D = append1( A', B, 1 )
+      %     E = append1( A', B, find(A, 'image') )
+      %
       %     See also fcat/one, fcat/append, fcat/collapsecat
       %
       %     IN:

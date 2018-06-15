@@ -3163,6 +3163,30 @@ void util::categorical::collapse_category(const std::string& category)
     collapse_category(category, &dummy);
 }
 
+//  empty_copy: Copy data, except id matrix
+
+util::categorical util::categorical::empty_copy(const util::categorical& to_copy)
+{
+    using util::u64;
+    using util::u32;
+    
+    util::categorical tmp;
+    
+    tmp.m_label_ids = to_copy.m_label_ids;
+    tmp.m_category_indices = to_copy.m_category_indices;
+    tmp.m_in_category = to_copy.m_in_category;
+    tmp.m_collapsed_expressions = to_copy.m_collapsed_expressions;
+    
+    u64 n_cats = to_copy.m_labels.size();
+    
+    for (u64 i = 0; i < n_cats; i++)
+    {
+        tmp.m_labels.push_back(std::vector<u32>());
+    }
+    
+    return tmp;
+}
+
 //  get_next_label_id: Get the next label id.
 //
 //      The next label id is a random 32 bit unsigned int
