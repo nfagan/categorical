@@ -21,3 +21,8 @@ assert( isequaln(means, eq_means) && isequaln(devs, eq_devs) );
 
 %%
 
+[inds, rc] = tabular( x, 'drugs', 'administration' );
+
+data = cellfun( @(x) mean(means(x)), inds );
+
+tbl = fcat.table( data, rc{:} )

@@ -7,7 +7,6 @@ assign_prog_match( f, c );
 assign_prog_nonmatch( f, c );
 assign_oob( f );
 
-
 end
 
 function assign_oob(f)

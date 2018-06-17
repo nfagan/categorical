@@ -3115,19 +3115,34 @@ std::vector<std::string> util::categorical::in_categories(const std::vector<std:
     util::u64 n_labs = labs.size();
     util::u64 n_cats = categories.size();
     
-    for (util::u64 i = 0; i < n_labs; i++)
+    for (util::u64 i = 0; i < n_cats; i++)
     {
-        const std::string& lab = labs[i];
-        const std::string& cat = m_in_category.at(lab);
+        const std::string& cat = categories[i];
         
-        for (util::u64 j = 0; j < n_cats; j++)
+        for (util::u64 j = 0; j < n_labs; j++)
         {
-            if (cat == categories[j])
+            const std::string& lab = labs[j];
+            
+            if (m_in_category.at(lab) == cat)
             {
                 result.push_back(lab);
             }
         }
     }
+    
+//    for (util::u64 i = 0; i < n_labs; i++)
+//    {
+//        const std::string& lab = labs[i];
+//        const std::string& cat = m_in_category.at(lab);
+//
+//        for (util::u64 j = 0; j < n_cats; j++)
+//        {
+//            if (cat == categories[j])
+//            {
+//                result.push_back(lab);
+//            }
+//        }
+//    }
     
     return result;
 }

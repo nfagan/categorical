@@ -19,7 +19,7 @@ cols = { 'dose' };
 
 [t, rc] = tabular( labs, rows, cols );
 
-means = cellfun( @(x) mean(egdat(x)), t, 'un', false );
+means = cellfun( @(x) mean(egdat(x)), t );
 
 tbl = fcat.table( means, rc{:} )
 

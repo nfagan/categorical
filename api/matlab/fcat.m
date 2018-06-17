@@ -2585,7 +2585,7 @@ classdef fcat < handle
       %   
       %     [t, rc] = tabular( labs, 'monkey', 'dose' )
       %
-      %     d = arrayfun( @(x) mean(dat(x{1})), t );
+      %     d = cellfun( @(x) mean(dat(x)), t );
       %
       %     fcat.table( d, rc{:} )
       %

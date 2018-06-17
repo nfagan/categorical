@@ -32,13 +32,7 @@ f3 = mergenew( copy(f), f2 );
 f = fcat.create( 'a', '<b>', 'c', '<d>' );
 f2 = fcat.create( 'a', 'b', 'd', 'd' );
 
-try
-  f3 = mergenew( copy(f), f2 );
-  error( 'failed' );
-catch err
-  if ( strcmp(err.message, 'failed') )
-    error( 'Allowed placing collapsed expression in incorrect category.' );
-  end
-end
+cat_test_assert_fail( @() mergenew(copy(f), f2) ...
+  , 'Allowed placing collapsed expression in incorrect category.' );
 
 end
