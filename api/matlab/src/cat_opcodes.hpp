@@ -54,7 +54,8 @@ namespace util {
         static constexpr uint32_t RENAME_CATEGORY = 47u;
         static constexpr uint32_t MERGE_NEW = 48u;
         static constexpr uint32_t APPEND_ONE = 49u;
+        static constexpr uint32_t FIND_OR = 50u;
         //
-        static constexpr uint32_t N_OPS = 50u;
+        static constexpr uint32_t N_OPS = 51u;
     }
 }

@@ -14,7 +14,7 @@ void util::assign_partial(int nlhs, mxArray *plhs[], int nrhs, const mxArray *pr
     std::vector<util::u64> to_indices = util::numeric_array_to_vector64(prhs[3], func_id);
     std::vector<util::u64> from_indices = util::numeric_array_to_vector64(prhs[4], func_id);
     
-    util::s64 index_offset = -1;
+    util::u64 index_offset = 1;
     
     util::u32 status = cat_a->assign(*cat_b, to_indices, from_indices, index_offset);
     

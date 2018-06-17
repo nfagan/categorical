@@ -4,7 +4,6 @@ void util::append_one(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]
 {
     using util::u32;
     using util::u64;
-    using util::s64;
     
     const char* func_id = "categorical:append1";
     
@@ -22,7 +21,7 @@ void util::append_one(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]
     }
     else
     {
-        s64 index_offset = -1;
+        u64 index_offset = 1;
         
         std::vector<u64> indices = util::numeric_array_to_vector64(prhs[3], func_id);
         

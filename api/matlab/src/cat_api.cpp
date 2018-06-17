@@ -55,7 +55,8 @@ namespace util {
             {"remove",                  util::ops::REMOVE_LABELS},
             {"rename_cat",              util::ops::RENAME_CATEGORY},
             {"merge_new",               util::ops::MERGE_NEW},
-            {"append_one",              util::ops::APPEND_ONE}
+            {"append_one",              util::ops::APPEND_ONE},
+            {"find_or",                 util::ops::FIND_OR}
         });
         
         std::array<util::mex_func_t, util::ops::N_OPS> funcs;
@@ -123,6 +124,7 @@ void util::init_cat_functions()
     globals::funcs[ops::RENAME_CATEGORY] =          &util::rename_category;
     globals::funcs[ops::MERGE_NEW] =                &util::merge_new;
     globals::funcs[ops::APPEND_ONE] =               &util::append_one;
+    globals::funcs[ops::FIND_OR] =                  &util::find_or;
     
     globals::INITIALIZED = true;
     

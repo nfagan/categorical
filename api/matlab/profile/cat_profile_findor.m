@@ -1,4 +1,4 @@
-function cat_profile_find(randomize)
+function cat_profile_findor(randomize)
 
 if ( nargin < 1 )
   randomize = true;
@@ -26,7 +26,7 @@ for i = 1:iters
   end
   
   tic;
-  I1 = find( f, some_labs );
+  I1 = findor( f, some_labs );
   total_ts(i, 1) = toc();
   
   tic;
@@ -42,8 +42,8 @@ end
 c1 = sum( total_ts(:, 1) );
 c2 = sum( total_ts(:, 2) );
 
-fprintf( '\n fcat        (find): %0.3f (ms)', c1 * 1e3 );
-fprintf( '\n categorical (find): %0.3f (ms)', c2 * 1e3 );
+fprintf( '\n fcat        (findor): %0.3f (ms)', c1 * 1e3 );
+fprintf( '\n categorical (findor): %0.3f (ms)', c2 * 1e3 );
 fprintf( '\n' );
 
 end

@@ -1,10 +1,10 @@
-function cat_profile_findall(randomize)
+function cat_profile_findall(randomize, kind, compare)
 
-if ( nargin < 1 )
-  randomize = true;
-end
+if ( nargin < 1 || isempty(randomize) ), randomize = true; end
+if ( nargin < 2 ), kind = 'small'; end
+if ( nargin < 3 ), compare = true; end
 
-f = fcat.example();
+f = fcat.example( kind );
 c = categorical( f );
 cats = getcats( f );
 N = numel( cats );
@@ -27,16 +27,22 @@ for i = 1:iters
   I1 = findall( f, some_cats );
   total_ts(i, 1) = toc();
   
-  tic;
-  I2 = cat_findall_categorical( c(:, cat_inds) );
-  total_ts(i, 2) = toc();  
+  if ( compare )
+    tic;
+    I2 = cat_findall_categorical( c(:, cat_inds) );
+    total_ts(i, 2) = toc();
+  end
 end
 
 c1 = sum(total_ts(:, 1));
 c2 = sum(total_ts(:, 2));
 
 fprintf( '\n fcat        (findall): %0.3f (ms)', c1 * 1e3 );
-fprintf( '\n categorical (findall): %0.3f (ms)', c2 * 1e3 );
+
+if ( compare )
+  fprintf( '\n categorical (findall): %0.3f (ms)', c2 * 1e3 );
+end
+
 fprintf( '\n' );
 
 end

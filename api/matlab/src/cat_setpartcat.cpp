@@ -5,7 +5,6 @@ void util::set_partial_category(int nlhs, mxArray *plhs[], int nrhs, const mxArr
 {
     using util::u64;
     using util::u32;
-    using util::s64;
     using namespace util::categorical_status;
     
     const char* func_id = "categorical:setpartcat";
@@ -19,7 +18,7 @@ void util::set_partial_category(int nlhs, mxArray *plhs[], int nrhs, const mxArr
     
     std::vector<util::u64> at_indices = util::numeric_array_to_vector64(prhs[4], func_id);
     
-    s64 index_offset = -1;
+    u64 index_offset = 1;
     
     u32 status = cat->set_category(cat_name, part_cat, at_indices, index_offset);
     

@@ -10,16 +10,6 @@
 #include <iostream>
 #include <algorithm>
 
-util::categorical::categorical()
-{
-    //
-}
-
-util::categorical::~categorical()
-{
-    //
-}
-
 //  !=: Check for inequality.
 
 bool util::categorical::operator !=(const util::categorical &other) const
@@ -436,7 +426,7 @@ void util::categorical::set_all_collapsed_expressions(util::u64 start_offset)
     }
 }
 
-//  find: Get indices of labels.
+//  find: Get indices of label combinations.
 
 std::vector<util::u64> util::categorical::find(const std::vector<std::string>& labels,
                                                util::u64 index_offset) const
@@ -446,23 +436,44 @@ std::vector<util::u64> util::categorical::find(const std::vector<std::string>& l
     return find_impl(labels, false, dummy_indices, &dummy_status, index_offset);
 }
 
-//  find: Get indices of labels, from subsets of rows.
+//  find: Get indices of label combinations, from subsets of rows.
 
 std::vector<util::u64> util::categorical::find(const std::vector<std::string>& labels,
-                            const std::vector<util::u64>& indices,
-                            util::u32* status,
-                            util::u64 index_offset) const
+                                               const std::vector<util::u64>& indices,
+                                               util::u32* status,
+                                               util::u64 index_offset) const
 {
     return find_impl(labels, true, indices, status, index_offset);
+}
+
+//  find_or: Get indices of any among labels.
+
+std::vector<util::u64> util::categorical::find_or(const std::vector<std::string>& labels,
+                                                  util::u64 index_offset) const
+{
+    std::vector<util::u64> dummy_indices;
+    util::u32 dummy_status;
+    
+    return find_or_impl(labels, false, dummy_indices, &dummy_status, index_offset);
+}
+
+//  find_or: Get indices of any among labels, from subsets of rows.
+
+std::vector<util::u64> util::categorical::find_or(const std::vector<std::string>& labels,
+                                                  const std::vector<util::u64>& indices,
+                                                  util::u32* status,
+                                                  util::u64 index_offset) const
+{
+    return find_or_impl(labels, true, indices, status, index_offset);
 }
 
 //  find_impl [private]: Private implementation of find, with and without subsets
 
 std::vector<util::u64> util::categorical::find_impl(const std::vector<std::string>& labels,
-                                 const bool use_indices,
-                                 const std::vector<util::u64>& indices,
-                                 util::u32* status,
-                                 util::u64 index_offset) const
+                                                    const bool use_indices,
+                                                    const std::vector<util::u64>& indices,
+                                                    util::u32* status,
+                                                    util::u64 index_offset) const
 {
     using util::u64;
     using util::bit_array;
@@ -535,6 +546,72 @@ std::vector<util::u64> util::categorical::find_impl(const std::vector<std::strin
     return bit_array::findv(final_index, index_offset);
 }
 
+//  find_or_impl [private]: Private implementation of find_or, with and without subsets
+
+std::vector<util::u64> util::categorical::find_or_impl(const std::vector<std::string>& labels,
+                                                       const bool use_indices,
+                                                       const std::vector<util::u64>& indices,
+                                                       util::u32* status,
+                                                       util::u64 index_offset) const
+{
+    using util::u64;
+    using util::bit_array;
+    
+    std::vector<util::u64> out;
+    
+    const u64 n_in = labels.size();
+    const u64 sz = size();
+    
+    *status = util::categorical_status::OK;
+    
+    if (n_in == 0 || sz == 0)
+    {
+        return out;
+    }
+    
+    auto label_it_end = m_label_ids.endk();
+    
+    util::bit_array final_index(sz, false);
+    
+    for (u64 i = 0; i < n_in; i++)
+    {
+        const std::string& lab = labels[i];
+        
+        auto search_it = m_label_ids.find(lab);
+        
+        //  label doesn't exist
+        if (search_it == label_it_end)
+        {
+            continue;
+        }
+        
+        const u32 lab_id = search_it->second;
+        const std::string& cat = m_in_category.at(lab);
+        const u64 cat_idx = m_category_indices.at(cat);
+        
+        bit_array index;
+        
+        if (use_indices)
+        {
+            index = util::categorical::assign_bit_array(m_labels[cat_idx], lab_id,
+                                                        indices, status, index_offset);
+            
+            if (*status != util::categorical_status::OK)
+            {
+                return out;
+            }
+        }
+        else
+        {
+            index = util::categorical::assign_bit_array(m_labels[cat_idx], lab_id);
+        }
+        
+        bit_array::unchecked_dot_or(final_index, final_index, index, 0, sz);
+    }
+    
+    return bit_array::findv(final_index, index_offset);
+}
+
 //  assign_bit_array: Assign true to bit_array where label id is found
 
 util::bit_array util::categorical::assign_bit_array(const std::vector<util::u32>& labels, util::u32 lab)
@@ -555,10 +632,10 @@ util::bit_array util::categorical::assign_bit_array(const std::vector<util::u32>
 }
 
 util::bit_array util::categorical::assign_bit_array(const std::vector<util::u32>& labels,
-                                        util::u32 lab,
-                                        const std::vector<util::u64>& indices,
-                                        util::u32* status,
-                                        util::u64 index_offset)
+                                                    util::u32 lab,
+                                                    const std::vector<util::u64>& indices,
+                                                    util::u32* status,
+                                                    util::u64 index_offset)
 {
     *status = util::categorical_status::OK;
     
@@ -619,7 +696,7 @@ std::vector<util::u64> util::categorical::get_category_indices(const std::vector
 //      find_all does not return the combinations.
 
 std::vector<std::vector<util::u64>> util::categorical::find_all(const std::vector<std::string> &categories,
-                                                   util::u64 index_offset) const
+                                                                util::u64 index_offset) const
 {
     using util::u64;
     using util::u32;
@@ -698,7 +775,7 @@ std::vector<std::vector<util::u64>> util::categorical::find_all(const std::vecto
 //      find_all does not return the combinations.
 
 std::vector<std::vector<util::u64>> util::categorical::find_all(const std::vector<std::string>& categories,
-                                             const std::vector<util::u64>& indices,
+                                                                const std::vector<util::u64>& indices,
                                                                 util::u32* status,
                                                                 util::u64 index_offset) const
 {
@@ -788,9 +865,9 @@ util::combinations_t util::categorical::find_allc(const std::vector<std::string>
 //      find_allc also returns the combinations.
 
 util::combinations_t util::categorical::find_allc(const std::vector<std::string>& categories,
-                               const std::vector<util::u64>& indices,
-                               util::u32* status,
-                               util::u64 index_offset) const
+                                                  const std::vector<util::u64>& indices,
+                                                  util::u32* status,
+                                                  util::u64 index_offset) const
 {
     return find_allc_impl(categories, true, indices, status, index_offset);
 }
@@ -798,10 +875,10 @@ util::combinations_t util::categorical::find_allc(const std::vector<std::string>
 //  find_allc_impl [private]: Implementation of find_allc and findall_c [indexed]
 
 util::combinations_t util::categorical::find_allc_impl(const std::vector<std::string>& categories,
-                                    const bool use_indices,
-                                    const std::vector<util::u64>& indices,
-                                    util::u32* status,
-                                    util::u64 index_offset) const
+                                                       const bool use_indices,
+                                                       const std::vector<util::u64>& indices,
+                                                       util::u32* status,
+                                                       util::u64 index_offset) const
 {
     using util::u64;
     using util::u32;
@@ -905,9 +982,9 @@ std::vector<std::vector<util::u64>> util::categorical::keep_each(const std::vect
 //      the modified object
 
 std::vector<std::vector<util::u64>> util::categorical::keep_each(const std::vector<std::string>& categories,
-                                              const std::vector<util::u64>& indices,
-                                              util::u32* status,
-                                              util::u64 index_offset)
+                                                                 const std::vector<util::u64>& indices,
+                                                                 util::u32* status,
+                                                                 util::u64 index_offset)
 {
     std::vector<std::vector<util::u64>> out_indices = find_all(categories, indices, status, index_offset);
     
@@ -1073,8 +1150,7 @@ void util::categorical::one()
 util::u32 util::categorical::set_category(const std::string &category,
                                           const std::vector<std::string> &full_category,
                                           const std::vector<util::u64>& at_indices,
-                                          util::s64 index_offset,
-                                          bool check_bounds)
+                                          util::u64 index_offset)
 {
     using util::u64;
     using util::u32;
@@ -1119,19 +1195,19 @@ util::u32 util::categorical::set_category(const std::string &category,
         
         u64 max = util::categorical::maximum(at_indices, n_indices);
         
-        if (max + index_offset > max || max == ~(u64(0)))
+        if (max - index_offset > max || max == ~(u64(0)))
         {
             return util::categorical_status::CAT_OVERFLOW;
         }
         
-        reserve(max + index_offset + 1);
+        reserve(max - index_offset + 1);
 #else
         return util::categorical_status::WRONG_CATEGORY_SIZE;
 #endif
     }
-    else if (check_bounds)
+    else
     {
-        u32 bounds_status = bounds_check(at_indices, n_indices, sz, index_offset);
+        u32 bounds_status = bounds_check(at_indices.data(), n_indices, sz, index_offset);
         
         if (bounds_status != util::categorical_status::OK)
         {
@@ -1198,7 +1274,7 @@ util::u32 util::categorical::set_category(const std::string &category,
             lab_id = processed[lab];
         }
         
-        labels[at_indices[i] + index_offset] = lab_id;
+        labels[at_indices[i] - index_offset] = lab_id;
     }
     
 #ifdef CAT_PRUNE_AFTER_ASSIGN
@@ -1588,7 +1664,7 @@ std::string util::categorical::get_collapsed_expression(const std::string& for_c
 
 //  keep: Retain rows at indices.
 
-util::u32 util::categorical::keep(const std::vector<util::u64>& at_indices, util::s64 offset)
+util::u32 util::categorical::keep(const std::vector<util::u64>& at_indices, util::u64 offset)
 {
     using util::u64;
     using util::u32;
@@ -1609,7 +1685,7 @@ util::u32 util::categorical::keep(const std::vector<util::u64>& at_indices, util
         
         for (u64 j = 0; j < n_indices; j++)
         {
-            u64 idx = at_indices[j] + offset;
+            u64 idx = at_indices[j] - offset;
             
             if (idx >= sz)
             {
@@ -1747,7 +1823,7 @@ util::u32 util::categorical::unchecked_append_progenitors_match_indexed(const ut
                                                                         util::u64 own_sz,
                                                                         util::u64 other_sz,
                                                                         const std::vector<util::u64>& indices,
-                                                                        util::s64 index_offset)
+                                                                        util::u64 index_offset)
 {
     using util::u64;
     
@@ -1764,7 +1840,7 @@ util::u32 util::categorical::unchecked_append_progenitors_match_indexed(const ut
         
         for (u64 j = 0; j < indices_sz; j++)
         {
-            const u64 idx = indices[j] + index_offset;
+            const u64 idx = indices[j] - index_offset;
             
             if (idx >= other_sz)
             {
@@ -1792,7 +1868,7 @@ util::u32 util::categorical::append_one(const util::categorical& other)
 
 util::u32 util::categorical::append_one(const util::categorical& other,
                                         const std::vector<util::u64>& indices,
-                                        util::s64 index_offset)
+                                        util::u64 index_offset)
 {
     return append_one_impl(other, true, indices, index_offset);
 }
@@ -1800,7 +1876,7 @@ util::u32 util::categorical::append_one(const util::categorical& other,
 util::u32 util::categorical::append_one_impl(const util::categorical& other,
                                              const bool use_indices,
                                              const std::vector<util::u64>& indices,
-                                             util::s64 index_offset)
+                                             util::u64 index_offset)
 {
     using util::categorical;
     using util::u32;
@@ -1850,7 +1926,7 @@ util::u32 util::categorical::append_one_impl(const util::categorical& other,
             
             if (use_indices)
             {
-                idx = indices[0] + index_offset;
+                idx = indices[0] - index_offset;
             }
             
             assign_lab = other.m_label_ids.at(ids[idx]);
@@ -1877,7 +1953,7 @@ util::u32 util::categorical::append(const util::categorical &other)
 
 util::u32 util::categorical::append(const util::categorical &other,
                                     const std::vector<util::u64>& indices,
-                                    util::s64 index_offset)
+                                    util::u64 index_offset)
 {
     return append_impl(other, true, indices, index_offset);
 }
@@ -1885,7 +1961,7 @@ util::u32 util::categorical::append(const util::categorical &other,
 util::u32 util::categorical::append_impl(const util::categorical& other,
                                          const bool use_indices,
                                          const std::vector<util::u64>& indices,
-                                         util::s64 index_offset)
+                                         util::u64 index_offset)
 {
     using util::u32;
     using util::u64;
@@ -2043,7 +2119,7 @@ util::u32 util::categorical::append_fill_new_label_ids_indexed(const util::categ
                                             util::u64 own_sz,
                                             util::u64 other_sz,
                                             const std::vector<util::u64>& indices,
-                                            util::s64 index_offset)
+                                            util::u64 index_offset)
 {
     using util::u64;
     using util::u32;
@@ -2061,7 +2137,7 @@ util::u32 util::categorical::append_fill_new_label_ids_indexed(const util::categ
         
         for (u64 i = 0; i < n_indices; i++)
         {
-            u64 idx = indices[i] + index_offset;
+            u64 idx = indices[i] - index_offset;
             
             if (idx >= other_sz)
             {
@@ -2116,8 +2192,8 @@ void util::categorical::replace_labels(std::vector<std::vector<u32>>& labels,
 //  unchecked_assign_progenitors_match: Assign contents at indices, assuming progenitors match.
 
 void util::categorical::unchecked_assign_progenitors_match(const util::categorical& other,
-                                        const std::vector<util::u64>& to_indices,
-                                        util::s64 index_offset)
+                                                           const std::vector<util::u64>& to_indices,
+                                                           util::u64 index_offset)
 {
     using util::u32;
     using util::u64;
@@ -2132,7 +2208,7 @@ void util::categorical::unchecked_assign_progenitors_match(const util::categoric
         
         for (u64 j = 0; j < n_indices; j++)
         {
-            u64 to_idx = to_indices[j] + index_offset;
+            u64 to_idx = to_indices[j] - index_offset;
             own_labs[to_idx] = other_labs[j];
         }
     }
@@ -2143,7 +2219,7 @@ void util::categorical::unchecked_assign_progenitors_match(const util::categoric
 void util::categorical::unchecked_assign_progenitors_match(const util::categorical &other,
                                                            const std::vector<util::u64> &to_indices,
                                                            const std::vector<util::u64> &from_indices,
-                                                           util::s64 index_offset,
+                                                           util::u64 index_offset,
                                                            bool is_scalar)
 {
     using util::u32;
@@ -2160,8 +2236,8 @@ void util::categorical::unchecked_assign_progenitors_match(const util::categoric
         for (u64 j = 0; j < n_indices; j++)
         {
             const u64 ind_from = is_scalar ? 0 : j;
-            u64 from_idx = from_indices[ind_from] + index_offset;
-            u64 to_idx = to_indices[j] + index_offset;
+            u64 from_idx = from_indices[ind_from] - index_offset;
+            u64 to_idx = to_indices[j] - index_offset;
             own_labs[to_idx] = other_labs[from_idx];
         }
     }
@@ -2171,7 +2247,7 @@ void util::categorical::unchecked_assign_progenitors_match(const util::categoric
 
 util::u32 util::categorical::assign(const util::categorical& other,
                                     const std::vector<util::u64>& at_indices,
-                                    util::s64 index_offset)
+                                    util::u64 index_offset)
 {
     using util::u32;
     using util::u64;
@@ -2205,7 +2281,7 @@ util::u32 util::categorical::assign(const util::categorical& other,
     
     //  bounds check
     
-    u32 bounds_status = util::categorical::bounds_check(at_indices, n_indices, own_sz, index_offset);
+    u32 bounds_status = util::categorical::bounds_check(at_indices.data(), n_indices, own_sz, index_offset);
     
     if (bounds_status != util::categorical_status::OK)
     {
@@ -2280,7 +2356,7 @@ util::u32 util::categorical::assign(const util::categorical& other,
         
         for (u64 i = 0; i < n_indices; i++)
         {
-            const u64 own_idx = at_indices[i] + index_offset;
+            const u64 own_idx = at_indices[i] - index_offset;
             
             u32 other_id = other_ids[i];
             
@@ -2303,7 +2379,7 @@ util::u32 util::categorical::assign(const util::categorical& other,
 util::u32 util::categorical::assign(const util::categorical& other,
                                     const std::vector<util::u64>& to_indices,
                                     const std::vector<util::u64>& from_indices,
-                                    util::s64 index_offset)
+                                    util::u64 index_offset)
 {
     using util::u32;
     using util::u64;
@@ -2335,8 +2411,8 @@ util::u32 util::categorical::assign(const util::categorical& other,
     }
     
     //  bounds check
-    u32 own_status = util::categorical::bounds_check(to_indices, n_to_indices, own_sz, index_offset);
-    u32 other_status = util::categorical::bounds_check(from_indices, n_from_indices, other_sz, index_offset);
+    u32 own_status = util::categorical::bounds_check(to_indices.data(), n_to_indices, own_sz, index_offset);
+    u32 other_status = util::categorical::bounds_check(from_indices.data(), n_from_indices, other_sz, index_offset);
     u32 ok = util::categorical_status::OK;
     
     if (own_status != ok || other_status != ok)
@@ -2374,8 +2450,8 @@ util::u32 util::categorical::assign(const util::categorical& other,
         for (u64 i = 0; i < n_to_indices; i++)
         {
             const u64 index_from = is_scalar ? 0 : i;
-            const u64 from_idx = from_indices[index_from] + index_offset;
-            const u64 to_idx = to_indices[i] + index_offset;
+            const u64 from_idx = from_indices[index_from] - index_offset;
+            const u64 to_idx = to_indices[i] - index_offset;
             
             const u32 other_lab_id = other_labs[from_idx];
             
@@ -2675,18 +2751,18 @@ util::u32 util::categorical::reconcile_new_label_ids(const util::categorical& ot
     return util::categorical_status::OK;
 }
 
-//  bounds_check: Ensure indices are in bounds.
+//  bounds_check: Ensure incoming indices are in bounds.
 
-util::u32 util::categorical::bounds_check(const std::vector<util::u64>& indices,
-                       util::u64 n_check,
-                       util::u64 end,
-                       util::u64 index_offset)
+util::u32 util::categorical::bounds_check(const util::u64* data,
+                                          util::u64 n_check,
+                                          util::u64 end,
+                                          util::u64 index_offset)
 {
     using util::u64;
     
     for (u64 i = 0; i < n_check; i++)
     {
-        if (indices[i] + index_offset >= end)
+        if (data[i] - index_offset >= end)
         {
             return util::categorical_status::OUT_OF_BOUNDS;
         }
@@ -2800,7 +2876,7 @@ std::vector<const std::vector<util::u32>*> util::categorical::get_label_mat(cons
 std::vector<std::string> util::categorical::partial_category(const std::string &category,
                                                              const std::vector<util::u64>& at_indices,
                                                              util::u32* status,
-                                                             util::s64 index_offset) const
+                                                             util::u64 index_offset) const
 {
     using util::u64;
     using util::u32;
@@ -2822,7 +2898,7 @@ std::vector<std::string> util::categorical::partial_category(const std::string &
     
     for (u64 i = 0; i < n_indices; i++)
     {
-        u64 idx = at_indices[i] + index_offset;
+        u64 idx = at_indices[i] - index_offset;
         
         if (idx >= sz)
         {
@@ -2937,7 +3013,7 @@ bool util::categorical::is_uniform(const std::vector<util::u32>& lab_ids) const
 bool util::categorical::is_uniform(const std::vector<util::u32>& lab_ids,
                                    const std::vector<util::u64>& indices,
                                    util::u32* status,
-                                   util::s64 index_offset) const
+                                   util::u64 index_offset) const
 {
     using util::u64;
     using util::u32;
@@ -2952,7 +3028,7 @@ bool util::categorical::is_uniform(const std::vector<util::u32>& lab_ids,
         return false;
     }
     
-    u64 first = indices[0] + index_offset;
+    u64 first = indices[0] - index_offset;
     
     if (first >= sz)
     {
@@ -2964,7 +3040,7 @@ bool util::categorical::is_uniform(const std::vector<util::u32>& lab_ids,
     
     for (u64 i = 1; i < n_indices; i++)
     {
-        u64 idx = indices[i] + index_offset;
+        u64 idx = indices[i] - index_offset;
         
         if (idx >= sz)
         {

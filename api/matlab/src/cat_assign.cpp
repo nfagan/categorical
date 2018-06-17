@@ -12,7 +12,7 @@ void util::assign(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     util::categorical* cat_b = util::detail::mat_to_ptr<util::categorical>(prhs[2]);
     
     std::vector<util::u64> at_indices = util::numeric_array_to_vector64(prhs[3], func_id);
-    util::s64 index_offset = -1;
+    util::u64 index_offset = 1;
     
     util::u32 status = cat_a->assign(*cat_b, at_indices, index_offset);
     

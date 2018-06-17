@@ -24,6 +24,11 @@ cat_profile_find( false );
 % false:
 % fcat (find): 1475.400 (ms)
 %%
+cat_profile_findor( false );
+
+% fcat        (findor): 1480.973 (ms)
+% categorical (findor): 3993.933 (ms)
+%%
 cat_profile_append
 
 %  categorical:   6249.876 (ms) [10000]

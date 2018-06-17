@@ -25,7 +25,7 @@ void util::partial_category(int nlhs, mxArray *plhs[], int nrhs, const mxArray *
     for (u64 i = 0; i < n_cats; i++)
     {
         bool cat_exists;
-        util::s64 index_offset = -1;
+        util::u64 index_offset = 1;
         util::u32 status;
         
         const std::string& c_cat = categories[i];

@@ -96,6 +96,10 @@ classdef fcat < handle
       
       %   EQ -- True if two fcat objects have equal contents.
       %
+      %     A == B returns true if `A` and `B` are both fcat objects with
+      %     equal labels and categories, and with equivalent label
+      %     matrices.
+      %
       %     See also fcat/ne, fcat/findall
       %
       %     IN:
@@ -134,7 +138,7 @@ classdef fcat < handle
       %     OUT:
       %       - `n` (uint64)
       
-      n = prod( size(varargin{1}) );  %#ok<PSIZE>
+      n = prod( size(varargin{1}), 'native' );  %#ok<PSIZE>
     end
     
     function tf = isempty(obj)
@@ -897,6 +901,7 @@ classdef fcat < handle
       %
       %     IN:
       %       - `categories` (char, cell array of strings)
+      %       - `inds` (uint64) |OPTIONAL|
       %     OUT:
       %       - `cmbs` (uint32)
       
@@ -933,6 +938,7 @@ classdef fcat < handle
       %
       %     IN:
       %       - `categories` (char, cell array of strings)
+      %       - `inds` (uint64) |OPTIONAL|
       %     OUT:
       %       - `I` (cell array of uint64)
       %       - `C` (cell array of strings)
@@ -989,10 +995,11 @@ classdef fcat < handle
       %     find( f, {'a', 'd'} )
       %     find( f, {'a', 'c'} )
       %
-      %     See also fcat/getlabs, fcat/getcats
+      %     See also fcat/findall, fcat/findor, fcat/getlabs, fcat/getcats
       %
       %     IN:
-      %       - `labels` (uint32)
+      %       - `labels` (cell array of strings, char)
+      %       - `inds` (uint64) |OPTIONAL|
       %     OUT:
       %       - `inds` (uint32)
       
@@ -1000,6 +1007,38 @@ classdef fcat < handle
         I = cat_api( 'find', obj.id, labels );
       else
         I = cat_api( 'find', obj.id, labels, uint64(inds) );
+      end
+    end
+    
+    function I = findor(obj, labels, inds)
+      
+      %   FINDOR -- Get indices associated with any among labels.
+      %
+      %     I = findor( obj, {'a', 'b', 'c'} ) returns indices associated
+      %     with any among 'a', 'b' and 'c'. If all labels reside in the 
+      %     same category, the output is equivalent to `find`.
+      %
+      %     I = findor( ..., inds ) searches the subset of rows identified 
+      %     by the uint64 index vector `inds`.
+      %
+      %     EX //
+      %
+      %     f = fcat.create( 'a', {'a', 'b'}, 'c', {'c', 'd'} )
+      %     find( f, {'a', 'd'} )
+      %     findor( f, {'a', 'd'} )
+      %
+      %     See also fcat/find, fcat/findall
+      %
+      %     IN:
+      %       - `labels` (cell array of strings, char)
+      %       - `inds` (uint64) |OPTIONAL|
+      %     OUT:
+      %       - `inds` (uint32)
+      
+      if ( nargin < 3 )
+        I = cat_api( 'find_or', obj.id, labels );
+      else
+        I = cat_api( 'find_or', obj.id, labels, uint64(inds) );
       end
     end
     

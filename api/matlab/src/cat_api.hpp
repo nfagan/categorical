@@ -64,6 +64,7 @@ namespace util {
     MEXFUNC(count);
     
     MEXFUNC(find);
+    MEXFUNC(find_or);
     MEXFUNC(find_all);
     MEXFUNC(find_allc);
     

@@ -53,8 +53,8 @@ namespace util {
 class util::categorical
 {
 public:
-    categorical();
-    ~categorical();
+    categorical() = default;
+    ~categorical() = default;
     
     bool operator ==(const util::categorical& other) const;
     bool operator !=(const util::categorical& other) const;
@@ -66,6 +66,14 @@ public:
                                 const std::vector<util::u64>& indices,
                                 util::u32* status,
                                 util::u64 index_offset = 0) const;
+    
+    std::vector<util::u64> find_or(const std::vector<std::string>& labels,
+                                   util::u64 index_offset = 0) const;
+    
+    std::vector<util::u64> find_or(const std::vector<std::string>& labels,
+                                   const std::vector<util::u64>& indices,
+                                   util::u32* status,
+                                   util::u64 index_offset = 0) const;
     
     std::vector<std::vector<util::u64>> find_all(const std::vector<std::string>& categories,
                                     util::u64 index_offset = 0) const;
@@ -120,7 +128,7 @@ public:
     std::vector<std::string> partial_category(const std::string& category,
                                               const std::vector<util::u64>& at_indices,
                                               util::u32* status,
-                                              util::s64 index_offset = 0) const;
+                                              util::u64 index_offset = 0) const;
     
     bool is_uniform_category(const std::string& cat, bool* exists) const;
     
@@ -133,7 +141,7 @@ public:
     
     void remove_category(const std::string& category, bool* exists);
     
-    util::u32 keep(const std::vector<util::u64>& at_indices, util::s64 offset = 0);
+    util::u32 keep(const std::vector<util::u64>& at_indices, util::u64 offset = 0);
     std::vector<util::u64> remove(const std::vector<std::string>& labels);
     
     void reserve(util::u64 rows);
@@ -142,20 +150,20 @@ public:
     util::u32 append(const util::categorical& other);
     util::u32 append(const util::categorical &other,
                      const std::vector<util::u64>& indices,
-                     util::s64 index_offset = 0);
+                     util::u64 index_offset = 0);
     
     util::u32 append_one(const util::categorical& other);
     util::u32 append_one(const util::categorical& other,
                          const std::vector<util::u64>& indices,
-                         util::s64 index_offset = 0);
+                         util::u64 index_offset = 0);
     
     util::u32 assign(const util::categorical& other,
                      const std::vector<util::u64>& to_indices,
-                     util::s64 index_offset = 0);
+                     util::u64 index_offset = 0);
     util::u32 assign(const util::categorical& other,
                      const std::vector<util::u64>& to_indices,
                      const std::vector<util::u64>& from_indices,
-                     util::s64 index_offset = 0);
+                     util::u64 index_offset = 0);
     
     util::u32 merge(const util::categorical& other);
     util::u32 merge_new(const util::categorical& other);
@@ -169,8 +177,7 @@ public:
     util::u32 set_category(const std::string& category, const std::vector<std::string>& full_category);
     util::u32 set_category(const std::string& category, const std::vector<std::string>& part_category,
                            const std::vector<util::u64>& at_indices,
-                           util::s64 index_offset = 0,
-                           bool check_bounds = true);
+                           util::u64 index_offset = 0);
     
     util::u32 fill_category(const std::string& category, const std::string& lab);
     
@@ -221,44 +228,50 @@ private:
                                                          util::u64 own_sz,
                                                          util::u64 other_sz,
                                                          const std::vector<util::u64>& indices,
-                                                         util::s64 index_offset);
+                                                         util::u64 index_offset);
     void unchecked_assign_progenitors_match(const util::categorical& other,
                                             const std::vector<util::u64>& to_indices,
-                                            util::s64 index_offset);
+                                            util::u64 index_offset);
     void unchecked_assign_progenitors_match(const util::categorical& other,
                                             const std::vector<util::u64>& to_indices,
                                             const std::vector<util::u64>& from_indices,
-                                            util::s64 index_offset,
+                                            util::u64 index_offset,
                                             bool is_scalar);
     
     util::u32 append_impl(const util::categorical& other,
                           const bool use_indices,
                           const std::vector<util::u64>& indices,
-                          util::s64 index_offset);
+                          util::u64 index_offset);
     
     util::u32 append_one_impl(const util::categorical& other,
                               const bool use_indices,
                               const std::vector<util::u64>& indices,
-                              util::s64 index_offset);
+                              util::u64 index_offset);
     
     bool categories_match(const categorical& other) const;
     bool is_uniform(const std::vector<util::u32>& lab_ids) const;
     bool is_uniform(const std::vector<util::u32>& lab_ids,
                     const std::vector<util::u64>& indices,
                     util::u32* status,
-                    util::s64 index_offset) const;
+                    util::u64 index_offset) const;
     
     std::vector<util::u64> find_impl(const std::vector<std::string>& labels,
                                      const bool use_indices,
                                      const std::vector<util::u64>& indices,
                                      util::u32* status,
-                                     util::u64 index_offset = 0) const;
+                                     util::u64 index_offset) const;
+    
+    std::vector<util::u64> find_or_impl(const std::vector<std::string>& labels,
+                                        const bool use_indices,
+                                        const std::vector<util::u64>& indices,
+                                        util::u32* status,
+                                        util::u64 index_offset) const;
     
     util::combinations_t find_allc_impl(const std::vector<std::string>& categories,
                                         const bool use_indices,
                                         const std::vector<util::u64>& indices,
                                         util::u32* status,
-                                        util::u64 index_offset = 0) const;
+                                        util::u64 index_offset) const;
     
     std::vector<util::u64> get_category_indices(const std::vector<std::string>& cats,
                                                 const util::u64 n_cats, bool* exist) const;
@@ -289,7 +302,7 @@ private:
                                                 util::u64 own_sz,
                                                 util::u64 other_sz,
                                                 const std::vector<util::u64>& indices,
-                                                util::s64 index_offset);
+                                                util::u64 index_offset);
     
     util::u32 merge(const util::categorical& other, const bool overwrite_existing_cats);
     
@@ -316,9 +329,9 @@ private:
                                             util::u32 lab,
                                             const std::vector<util::u64>& indices,
                                             util::u32* status,
-                                            util::u64 index_offset = 0);
+                                            util::u64 index_offsex);
     
-    static util::u32 bounds_check(const std::vector<util::u64>& indices,
+    static util::u32 bounds_check(const util::u64* data,
                                   util::u64 n_check,
                                   util::u64 end,
                                   util::u64 index_offset);

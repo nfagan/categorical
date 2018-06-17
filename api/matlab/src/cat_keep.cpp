@@ -11,7 +11,7 @@ void util::keep(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     
     std::vector<util::u64> indices = util::numeric_array_to_vector64(prhs[2], func_id);
     
-    util::s64 index_offset = -1;
+    util::u64 index_offset = 1;
     
     util::u32 status = cat->keep(indices, index_offset);
     
