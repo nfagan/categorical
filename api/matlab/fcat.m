@@ -257,18 +257,32 @@ classdef fcat < handle
       n = cat_api( 'n_cats', obj.id );      
     end
     
-    function c = count(obj, labels)
+    function c = count(obj, labels, inds)
       
       %   COUNT -- Count the number of rows associated with labels.
+      %
+      %     c = count( obj, 'a' ) returns the number of rows identified by
+      %     the label 'a'.
+      %
+      %     c = count( obj, labels ) returns counts for each label in the
+      %     cell array of strings `labels`.
+      %
+      %     c = count( ..., inds ) searches only rows identified by the
+      %     uint64 index vector `inds`.
       %
       %     See also fcat/find, fcat/prune
       %
       %     IN:
       %       - `labels` (char, cell array of strings)
+      %       - `inds` (uint64) |OPTIONAL|
       %     OUT:
       %       - `c` (uint64)
       
-      c = cat_api( 'count', obj.id, labels );            
+      if ( nargin == 2 )
+        c = cat_api( 'count', obj.id, labels );
+      else
+        c = cat_api( 'count', obj.id, labels, uint64(inds) );
+      end
     end
     
     function [c, C] = countrows(obj, categories)

@@ -233,6 +233,31 @@ util::u64 util::categorical::n_labels() const
     return m_label_ids.size();
 }
 
+util::u32 util::categorical::get_label_id_or_0(const std::string& lab, bool* exist) const
+{
+    *exist = true;
+    
+    auto lab_id_it = m_label_ids.find(lab);
+    
+    if (lab_id_it == m_label_ids.endk())
+    {
+        *exist = false;
+        return 0;
+    }
+    
+    return lab_id_it->second;
+}
+
+//  unchecked_get_label_column: Get a reference to the column of label_ids in which
+//      a label resides. No checking is done to ensure that the label exists.
+
+const std::vector<util::u32>& util::categorical::unchecked_get_label_column(const std::string& lab) const
+{
+    const std::string& in_cat = m_in_category.at(lab);
+    const u64 cat_idx = m_category_indices.at(in_cat);
+    return m_labels[cat_idx];
+}
+
 //  count: Get the number of rows associated with label.
 
 util::u64 util::categorical::count(const std::string& lab) const
@@ -240,25 +265,67 @@ util::u64 util::categorical::count(const std::string& lab) const
     using util::u32;
     using util::u64;
     
-    auto lab_id_it = m_label_ids.find(lab);
+    bool exists;
+    
+    u32 id = get_label_id_or_0(lab, &exists);
+    
+    if (!exists)
+    {
+        return 0;
+    }
     
     u64 sum = 0;
     
-    if (lab_id_it == m_label_ids.endk())
-    {
-        return sum;
-    }
-    
-    u32 id = lab_id_it->second;
-    const std::string& in_cat = m_in_category.at(lab);
-    const u64 cat_idx = m_category_indices.at(in_cat);
-    
-    const std::vector<u32>& lab_col = m_labels[cat_idx];
+    const std::vector<u32>& lab_col = unchecked_get_label_column(lab);
     const u64 sz = lab_col.size();
     
     for (u64 i = 0; i < sz; i++)
     {
         if (lab_col[i] == id)
+        {
+            sum++;
+        }
+    }
+    
+    return sum;
+}
+
+util::u64 util::categorical::count(const std::string& lab,
+                                   const std::vector<util::u64>& indices,
+                                   util::u32* status,
+                                   util::u64 index_offset) const
+{
+    using util::u32;
+    using util::u64;
+    
+    *status = util::categorical_status::OK;
+    
+    bool exists;
+    
+    u32 id = get_label_id_or_0(lab, &exists);
+    
+    if (!exists)
+    {
+        return 0;
+    }
+    
+    const std::vector<u32>& lab_col = unchecked_get_label_column(lab);
+    const u64 n_indices = indices.size();
+    const u64 sz = lab_col.size();
+    
+    u64 sum = 0;
+    
+    for (u64 i = 0; i < n_indices; i++)
+    {
+        const u64 idx = indices[i] - index_offset;
+        
+        if (idx >= sz)
+        {
+            *status = util::categorical_status::OUT_OF_BOUNDS;
+            return 0;
+        }
+        
+        if (lab_col[idx] == id)
         {
             sum++;
         }

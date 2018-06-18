@@ -190,6 +190,10 @@ public:
     
     util::u64 size() const;
     util::u64 count(const std::string& lab) const;
+    util::u64 count(const std::string& lab,
+                    const std::vector<util::u64>& indices,
+                    util::u32* status,
+                    util::u64 index_offset = 0) const;
     
     static util::categorical empty_copy(const util::categorical& to_copy);
     
@@ -212,12 +216,14 @@ private:
     bool has_label(util::u32 label_id) const;
     
     util::u32 get_next_label_id();
+    util::u32 get_label_id_or_0(const std::string& lab, bool* exist) const;
     
     void unchecked_add_category(const std::string& category, const std::string& collapsed_expression);
     void unchecked_in_category(std::vector<std::string>& out, const std::string& category) const;
     void unchecked_full_category(std::vector<std::string>& out, const std::string& category) const;
     void unchecked_keep_each(const std::vector<std::vector<util::u64>>& indices, util::u64 index_offset);
     void unchecked_insert_label(const std::string& lab, const util::u32 id, const std::string& category);
+    const std::vector<util::u32>& unchecked_get_label_column(const std::string& lab) const;
     
     bool unchecked_eq_progenitors_match(const util::categorical& other, util::u64 sz) const;
     
