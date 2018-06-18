@@ -816,6 +816,77 @@ classdef plotlabeled < handle
       n_cols = ceil( N/n_rows );
       shape = [ n_rows, n_cols ];
     end
+    
+    function [hs, store_stats] = scatter_addcorr(ids, X, Y, alpha)
+      
+      %   SCATTER_ADDCORR -- Add correlation + regression lines to scatter plots.
+      %
+      %     plotlabeled.scatter_addcorr( ids, X, Y ) adds correlation stats 
+      %     and fitted lines to each subplot in `ids`. `ids` is a struct 
+      %     array as returned from `plotlabeled.scatter`. `X` and `Y` are 
+      %     the x and y vectors of data as input to `scatter`.
+      %
+      %     ... scatter_addcorr( ..., ALPHA ) uses ALPHA to determine
+      %     whether the correlation is significant.
+      %
+      %     h = ... scatter_addcorr(...) returns an array of handles to the
+      %     fitted lines.
+      %
+      %     [..., store_stats] = ... also returns a matrix of [r, p] value
+      %     pairs.
+      %
+      %     IN:
+      %       - `ids` (struct array)
+      %       - `X` (numeric)
+      %       - `Y` (numeric)
+      %       - `alpha` (double) |OPTIONAL|
+      %     OUT:
+      %       - `hs` (array of graphics objects)
+      %       - `store_stats` (double)
+      
+      if ( nargin < 4 ), alpha = 0.05; end
+
+      hs = gobjects( size(ids) );
+      store_stats = zeros( numel(ids), 2 );
+
+      for i = 1:numel(ids)
+        ax = ids(i).axes;
+        ind = ids(i).index;
+
+        x = X(ind);
+        y = Y(ind);
+
+        [r, p] = corr( x, y, 'rows', 'complete' );
+
+        xlims = get( ax, 'xlim' );
+        ylims = get( ax, 'ylim' );
+        xticks = get( ax, 'xtick' );
+
+        ps = polyfit( x, y, 1 );
+        y = polyval( ps, xticks );
+
+        cstate = get( ax, 'nextplot' );
+        set( ax, 'nextplot', 'add' );
+        h = plot( ax, xticks, y );
+        set( ax, 'nextplot', cstate );
+
+        h.Annotation.LegendInformation.IconDisplayStyle = 'off';
+        hs(i) = h;  
+
+        coord_func = @(x) ((x(2)-x(1)) * 0.75) + x(1);
+
+        xc = coord_func( xlims );
+        yc = coord_func( ylims );
+
+        txt = sprintf( 'R = %0.2f, p = %0.3f', r, p);
+
+        if ( p < alpha ), txt = sprintf( '%s *', txt ); end
+
+        text( ax, xc, yc, txt );
+
+        store_stats(i, :) = [ r, p ];
+      end
+    end
   end
     
   methods (Static = true, Access = private)
