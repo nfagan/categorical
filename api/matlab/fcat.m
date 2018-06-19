@@ -2718,5 +2718,28 @@ classdef fcat < handle
         strs(indices{:}) = { joined };
       end      
     end
+    
+    function ns = parse(strs, removing)
+      
+      %   PARSE -- Parse number(s) from string(s).
+      %
+      %     ns = fcat.parse( strs ) is the same as str2double( strs );
+      %     ns = fcat.parse( strs, remove ) first removes the char vector
+      %     `remove` from `strs` before performing the conversion.
+      %
+      %     `strs` can be a char vector or cell array of strings.
+      %
+      %     See also fcat/strjoin, fcat/joincat
+      %
+      %     IN:
+      %       - `strs` (char, cell array of strings)
+      %       - `removing` (char) |OPTIONAL|
+      %     OUT:
+      %       - `ns` (double)
+      
+      if ( nargin < 2 ), removing = ''; end
+      if ( ~isempty(removing) ), strs = regexprep( strs, removing, '' ); end
+      ns = str2double( strs );            
+    end
   end
 end

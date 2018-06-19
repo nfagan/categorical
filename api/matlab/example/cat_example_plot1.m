@@ -35,7 +35,6 @@ end
 
 newlabs('image') = sprintf( '%s - %s', img1, img2 );
 
-plt = labeled( diffs, newlabs );
 pl = plotlabeled();
 
 pl.summary_func = @plotlabeled.nanmean;
@@ -43,7 +42,7 @@ pl.error_func = @plotlabeled.nansem;
 pl.x_order = { 'saline', 'low', 'high' };
 
 pl.fig = figure(1);
-bar( pl, plt, 'dose', 'roi', {'image', 'monkey'} );
+bar( pl, diffs, newlabs, 'dose', 'roi', {'image', 'monkey'} );
 
 pl.fig = figure(2);
-bar( pl, plt, 'dose', 'roi', 'image' );
+bar( pl, diffs, newlabs, 'dose', 'roi', 'image' );

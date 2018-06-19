@@ -1,5 +1,11 @@
 classdef plotlabeled < handle
   
+  properties (Access = private, Constant = true)
+    %   When categories are input as {}, a dummy category is added.
+    %   This specifies the pattern used to create the dummy category.
+    DUMMY_CATEGORY_PATTERN = 'undefined %d';
+  end
+  
   properties (Access = public)
     summary_func = @plotlabeled.mean;
     error_func = @plotlabeled.std;
@@ -16,16 +22,20 @@ classdef plotlabeled < handle
     points_are = {};
     points_color_map = [];
     x_tick_rotation = 60;
+    invert_y = false;
     main_line_width = 1;
     marker_size = 1;
     marker_type = 'o';
     join_pattern = ' | ';
     y_lims = [];
+    c_lims = [];
     match_y_lims = true;
+    match_c_lims = true;
     x_order = {};
     group_order = {};
-    panel_order = {}
+    panel_order = {};
     x = [];
+    y = [];
   end
   
   methods
@@ -41,7 +51,7 @@ classdef plotlabeled < handle
       
     end
     
-    function axs = lines(obj, data, groups, panels)
+    function axs = lines(obj, varargin)
       
       %   LINES -- Plot lines for subsets of data.
       %
@@ -51,9 +61,16 @@ classdef plotlabeled < handle
       %
       %     `data` is a labeled object with numeric, 2-dimensional data.
       %
+      %     lines( pl, data, labels, ... ) works as above, except that
+      %     `data` is a numeric matrix, and `labels` is an fcat object with
+      %     the same number of rows as `data`.
+      %
       %     By default, the x-axis is generated automatically as
       %     1:size(data, 2). To use different values for the x-axis, set
       %     the `x` property.
+      %
+      %     Pass in an empty cell array ({}) for either groups or panels 
+      %     in order to avoid specifying that dimension.
       %
       %     See also plotlabeled/bar, plotlabeled/plotlabeled
       %
@@ -63,6 +80,15 @@ classdef plotlabeled < handle
       %       - `panels` (cell array of strings, char)
       %     OUT:
       %       - `axs` (axes)
+      
+      try
+        [data, gp] = plotlabeled.parse_varargin( varargin, 3 );
+      catch err
+        throw( err );
+      end
+      
+      groups = gp{1};
+      panels = gp{2};
       
       try
         opts = matplotopts( obj, data, {}, groups, panels );
@@ -131,7 +157,7 @@ classdef plotlabeled < handle
       set_lims( obj, axs, 'ylim', get_ylims(obj, axs) );
     end
     
-    function axs = bar(obj, data, xcat, groups, panels)
+    function axs = bar(obj, varargin)
       
       %   BAR -- Plot bars for subsets of data.
       %
@@ -141,6 +167,13 @@ classdef plotlabeled < handle
       %
       %     `data` is a labeled object with numeric data arranged in a
       %     row-vector.
+      %
+      %     bar( pl, data, labels, ... ) works as above, except that `data`
+      %     is a numeric row vector, and `labels` is an fcat object with
+      %     the same number of rows as `data`.
+      %
+      %     Pass in an empty cell array ({}) for any of x, groups, or
+      %     panels, in order to avoid specifying that dimension.
       %
       %     See also plotlabeled/lines, plotlabeled/errorbar
       %
@@ -152,13 +185,13 @@ classdef plotlabeled < handle
       %       - `axs` (axes)
       
       try
-        axs = groupplot( obj, 'bar', data, xcat, groups, panels );
+        axs = groupplot( obj, 'bar', varargin{:} );
       catch err
         throw( err );
       end
     end
     
-    function axs = errorbar(obj, data, xcat, groups, panels)
+    function axs = errorbar(obj, varargin)
       
       %   ERRORBAR -- Plot lines with errors for subsets of data.
       %
@@ -168,6 +201,13 @@ classdef plotlabeled < handle
       %
       %     `data` is a labeled object with numeric data arranged in a
       %     row-vector.
+      %
+      %     errorbar( pl, data, labels, ... ) works as above, except that
+      %     `data` is a numeric matrix, and `labels` is an fcat object with
+      %     the same number of rows as `data`.
+      %
+      %     Pass in an empty cell array ({}) for any of x, groups, or
+      %     panels, in order to avoid specifying that dimension.
       %
       %     See also plotlabeled/lines, plotlabeled/bar
       %
@@ -179,7 +219,7 @@ classdef plotlabeled < handle
       %       - `axs` (axes)
       
       try
-        axs = groupplot( obj, 'errorbar', data, xcat, groups, panels );
+        axs = groupplot( obj, 'errorbar', varargin{:} );
       catch err
         throw( err );
       end
@@ -243,6 +283,8 @@ classdef plotlabeled < handle
       catch err
         throwAsCaller( err );
       end
+      
+      labels = addcat( copy(labels), opts.specificity );
       
       n_subplots = opts.n_subplots;
       c_shape = opts.c_shape;
@@ -309,6 +351,111 @@ classdef plotlabeled < handle
         s = struct( 'axes', {}, 'series', {}, 'index', {}, 'selectors', {} );
       end
     end
+    
+    function axs = imagesc(obj, varargin)
+      
+      %   IMAGESC -- Create scaled images for subsets of data.
+      %
+      %     imagesc( pl, data, 'outcomes' ) creates scaled images whose
+      %     panels are drawn from the unique labels in 'outcomes'. `data`
+      %     is a labeled object.
+      %
+      %     imagesc( pl, data, labels, 'outcomes' ) works as above.
+      %     `data` in this case is numeric; `labels` is an fcat object with
+      %     the same number of rows as `data`.
+      %
+      %     Plotted data must be a 3-dimensional array: N-by-y-by-x.
+      %     `pl.summary_func` is called to collapse the first dimension for
+      %     each subset of data. 
+      %
+      %     axs = imagesc(...) returns an array of axes handles to
+      %     each subplot.
+      %
+      %     Pass in an empty cell array ({}) for panels to avoid specifying 
+      %     that dimension.
+      %
+      %     This function is useful for creating time-series spectrograms, 
+      %     in which case data are conceptually an array of N-trials by
+      %     M-frequencies by P-time points.
+      %
+      %     IN:
+      %       - `varargin` (numeric, labeled, fcat, char, cell array of strings)
+      %     OUT:
+      %       - `axs` (axes)
+      
+      try
+        [plt, panels] = validate_and_get_labeled( varargin{:} );
+      catch err
+        throw( err );
+      end
+      
+      try
+        opts = matplotopts( obj, plt, {}, {}, panels );
+      catch err
+        throw( err );
+      end
+      
+      n_x = size( plt.data, 3 );
+      n_y = size( plt.data, 2 );
+      
+      n_subplots = opts.n_subplots;
+      c_shape = opts.c_shape;
+      
+      axs = gobjects( 1, n_subplots );
+      figure( opts.f );
+      
+      xdat = get_x( obj, n_x );
+      ydat = get_y( obj, n_y );
+      ys = repmat( (1:length(ydat))', 1, length(xdat) );
+      
+      if ( obj.invert_y )
+        ydat = flipud( ydat(:) );
+      end
+      
+      for i = 1:n_subplots
+        ax = subplot( c_shape(1), c_shape(2), i );
+        
+        dat = squeeze( rowref(opts.summary_data, i) );
+        
+        if ( obj.invert_y ), dat = flipud( dat ); end
+        if ( obj.add_smoothing ), dat = obj.smooth_func( dat ); end
+        
+        h = imagesc( ax, ys, 'CData', dat );
+        cb = colorbar;
+        
+        xticks = get( ax, 'xtick' );
+        yticks = get( ax, 'ytick' );
+        
+        set( ax, 'xticklabels', xdat(xticks) );
+        set( ax, 'yticklabels', ydat(yticks) );
+        
+        title( ax, opts.p_labs{i} );
+        
+        axs(i) = ax;
+      end
+      
+      set_lims( obj, axs, 'clim', get_clims(obj, axs) );
+      
+      function [plt, panels] = validate_and_get_labeled(varargin)
+        
+        %   VALIDATE_AND_GET_LABELED -- Get labeled from labeled or data +
+        %     fcat.
+        
+        narginchk( 2, 3 );
+        if ( nargin == 3 )
+          plt = labeled( varargin{1}, varargin{2} );
+          panels = varargin{3};
+        else
+          plt = varargin{1};
+          panels = varargin{2};
+          
+          plotlabeled.assert_isa( plt, 'fcat', 'labels' );
+        end
+        
+        assert( ndims(plt.data) == 3, ['Data must be 3-dimensional: ' ...
+          , ' N-by-y-by-x.'] );
+      end
+    end
   end
   
   methods (Access = private)
@@ -358,10 +505,13 @@ classdef plotlabeled < handle
       
       assert( size(data, 1) >= 1, 'Data cannot be empty.' );
       
+      %   add categories to `data` if any of xcats, groups, or panels is
+      %   an empty cell array ({})
+      [xcats, groups, panels] = plotlabeled.require_dummy_cats( data, xcats, groups, panels );
       [xcats, groups, panels] = plotlabeled.cell( xcats, groups, panels );
       [xcats, groups, panels] = plotlabeled.uniques( xcats, groups, panels );
       
-      specificity = [ xcats, groups, panels ];
+      specificity = [ xcats(:)', groups(:)', panels(:)' ];
       
       %   ensure all categories exist.
       validate_categories( data, specificity );
@@ -421,6 +571,7 @@ classdef plotlabeled < handle
       opts = struct();
       opts.summary_data = summary_data;
       opts.errors_data = errors_data;
+      opts.specificity = specificity;
       opts.I = I;
       opts.C = C;
       
@@ -452,9 +603,19 @@ classdef plotlabeled < handle
       end
     end
     
-    function axs = groupplot(obj, func_name, data, xcats, groups, panels)
+    function axs = groupplot(obj, func_name, varargin)
       
       %   GROUPPLOT -- Internal utility to plot grouped, row-vector data.
+      
+      try
+        [data, gp] = plotlabeled.parse_varargin( varargin, 4 );
+      catch err
+        throw( err );
+      end
+      
+      xcats = gp{1};
+      groups = gp{2};
+      panels = gp{3};
       
       opts = matplotopts( obj, data, xcats, groups, panels );
       
@@ -501,8 +662,11 @@ classdef plotlabeled < handle
           col = find( g_combs, g_c(full_row_ind, :) );
           
           summary_mat(row, col) = summary_data(full_row_ind);
-          errors_mat(row, col) = errors_data(full_row_ind);
           inds_mat(row, col) = full_row_ind;
+          
+          if ( obj.add_errors )
+            errors_mat(row, col) = errors_data(full_row_ind);
+          end
         end
         
         switch ( func_name )
@@ -513,11 +677,7 @@ classdef plotlabeled < handle
               h = bar( summary_mat );
             end
           case 'errorbar'
-            if ( obj.add_errors )
-              h = errorbar( summary_mat, errors_mat );
-            else
-              h = errorbar( summary_mat, nan(size(errors_mat)) );
-            end
+            h = errorbar( summary_mat, errors_mat );
           otherwise
             error( 'Unrecognized function name "%s".', func_name );
         end
@@ -636,6 +796,37 @@ classdef plotlabeled < handle
       end
     end
     
+    function x = get_x(obj, sz_check)
+      
+      %   GET_X -- Get x coordinate vector for n-d data.
+      
+      x = get_xyz( obj, 'x', sz_check );
+    end
+    
+    function y = get_y(obj, sz_check)
+      
+      %   GET_Y -- Get y coordinate vector for n-d data.
+      
+      y = get_xyz( obj, 'y', sz_check );
+    end
+    
+    function dat = get_xyz(obj, prop, sz_check)
+      
+      %   GET_XYZ -- Get vector of x, y, z, ... data to plot against.
+      
+      dat = obj.(prop);
+      
+      if ( isempty(dat) )
+        dat = 1:sz_check;
+      else
+        if ( numel(dat) ~= sz_check )
+          name = upper( prop );
+          error( ['%s data do not correspond to the plotted data. %s data have' ...
+            , ' %d value(s); expected %d.'], name, name, numel(dat), sz_check );
+        end
+      end
+    end
+    
     function x = get_matx(obj, summary_data)
       
       %   GET_MATX -- Get x coordinates for 2d data.
@@ -652,7 +843,7 @@ classdef plotlabeled < handle
           %   even though, intuitively, it should be columns
           %
           error( ['X data do not correspond to the plotted data. X data have' ...
-            , ' %d values; plotted data have %d columns.'], numel(obj.x), rows );
+            , ' %d value(s); plotted data have %d columns.'], numel(obj.x), rows );
         end
         x = repmat( obj.x(:), 1, cols );        
       end
@@ -684,13 +875,27 @@ classdef plotlabeled < handle
       
       %   GET_YLIMS
       
-      if ( ~isempty(obj.y_lims) )
-        l = obj.y_lims;
-      elseif ( obj.match_y_lims )
-        all_lims = get_lims( obj, axs, 'ylim' );
+      l = get_current_lims( obj, 'y_lims', 'match_y_lims', 'ylim', axs );
+    end
+    
+    function c = get_clims(obj, axs)
+      
+      %   GET_CLIMS
+      
+      c = get_current_lims( obj, 'c_lims', 'match_c_lims', 'clim', axs );      
+    end
+    
+    function l = get_current_lims(obj, prop, match_prop, kind, axs)
+      
+      %   GET_CURRENT_LIMS -- Get matched or manually set limits for axis.
+      
+      if ( ~isempty(obj.(prop)) )
+        l = obj.(prop);
+      elseif ( obj.(match_prop) )
+        all_lims = get_lims( obj, axs, kind );
         l = [ min(all_lims(:, 1)), max(all_lims(:, 2)) ];
       else
-        l = get_lims( obj, axs, 'ylim' );
+        l = get_lims( obj, axs, kind );
       end
     end
     
@@ -746,11 +951,25 @@ classdef plotlabeled < handle
       y = mean( x, 1 );
     end
     
+    function y = median(x)
+      
+      %   MEDIAN -- Median across the first dimension.
+      
+      y = median( x, 1 );
+    end
+    
     function y = nanmean(x)
       
       %   NANMEAN -- Mean across the first dimension, excluding NaN.
       
       y = nanmean( x, 1 );
+    end
+    
+    function y = nanmedian(x)
+      
+      %   MEDIAN -- Median across the first dimension, excluding NaN.
+      
+      y = nanmedian( x, 1 );
     end
     
     function y = nanstd(x)
@@ -891,6 +1110,25 @@ classdef plotlabeled < handle
     
   methods (Static = true, Access = private)
     
+    function [data, selectors] = parse_varargin(inputs, low)
+      
+      %   PARSE_VARARGIN -- Obtain labeled data from labeled object or data
+      %     + fcat object.
+      
+      n_in = numel( inputs );
+      
+      if ( n_in < low ), error( 'Not enough input arguments.' ); end
+      if ( n_in > low+1 ), error( 'Too many input arguments.' ); end
+      
+      if ( n_in == low )
+        data = inputs{1};
+        selectors = inputs(2:end);
+      else
+        data = labeled( inputs{1}, inputs{2} );
+        selectors = inputs(3:end);
+      end
+    end
+    
     function [summary_mat, errors_mat] = apply_smoothing(summary_mat, errors_mat, func)
       
       %   APPLY_SMOOTHING -- Internal utility to smooth data and errors.
@@ -942,6 +1180,7 @@ classdef plotlabeled < handle
       if ( numel(preferred) == 0 )
         return;
       end
+      preferred = unique( preferred(:)', 'stable' );
       inds = cellfun( @(x) find(strcmp(preferred, x)), actual, 'un', false );
       empties = cellfun( @isempty, inds );
       inds( empties ) = { Inf };
@@ -991,6 +1230,39 @@ classdef plotlabeled < handle
         else
           varargout{i} = varargin{i};
         end
+      end
+    end
+    
+    function varargout = require_dummy_cats(data, varargin)
+      
+      %   REQUIRE_DUMMY_CATS -- Add categories if unspecified.
+      %
+      %     ... require_dummy_cats( data, xcats, groups, panels, ... )
+      %     checks if xcats, ... is an empty cell array ({}). If so, a new
+      %     dummy category will be added to `data`, and the corresponding
+      %     output of this function will be the new category name.
+      
+      varargout = cell( size(varargin) );
+      offset = 1;
+      
+      for i = 1:numel(varargin)
+        cats = varargin{i};
+        if ( ~ischar(cats) && isempty(cats) )
+          [ varargout{i}, offset ] = require_dummy_category( data, offset );
+        else
+          varargout{i} = cats;
+        end
+      end
+      
+      function [cname, start] = require_dummy_category(data, start)
+        pattern = plotlabeled.DUMMY_CATEGORY_PATTERN;
+        cname = sprintf( pattern, start );
+        while ( hascat(data, cname) )
+          start = start + 1;
+          cname = sprintf( pattern, start );
+        end
+        start = start + 1;
+        addcat( data, cname );
       end
     end
     
