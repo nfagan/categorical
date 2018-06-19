@@ -34,7 +34,7 @@ addcat( repmat(rlabs, 2), 'measure' );
 setcat( rlabs, 'measure', 'mean', 1:N );
 setcat( rlabs, 'measure', 'std', N+1:N*2 );
 
-means = cellfun( @(x) mean(egdat(x)), t, 'un', false );
-devs = cellfun( @(x) std(egdat(x)), t, 'un', false );
+means = cellfun( @(x) mean(egdat(x)), t  );
+devs = cellfun( @(x) std(egdat(x)), t );
 
 tbl2 = fcat.table( [means; devs], rlabs, clabs )
