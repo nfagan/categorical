@@ -5,7 +5,7 @@ x = cat_test_get_mat_categorical();
 f = fcat.from( x.c );
 
 tic;
-[f2, I] = keepeach( f(:), getcats(f) );
+[f2, I] = keepeach( f', getcats(f) );
 c1 = toc();
 
 tic;

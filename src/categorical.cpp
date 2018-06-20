@@ -1110,7 +1110,7 @@ void util::categorical::unchecked_keep_each(const std::vector<std::vector<util::
     using util::u64;
     using util::u32;
     
-    util::categorical copy = *this;
+    util::categorical copy = util::categorical::empty_copy(*this);
     
     const u64 n_indices = indices.size();
     const u64 n_cats = m_labels.size();
@@ -1169,6 +1169,7 @@ void util::categorical::unchecked_keep_each(const std::vector<std::vector<util::
                     if (randomize_on_insert)
                     {
                         m_progenitor_ids.randomize();
+                        copy.m_progenitor_ids.randomize();
                         randomize_on_insert = false;
                     }
                 }
@@ -3334,6 +3335,7 @@ util::categorical util::categorical::empty_copy(const util::categorical& to_copy
     tmp.m_category_indices = to_copy.m_category_indices;
     tmp.m_in_category = to_copy.m_in_category;
     tmp.m_collapsed_expressions = to_copy.m_collapsed_expressions;
+    tmp.m_progenitor_ids = to_copy.m_progenitor_ids;
     
     u64 n_cats = to_copy.m_labels.size();
     
