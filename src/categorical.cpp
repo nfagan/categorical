@@ -1625,7 +1625,8 @@ util::u32 util::categorical::replace_labels(const std::string& from, const std::
 
 //  replace_labels: Replace labels with single label.
 
-util::u32 util::categorical::replace_labels(const std::vector<std::string>& from, const std::string& with,
+util::u32 util::categorical::replace_labels(const std::vector<std::string>& from,
+                                            const std::string& with,
                                             bool test_scalar)
 {
     using util::u64;
