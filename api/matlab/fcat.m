@@ -984,7 +984,7 @@ classdef fcat < handle
     
     function I = find(obj, labels, inds)
       
-      %   FIND -- Get indices associated with labels.
+      %   FIND -- Get indices associated with label or label combination.
       %
       %     I = find( obj, 'a' ) returns indices of rows identified by the 
       %     label 'a'.
@@ -1404,9 +1404,17 @@ classdef fcat < handle
       %       - `to` (cell array of strings)
       
       if ( nargin == 3 )
-        cat_api( 'set_cat', obj.id, category, to );
+        if ( ischar(category) )
+          cat_api( 'set_cat', obj.id, category, to );
+        else
+          cat_api( 'set_cats', obj.id, category, to );
+        end
       else
-        cat_api( 'set_partial_cat', obj.id, category, to, uint64(at_indices) );
+        if ( ischar(category) )
+          cat_api( 'set_partial_cat', obj.id, category, to, uint64(at_indices) );
+        else
+          cat_api( 'set_partial_cats', obj.id, categories, to, uint64(at_indices) );
+        end
       end
     end
     
@@ -2000,6 +2008,17 @@ classdef fcat < handle
       %     C = categorical( ..., INDS ) returns the subset of rows at
       %     indices `INDS`.
       %
+      %     Note that there are certain restrictions on the format of
+      %     labels (levels) of a categorical matrix that do not apply to
+      %     fcat objects, and these can complicate converting between
+      %     the two. In particular, the empty character vector ('') is a
+      %     valid fcat label, but an invalid categorical level.
+      %     Additionally, the categorical constructor trims leading and
+      %     trailing whitespace from its levels, whereas fcat objects
+      %     preserve this whitespace. In these cases, use the cellstr()
+      %     method to obtain an exact, Matlab-native representation of the 
+      %     object's contents.
+      %
       %     See also fcat/cellstr
       %
       %     IN:
@@ -2084,7 +2103,15 @@ classdef fcat < handle
       %   DISPFULL -- Display complete contents.
       
       fprintf( '  %s %s array\n\n', sz_str, link_str );
-      disp( categorical(obj) );
+      try
+        disp( categorical(obj) );
+      catch err
+        %   It's legal to assign the empty character vector ('') as a label
+        %   in an fcat object, but not in a categorical array.
+        warning( ['Object contains labels that are invalid Matlab categorical levels' ...
+          , ' (such as ''''). Attempts to convert the object to a categorical' ...
+          , ' matrix will fail. Use setdisp(obj, ''short'') to view contents.'] );
+      end
     end
     
     function dispshort(obj, desktop_exists, link_str, sz_str)

@@ -36,6 +36,7 @@ classdef plotlabeled < handle
     panel_order = {};
     x = [];
     y = [];
+    mask = 'off';
   end
   
   methods
@@ -456,6 +457,26 @@ classdef plotlabeled < handle
           , ' N-by-y-by-x.'] );
       end
     end
+    
+    %
+    %   GET / SET
+    %    
+    
+    function set.mask(obj, val)
+      
+      %   SET.MASK -- Validate and set the "mask" property.
+      
+      if ( strcmp(val, 'off') )
+        obj.mask = val;
+      else
+        classes = { 'uint64', 'logical', 'double' };
+        if ( ~ismember(class(val), classes) )
+          error( 'Mask must be one of:\n%s', strjoin([classes, '"off"'], ' | ') );
+        end
+        if ( isa(val, 'logical') ), val = find( val ); end
+        obj.mask = val;
+      end
+    end
   end
   
   methods (Access = private)
@@ -502,6 +523,11 @@ classdef plotlabeled < handle
       plotlabeled.assert_isa( obj, 'plotlabeled', 'plot object' );
       
       data = prune( copy(data) );
+      
+      %   apply mask, if specified.
+      if ( ~strcmp(obj.mask, 'off') )
+        keep( data, obj.mask );
+      end
       
       assert( size(data, 1) >= 1, 'Data cannot be empty.' );
       
@@ -1368,6 +1394,19 @@ classdef plotlabeled < handle
               varargout{1} = hBar;
               varargout{2} = hErrorbar;
       end   
+    end
+    
+    function assert_oneof(data, classes, kind)
+      
+      %   ASSERT_ONEOF
+      
+      if ( nargin < 2 ), kind = '(unspecified)'; end
+      if ( ~iscell(classes) ), classes = { classes }; end
+      
+      if ( ~ismember(class(data), classes) )
+        error( 'Data of type "%s" must be one of the following classes:\n%s' ...
+          , kind, strjoin(classes, ' | ') );
+      end
     end
     
     function assert_isa(data, cls, kind)

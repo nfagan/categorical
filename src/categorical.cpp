@@ -1586,6 +1586,11 @@ bool util::categorical::categories_match(const util::categorical &other) const
 
 util::u32 util::categorical::replace_labels(const std::string& from, const std::string& with)
 {
+    if (from == with)
+    {
+        return util::categorical_status::OK;
+    }
+    
     auto from_it = m_label_ids.find(from);
     auto with_it = m_label_ids.find(with);
     auto end_it = m_label_ids.endk();
@@ -1619,6 +1624,9 @@ util::u32 util::categorical::replace_labels(const std::string& from, const std::
     
     m_in_category.erase(from);
     m_in_category[with] = c_incat;
+    
+    //  string-label to uint32 mapping is now different
+    m_progenitor_ids.randomize();
     
     return util::categorical_status::OK;
 }

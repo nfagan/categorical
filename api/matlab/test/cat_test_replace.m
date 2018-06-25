@@ -40,4 +40,11 @@ else
   assert( all(haslab(f, incat1)), 'Original labels did not exist after replacement.' );
 end
 
+f1 = fcat.create( 'a', {'a', 'b'} );
+f2 = replace( copy(f1), 'a', 'c' );
+f3 = replace( copy(f1), 'a', 'b' );
+
+assert( progenitorsmatch(f1, f3), 'Replacing single label with present label updated progenitors.' );
+assert( ~progenitorsmatch(f1, f2), 'Replacing single label with new label did not update progenitors.' );
+
 end
