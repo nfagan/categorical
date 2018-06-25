@@ -1846,7 +1846,7 @@ classdef fcat < handle
       end
       
       if ( desktop_exists )
-        link_str = sprintf( '<a href="matlab:helpPopup %s/%s">%s</a>' ...
+        link_str = sprintf( '<a href="matlab:helpPopup %s/%s" style="font-weight:bold">%s</a>' ...
           , cls, cls, cls );
       else
         link_str = cls;
