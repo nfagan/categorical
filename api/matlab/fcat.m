@@ -29,7 +29,8 @@ classdef fcat < handle
       %     The FCAT constructor generates an empty object into which
       %     categories and labels can be inserted. To directly construct an
       %     FCAT object with categories set to values, see the static
-      %     method `create`.
+      %     method `create`. To directly construct an FCAT object with
+      %     categories, see the static method `with`.
       %
       %     EX 1 //
       %
@@ -131,9 +132,11 @@ classdef fcat < handle
     
     function n = numel(varargin)
       
-      %   SIZE -- Get the number of elements in the object.
+      %   NUMEL -- Get the number of elements in the object.
       %
-      %     See also fcat/size
+      %     N = numel( obj ) is equivalent to N = prod( size(obj) );
+      %
+      %     See also fcat/size, fcat/length
       %
       %     OUT:
       %       - `n` (uint64)
@@ -143,24 +146,24 @@ classdef fcat < handle
     
     function tf = isempty(obj)
       
-      %   ISEMPTY -- True if the object is of size 0.
+      %   ISEMPTY -- True if the object has 0 rows.
       %
-      %     See also fcat/numel
+      %     See also fcat/size, fcat/length
       %
       %     OUT:
       %       - `tf` (logical)
       
-      tf = numel( obj ) == 0;      
+      tf = length( obj ) == 0;      %#ok<ISMT>
     end
     
     function l = length(obj)
       
-      %   LENGTH -- Number of rows in the object.
+      %   LENGTH -- Get the number of rows in the object.
       %
-      %     l = length(obj) returns the number of rows in `obj`, and is
+      %     l = length( obj ) returns the number of rows in `obj`, and is
       %     equivalent to `size(obj, 1)`.
       %
-      %     See also fcat/size
+      %     See also fcat/size, fcat/numel
       %
       %     OUT:
       %       - `l` (uint64)
@@ -170,9 +173,18 @@ classdef fcat < handle
     
     function sz = size(obj, dim)
       
-      %   SIZE -- Get the number of rows in the object.
+      %   SIZE -- Get size of the object.
       %
-      %     See also fcat/numel, fcat/getlabs
+      %     S = size( obj ) returns the [M, N] size of `obj`. `M` is the 
+      %     number of rows in `obj`; `N` is the number of caegories.
+      %
+      %     S = size( obj, DIM ) returns the size of `obj` in dimension
+      %     `DIM`.
+      %
+      %     For the sake of stylistic consistency, the size of `obj` in
+      %     dimensions > 2 is 1.
+      %
+      %     See also fcat/numel, fcat/length, fcat/getlabs
       %
       %     IN:
       %       - `dimension` |OPTIONAL| (numeric)
@@ -370,6 +382,15 @@ classdef fcat < handle
       end
       
       repeat( obj, N-1 );
+    end
+    
+    function obj = reshape(obj, varargin)
+      
+      %   RESHAPE -- Reshaping fcat objects is not supported.
+      %
+      %     See also fcat/resize
+      
+      error( 'Reshaping fcat objects is not supported. See `fcat/resize`.' );
     end
     
     function obj = subsasgn(obj, s, values)

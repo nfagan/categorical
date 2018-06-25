@@ -947,7 +947,8 @@ classdef plotlabeled < handle
       else
         s = obj.shape;
         if ( prod(s) < n )
-          warning( 'Number of subplots exceeds manually specified shape.' );
+          warning( 'Number of subplots (%d) exceeds manually specified shape (%d).' ...
+            , n, prod(s) );
           s = plotlabeled.get_subplot_shape( n );
         end
       end
@@ -1060,6 +1061,25 @@ classdef plotlabeled < handle
       n_rows = round( sqrt(N) );
       n_cols = ceil( N/n_rows );
       shape = [ n_rows, n_cols ];
+    end
+    
+    function shape = try_subplot_shape(shape, N)
+      
+      %   TRY_SUBPLOT_SHAPE -- Get subplot shape from shape or linear size.
+      %
+      %     s = ... try_subplot_shape( SHAPE, N ) returns `SHAPE` in `s` if
+      %     the product of `SHAPE` has at least `N` elements. Otherwise, it
+      %     returns the result of ... `get_subplot_shape( N )`.
+      %
+      %     IN:
+      %       - `shp` (double)
+      %       - `N` (double)
+      %     OUT:
+      %       - `shape` (double)
+      
+      if ( prod(shape(:)) < N )
+        shape = get_subplot_shape( N );
+      end
     end
     
     function [hs, store_stats] = scatter_addcorr(ids, X, Y, alpha)
