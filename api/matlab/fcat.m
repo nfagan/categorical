@@ -29,7 +29,7 @@ classdef fcat < handle
       %     The FCAT constructor generates an empty object into which
       %     categories and labels can be inserted. To directly construct an
       %     FCAT object with categories set to values, see the static
-      %     method `create`. To directly construct an FCAT object with
+      %     method `create`. To construct an FCAT object with empty 
       %     categories, see the static method `with`.
       %
       %     EX 1 //
@@ -1506,7 +1506,7 @@ classdef fcat < handle
     
     function obj = replace(obj, from, with)
       
-      %   REPLACE -- Replace labels with label.
+      %   REPLACE -- Replace label(s) with label.
       %
       %     replace( obj, 'label1', 'label2' ); replaces occurrences of
       %     'label1' with 'label2'. If 'label2' exists in `obj`, it must be
@@ -1602,7 +1602,7 @@ classdef fcat < handle
       %
       %     C = append1( A', B )
       %     D = append1( A', B, 1 )
-      %     E = append1( A', B, find(A, 'image') )
+      %     E = append1( A', B, find(B, 'image') )
       %
       %     See also fcat/one, fcat/append, fcat/collapsecat
       %
@@ -1899,6 +1899,10 @@ classdef fcat < handle
         sz_str = sprintf( '%d×%d', sz_m, sz_n );
       else
         sz_str = sprintf( '%d-by-%d', sz_m, sz_n );
+      end
+      
+      if ( sz_m == 0 )
+        sz_str = sprintf( '%s empty', sz_str );
       end
       
       if ( strcmp(obj.displaymode, 'short') )
