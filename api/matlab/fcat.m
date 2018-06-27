@@ -384,6 +384,41 @@ classdef fcat < handle
       repeat( obj, N-1 );
     end
     
+    function obj = repset(obj, cat, to)
+
+      %   REPSET -- Replicate and assign labels to full subset of category.
+      %
+      %     repset( obj, C, TO ) where `C` is a category name, and `TO`
+      %     is a cell array of string labels, replicates the contents of 
+      %     `obj` N times, where N is equal to the number of elements in 
+      %     `TO`. For each replication `i`, the contents of the category 
+      %     `C` will be set to `TO{i}`.
+      %
+      %     EX //
+      %
+      %     f = fcat.create( 'state', 'NY' );
+      %     addcat( f, 'city' );
+      %     repset( f, 'city', {'NYC', 'Buffalo', 'Albany'} )
+      %
+      %     See also fcat/repmat, fcat/setcat, fcat/resize
+      %
+      %     IN:
+      %       - `cat` (char)
+      %       - `to` (cell array of strings, char)
+
+      if ( ~iscell(to) ), to = { to }; end
+      
+      assert( iscellstr(to), 'Input must be a cell array of strings, or char.' );
+
+      N = length( obj );
+      repmat( obj, numel(to) );
+      rowsi = 1:N;
+
+      for i = 1:numel(to)
+        setcat( obj, cat, to{i}, rowsi + ((i-1)*N) );
+      end
+    end
+    
     function obj = reshape(obj, varargin)
       
       %   RESHAPE -- Reshaping fcat objects is not supported.
