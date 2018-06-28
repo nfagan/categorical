@@ -40,7 +40,7 @@ classdef plotlabeled < handle
   end
   
   methods
-    function obj = plotlabeled()
+    function obj = plotlabeled(varargin)
       
       %   PLOTLABELED -- Create labeled-plotting interface.
       %
@@ -48,8 +48,23 @@ classdef plotlabeled < handle
       %     creating groups and panels for different combinations of
       %     categories.
       %
+      %     obj = plotlabeled() creates a default-constructed PLOTLABELED
+      %     object. Properties can be modified using '.' notation.
+      %
+      %     obj = plotlabeled( 'prop1', val1, ... ) assigns val1 to the
+      %     property 'prop1'. Use properties( obj ) to get a list of valid
+      %     property names.
+      %
       %     See also plotlabeled/bar, plotlabeled/lines
+      %
+      %     IN:
+      %       - `varargin` (field, value)
       
+      try
+        assign_pair_inputs( obj, varargin );
+      catch err
+        throw( err );
+      end
     end
     
     function axs = lines(obj, varargin)
@@ -480,6 +495,36 @@ classdef plotlabeled < handle
   end
   
   methods (Access = private)
+    
+    function assign_pair_inputs(obj, inputs)
+      
+      %   ASSIGN_PAIR_INPUTS -- Assign (field, label) pair inputs to new
+      %     object.
+      %
+      %     assign_pair_inputs( obj, {'summary_func', @nanmean} ) is called
+      %     for the syntax obj = plotlabeled( 'summary_func', @nanmean );
+      
+      N = numel( inputs );
+      assert( mod(N, 2) == 0, '(field, value) pairs are incomplete' );
+      
+      if ( N == 0 ), return; end
+      
+      props = properties( obj );
+      
+      prop_names = inputs(1:2:end);
+      prop_vals = inputs(2:2:end);
+      
+      cls = class( obj );
+      
+      for j = 1:numel(prop_names)
+        name = prop_names{j};
+        
+        assert( ischar(name), 'Property name must be char; was "%s".', class(name) );
+        assert( ismember(name, props), '"%s" is not a property of class "%s".', name, cls );
+        
+        obj.(name) = prop_vals{j};
+      end
+    end
     
     function conditional_add_legend(obj, handles, g_labs, first_loop)
       
