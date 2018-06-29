@@ -703,6 +703,7 @@ classdef plotlabeled < handle
       clf( f );
       
       opts = struct();
+      opts.data = data;
       opts.summary_data = summary_data;
       opts.errors_data = errors_data;
       opts.specificity = specificity;
@@ -836,7 +837,7 @@ classdef plotlabeled < handle
         end
         
         if ( obj.add_points )
-          plot_points( obj, ax, h, data, inds_mat, opts.I, color_map );
+          plot_points( obj, ax, h, opts.data, inds_mat, opts.I, color_map );
         end
         
         title( p_labs(i, :) );
