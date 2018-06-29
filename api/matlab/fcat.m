@@ -2027,24 +2027,46 @@ classdef fcat < handle
     %   CONVERSION
     %
     
-    function [C, F] = cellstr(obj)
+    function [C, cats] = cellstr(obj, cats, inds)
       
       %   CELLSTR -- Convert to cell array of strings.
       %
       %     C = cellstr( obj ) returns an MxN cell array of strings `C`,
       %     whose rows are observations and columns are categories.
       %
-      %     [C, F] = ... also returns a 1xN cell array of strings `F`
+      %     C = cellstr( obj, CATS ) returns an MxN cell array of strings
+      %     drawn from `CATS` categories. `CATS` can be a cell array of
+      %     strings, or a numeric vector; the ordering of categories is
+      %     consistent with the output of `getcats()`.
+      %
+      %     C = cellstr( ..., inds ) draws from rows identified by the
+      %     uint64 index vector `inds`.
+      %
+      %     [C, cats] = ... also returns a 1xN cell array of strings `cats`
       %     identifying the columns of `C`.
       %
       %     See also fcat/fullcat, fcat/fcat
       %
       %     OUT:
       %       - `C` (cell array of strings)
-      %       - `F` (cell array of strings)
+      %       - `cats` (cell array of strings)
       
-      F = getcats( obj );
-      C = fullcat( obj, F );
+      if ( nargin == 1 )
+        cats = getcats( obj );
+        C = fullcat( obj, cats );
+        return;
+      end
+      
+      if ( isnumeric(cats) )
+        c = getcats( obj );
+        cats = c(cats);
+      end
+      
+      if ( nargin < 3 )
+        C = fullcat( obj, cats );
+      else
+        C = partcat( obj, cats, inds );
+      end
     end
     
     function [C, cats] = categorical(obj, cats, inds)
@@ -2375,6 +2397,9 @@ classdef fcat < handle
     function obj = like(B)
       
       %   LIKE -- Create fcat with the categories and labels of another fcat.
+      %
+      %     B = fcat.like( A ) returns an fcat object `B` with the same
+      %     categories and labels as fcat object `A`, but 0 rows.
       %
       %     See also fcat/with, fcat/from
       %

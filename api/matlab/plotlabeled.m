@@ -319,7 +319,7 @@ classdef plotlabeled < handle
       
       non_empties = true( size(g_labs) );
       
-      identifiers = get_identifiers();
+      identifiers = plotlabeled.get_identifiers();
       stp = 1;
       
       for i = 1:n_subplots
@@ -362,9 +362,70 @@ classdef plotlabeled < handle
       end
       
       set_lims( obj, axs, 'ylim', get_ylims(obj, axs) );
+    end
+    
+    function axs = boxplot(obj, data, labs, groups, panels)
       
-      function s = get_identifiers()
-        s = struct( 'axes', {}, 'series', {}, 'index', {}, 'selectors', {} );
+      %   BOXPLOT -- Create boxplots plots for subsets of data.
+      %
+      %     boxplot( obj, data, labels, groups, panels ) creates a series
+      %     of boxplots with panel labels drawn from the category(ies) in
+      %     `panels`, and group labels from the category(ies) in `groups`.
+      %
+      %     axs = ... returns an array of handles to the subplotted axes.
+      %
+      %     Note that, currently, the ordering of groups is not supported.
+      %
+      %     EX //
+      %
+      %     f = fcat.example();
+      %     dat = fcat.example( 'smalldata' );
+      %     pl = plotlabeled();
+      %     pl.boxplot( dat, f, 'dose', 'monkey' )
+      %
+      %     See also plotlabeled/scatter, plotlabeled/bar
+      %
+      %     IN:
+      %       - `data` (double)
+      %       - `labs` (fcat)
+      %       - `groups` (cell array of strings, char)
+      %       - `panels` (cell array of strings, char)
+      %     OUT:
+      %       - `axs` (axes)
+      
+      try
+        validate_data( data, labs );
+        opts = matplotopts( obj, labs, {}, groups, panels, false );
+      catch err
+        throw( err );
+      end
+      
+      labs = addcat( copy(labs), opts.specificity );
+      M = get_mask( obj, length(labs) );
+      
+      n_subplots = opts.n_subplots;
+      c_shape = opts.c_shape;
+      g_cats = opts.g_cats;
+      
+      axs = gobjects( 1, n_subplots );
+      
+      for i = 1:n_subplots
+        ax = subplot( c_shape(1), c_shape(2), i );
+        
+        I = find( labs, opts.p_combs(i, :), M );
+        
+        boxplot( ax, rowref(data, I), categorical(labs, g_cats, I) );
+        
+        title( ax, opts.p_labs(i, :) );
+        axs(i) = ax;
+      end
+      
+      set_lims( obj, axs, 'ylim', get_ylims(obj, axs) );
+      
+      function validate_data(data, labs)
+        plotlabeled.assert_isa( labs, 'fcat', 'data labels' );
+        assert( size(data, 1) == length(labs), ['Number of rows of data' ...
+          , ' must match number of rows of labels.'] );
       end
     end
     
@@ -541,7 +602,9 @@ classdef plotlabeled < handle
       %   VALIDATE_SCATTER -- Internal utility to validate scatter plot
       %     input.
       
-      try
+      try        
+        assert( ~has_mask(obj), 'Masking with scatter is not yet supported.' );
+        
         plotlabeled.assert_isa( labels, 'fcat', 'data labels' );
 
         dim_msg = ['X and Y data must be column vectors with the same number' ...
@@ -645,6 +708,10 @@ classdef plotlabeled < handle
       opts.specificity = specificity;
       opts.I = I;
       opts.C = C;
+      
+      opts.g_cats = groups;
+      opts.p_cats = panels;
+      opts.x_cats = xcats;
       
       opts.x_c = x_c;
       opts.g_c = g_c;
@@ -854,6 +921,26 @@ classdef plotlabeled < handle
       end
       
       set( ax, 'nextplot', 'replace' );
+    end
+    
+    function tf = has_mask(obj)
+      
+      %   HAS_MASK
+      
+      tf = ~strcmp( obj.mask, 'off' );
+    end
+    
+    function [m, hm] = get_mask(obj, N)
+      
+      %   GET_MASK
+      
+      hm = has_mask( obj );
+      
+      if ( hm )
+        m = obj.mask;
+      else
+        m = 1:N;
+      end
     end
     
     function m = get_points_color_map(obj)
@@ -1200,6 +1287,13 @@ classdef plotlabeled < handle
   end
     
   methods (Static = true, Access = private)
+    
+    function s = get_identifiers()
+      
+      %   GET_IDENTIFIERS
+      
+      s = struct( 'axes', {}, 'series', {}, 'index', {}, 'selectors', {} );
+    end
     
     function [data, selectors] = parse_varargin(inputs, low)
       
