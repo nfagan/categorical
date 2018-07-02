@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <new>
 #include <cstring>
+#include <cstdlib>
 
 namespace util {
     template<typename T>
