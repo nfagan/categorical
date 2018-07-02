@@ -13,10 +13,11 @@ file(GLOB SOURCES "src/*.c" "src/*.cpp" "src/*.hpp" "src/*.h")
 
 add_library(categorical STATIC ${SOURCES})
 
-add_executable(categorical-test "test/categorical.cpp")
-add_executable(bit_array-test "test/bit_array.cpp")
-
-target_link_libraries(categorical-test categorical)
-target_link_libraries(bit_array-test categorical)
+if (APPLE)
+	add_executable(categorical-test "test/categorical.cpp")
+	add_executable(bit_array-test "test/bit_array.cpp")
+	target_link_libraries(categorical-test categorical)
+	target_link_libraries(bit_array-test categorical)
+endif()
 
 install(TARGETS categorical DESTINATION ${CMAKE_SOURCE_DIR}/lib)
