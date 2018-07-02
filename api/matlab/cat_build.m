@@ -28,7 +28,7 @@ end
 
 if ( isunix() && ~ismac() )
   compiler_spec = 'GCC=''/usr/bin/g++-4.9''';
-  cxx_std = 'c++1y';
+  cxx_std = 'c++14';
 else
   compiler_spec = '';
   cxx_std = 'c++14';
