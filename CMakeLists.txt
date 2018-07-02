@@ -13,7 +13,7 @@ file(GLOB SOURCES "src/*.c" "src/*.cpp" "src/*.hpp" "src/*.h")
 
 add_library(categorical STATIC ${SOURCES})
 
-if (NOT LINUX)
+if (APPLE OR WIN32)
 	add_executable(categorical-test "test/categorical.cpp")
 	add_executable(bit_array-test "test/bit_array.cpp")
 	target_link_libraries(categorical-test categorical)
