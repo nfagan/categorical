@@ -48,6 +48,14 @@ namespace util {
     }
     
     util::u32 get_id(std::function<bool(util::u32)> exists_func);
+    
+    //  matlab conversion
+    void from_matlab_categorical(util::categorical* self,
+                                 const std::vector<std::string>& categories,
+                                 const std::vector<std::string>& labels,
+                                 util::u32* lab_ids,
+                                 util::u64 rows,
+                                 util::u64 cols);
 }
 
 class util::categorical
