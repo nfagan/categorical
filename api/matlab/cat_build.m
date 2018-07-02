@@ -26,6 +26,12 @@ else
   pathsep = '/';
 end
 
+if ( isunix() && ~ismac() )
+  compiler_spec = 'GCC=''/usr/bin/gcc-4.9''';
+else
+  compiler_spec = '';
+end
+
 api_dir_search = strjoin( {'api', 'matlab'}, pathsep );
 api_dir_index = strfind( api_dir, api_dir_search );
 
@@ -41,8 +47,8 @@ cat_lib_name = 'categorical';
 
 mex_func_path = strjoin( mex_func_paths, ' ' );
 
-build_cmd = sprintf( '-v CXXFLAGS="-std=c++14" COPTIMFLAGS="-O3 -fwrapv -DNDEBUG" CXXOPTIMFLAGS="-O3 -fwrapv -DNDEBUG" %s -I%s -l%s -L%s -outdir %s' ...
-  , mex_func_path, cat_include_dir, cat_lib_name, cat_lib_dir, api_dir );
+build_cmd = sprintf( '-v %s CXXFLAGS="-std=c++14" COPTIMFLAGS="-O3 -fwrapv -DNDEBUG" CXXOPTIMFLAGS="-O3 -fwrapv -DNDEBUG" %s -I%s -l%s -L%s -outdir %s' ...
+  , compiler_spec, mex_func_path, cat_include_dir, cat_lib_name, cat_lib_dir, api_dir );
 
 eval( sprintf('mex %s', build_cmd) );
 
