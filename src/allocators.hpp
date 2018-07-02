@@ -12,6 +12,7 @@
 #include <new>
 #include <cstring>
 #include <cstdlib>
+#include <type_traits>
 
 namespace util {
     template<typename T>
