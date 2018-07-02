@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <cstdint>
+#include <cstdlib>
 
 namespace util {
     typedef std::function<void(int, mxArray**, int, const mxArray**)> mex_func_t;
