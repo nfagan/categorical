@@ -30,7 +30,9 @@ classdef fcat < handle
       %     categories and labels can be inserted. To directly construct an
       %     FCAT object with categories set to values, see the static
       %     method `create`. To construct an FCAT object with empty 
-      %     categories, see the static method `with`.
+      %     categories, see the static method `with`. To convert to FCAT
+      %     from a compatible source, such as a cell mtarix of strings or 
+      %     categorical matrix, see the static method `from`.
       %
       %     EX 1 //
       %
@@ -2045,7 +2047,7 @@ classdef fcat < handle
       %     [C, cats] = ... also returns a 1xN cell array of strings `cats`
       %     identifying the columns of `C`.
       %
-      %     See also fcat/fullcat, fcat/fcat
+      %     See also fcat/categorical, fcat/fullcat, fcat/fcat
       %
       %     OUT:
       %       - `C` (cell array of strings)
@@ -2677,6 +2679,8 @@ classdef fcat < handle
     function conf = buildconfig()
       
       %   BUILDCONFIG -- Get config options with which the cat_api was built.
+      %
+      %     See also fcat/fcat
       %
       %     OUT:
       %       - `conf` (struct)
