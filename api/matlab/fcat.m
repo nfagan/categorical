@@ -2145,6 +2145,50 @@ classdef fcat < handle
       f = categories( c );
     end
     
+    function s = gather(obj, flag)
+      
+      %   GATHER -- Aggregate contents as struct.
+      %
+      %     s = gather( obj ) returns a struct `s` with fields 'labels' and
+      %     'categories'. 'labels' is the categorical matrix that would be
+      %     returned by `categorical( obj )`; 'categories' is the vector of
+      %     category names identifying columns of 'labels'.
+      %
+      %     s = gather( obj, FLAG ) where FLAG is either 'categorical' or
+      %     'cellstr', specifies the class of 'labels'.
+      %
+      %     EX //
+      %
+      %     x = gather( fcat.example );
+      %     y = fcat.from( x.labels, x.categories )
+      %
+      %     See also fcat/cellstr, fcat/categorical, fcat.from
+      %
+      %     IN:
+      %       - `flag` (char) |OPTIONAL|
+      %     OUT:
+      %       - `s` (struct)
+      
+      s = struct();
+      
+      if ( nargin == 1 )
+        [s.labels, s.categories] = categorical( obj );
+      else
+        assert( ischar(flag), 'Flag must be char; was "%s".', class(flag) );
+        
+        switch ( flag )
+          case 'cellstr'
+            [s.labels, s.categories] = cellstr( obj );
+          case 'categorical'
+            [s.labels, s.categories] = categorical( obj );
+          otherwise
+            opts = { 'cellstr', 'categorical' };
+            error( 'Unrecognized flag "%s"; options are:\n\n%s', flag ...
+              , strjoin(opts, ' | ') );
+        end
+      end
+    end
+    
     function B = saveobj(obj)
       
       %   SAVEOBJ -- Convert object to struct in order to save.
