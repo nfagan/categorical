@@ -562,6 +562,8 @@ classdef plotlabeled < handle
       %       - `axs` (axes)
       
       try
+        assert( ~has_mask(obj), 'Masking is not supported with `hist`.' );
+        
         validate_data_labels( data, labels );
         opts = matplotopts( obj, labels, {}, {}, panels, false );
       catch err

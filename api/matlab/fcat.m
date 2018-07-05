@@ -2406,6 +2406,21 @@ classdef fcat < handle
       
       obj = fcat( cat_api('from_categorical', unique_cats, labs, mat) );
     end
+    
+    function obj = from_struct(s)
+      
+      %   FROM_STRUCT -- Private utility to convert to fcat from struct.
+      %
+      %     IN:
+      %       - `s` (struct)
+      %     OUT:
+      %       - `obj` (fcat)
+      
+      assert( all(isfield(s, {'labels', 'categories'})), ['Struct input' ...
+        , ' must be a struct with fields ''labels'' and ''categories''.'] );
+      
+      obj = fcat.from( s.labels, s.categories );
+    end
   end
   
   methods (Static = true, Access = public)
@@ -2477,7 +2492,7 @@ classdef fcat < handle
       %     `cats` to identify columns of `c`.
       %
       %     C = fcat.from( sp ) creates an fcat object from the
-      %     SparseLabels object `sp`.
+      %     SparseLabels or Labels object `sp`.
       %
       %     EX //
       %
@@ -2502,15 +2517,30 @@ classdef fcat < handle
           obj = fcat.from_sp( arr );
           return;
           
+        elseif ( isa(arr, 'Labels') )
+          cats = arr.fields;
+          arr = arr.labels;
+          
+        elseif ( isstruct(arr) )
+          try
+            obj = fcat.from_struct( arr );
+          catch err
+            throw( err );
+          end
+          return;
+          
         else
           error( 'Cannot convert to fcat from objects of type "%s"', class(arr) );
         end
       else
         cats = varargin{2};
       end
-        
-      if ( ~iscellstr(cats) && ~isa(cats, 'categorical') )
-        error( 'Categories must be cell array of strings, or categorical.' );
+      
+      if ( ischar(cats) || isa(cats, 'categorical') )
+        cats = cellstr( cats );
+      else
+        assert( iscellstr(cats), ['Categories must be cell array of strings,' ...
+          , ' char, or categorical; was "%s".'], class(cats) );
       end
 
       if ( numel(unique(cats)) ~= numel(cats) )
@@ -2530,10 +2560,6 @@ classdef fcat < handle
 
       if ( ~ismatrix(arr) )
         error( 'Input cannot have more than 2 dimensions.' );
-      end
-
-      if ( isa(cats, 'categorical') )
-        cats = cellstr( cats );
       end
 
       if ( isa(arr, 'categorical') )
