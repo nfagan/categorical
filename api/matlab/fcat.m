@@ -1500,6 +1500,9 @@ classdef fcat < handle
       
       %   FILLCAT -- Set entire contents of category to label.
       %
+      %     fillcat( obj, 'cities', 'NY' ) assigns 'NY' to each row of
+      %     category 'cities'.
+      %
       %     See also fcat/setcat
       %
       %     IN:
