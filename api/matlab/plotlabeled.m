@@ -27,8 +27,10 @@ classdef plotlabeled < handle
     marker_size = 1;
     marker_type = 'o';
     join_pattern = ' | ';
+    x_lims = [];
     y_lims = [];
     c_lims = [];
+    match_x_lims = true;
     match_y_lims = true;
     match_c_lims = true;
     x_order = {};
@@ -534,6 +536,68 @@ classdef plotlabeled < handle
       end
     end
     
+    function axs = hist(obj, data, labels, panels, varargin)
+      
+      %   HIST -- Create histograms for subsets of data.
+      %
+      %     hist( pl, data, labels, panels ) creates histograms whose
+      %     panels are drawn from the label combinations in categories 
+      %     given by `panels`. `data` is a double matrix; `labels` is an 
+      %     fcat object with the same number of rows as `data`.
+      %
+      %     hist( ..., VARARGIN ) passes additional arguments to the
+      %     built-in histogram function.
+      %
+      %     axs = hist( ... ) returns an array of handles to the created
+      %     axes.
+      %
+      %     See also histogram, plotlabeled/imagesc, plotlabeled/scatter
+      %
+      %     IN:
+      %       - `data` (double)
+      %       - `labels` (fcat)
+      %       - `panels` (cell array of strings, char)
+      %     	- `varargin` (/any/)
+      %     OUT:
+      %       - `axs` (axes)
+      
+      try
+        validate_data_labels( data, labels );
+        opts = matplotopts( obj, labels, {}, {}, panels, false );
+      catch err
+        throw( err );
+      end
+      
+      I = opts.I;
+      
+      n_subplots = opts.n_subplots;
+      c_shape = opts.c_shape;
+      
+      axs = gobjects( n_subplots, 1 );
+      
+      for i = 1:n_subplots
+        ax = subplot( c_shape(1), c_shape(2), i );
+        
+        dat = rowref( data, I{i} );
+        
+        h = histogram( ax, dat, varargin{:} );
+        
+        conditional_add_legend( obj, h, opts.g_labs, i == 1 );
+        title( ax, opts.p_labs(i, :) );
+        
+        axs(i) = ax;
+      end
+            
+      set_lims( obj, axs, 'xlim', get_xlims(obj, axs) );
+      set_lims( obj, axs, 'ylim', get_ylims(obj, axs) );
+      
+      function validate_data_labels(data, labels)
+        assert( isa(labels, 'fcat'), 'Labels must be fcat; were "%s".', class(labels) );
+        assert( size(data, 1) == length(labels) ...
+          , 'Length of labels must match number of rows of data.' );
+      end
+    end
+    
     %
     %   GET / SET
     %    
@@ -1028,6 +1092,13 @@ classdef plotlabeled < handle
       if ( numel(axs) > 1 )
         l = cell2mat( l );
       end
+    end
+    
+    function l = get_xlims(obj, axs)
+      
+      %   GET_XLIMS
+      
+      l = get_current_lims( obj, 'x_lims', 'match_x_lims', 'xlim', axs );
     end
     
     function l = get_ylims(obj, axs)

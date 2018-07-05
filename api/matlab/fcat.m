@@ -100,8 +100,11 @@ classdef fcat < handle
       %   EQ -- True if two fcat objects have equal contents.
       %
       %     A == B returns true if `A` and `B` are both fcat objects with
-      %     equal labels and categories, and with equivalent label
+      %     matching labels and categories, and with equivalent label
       %     matrices.
+      %
+      %     Use `isequal` to determine whether A and B are handles to the
+      %     same underlying object.
       %
       %     See also fcat/ne, fcat/findall
       %
@@ -2650,9 +2653,13 @@ classdef fcat < handle
       %     OUT:
       %       - `fs` (cell array of fcat)
       
-      %   leverage varargin input handling of zeros function
-      z = zeros( varargin{:} );
-      fs = arrayfun( @(x) fcat(), z, 'un', false );   
+      %   leverage varargin input handling of cell function
+      fs = cell( varargin{:} );
+      n = numel( fs );
+      
+      for i = 1:n
+        fs{i} = fcat();
+      end
     end
     
     function f = example(varargin)
