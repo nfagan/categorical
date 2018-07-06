@@ -12,6 +12,8 @@ function new_data = rowop(data, I, func, uniform)
 %     first-dimension size not equal to 1. In this case `newdata` is an 
 %     Mx1 cell array.
 %
+%     See also fcat, plotlabeled, rowmean, rownanmean
+%
 %     IN:
 %       - `data` (/T/)
 %       - `I` (cell array of integers, cell array of logical)

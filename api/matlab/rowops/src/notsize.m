@@ -8,6 +8,8 @@ function sz = notsize(X, dim)
 %     S = notsize( X, 1:2 ) returns the size of `X`, except along the first
 %     and second dimensions.
 %
+%     See also rows, colons
+%
 %     IN:
 %       - `X` (/any/)
 %       - `dim` (double)
