@@ -19,7 +19,7 @@ function d = dimref(data, I, dim)
 %       - `d` (/T/)
 
 assert( isscalar(dim) && dim > 0 && dim <= ndims(data) ...
-  , 'Dimension must be an integer scalar within indexing range.' ); 
+  , 'Dimension must be an integer scalar within indexing range.' );
 indices = colons( ndims(data) );
 indices{dim} = I;
 d = data(indices{:});

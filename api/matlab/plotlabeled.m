@@ -491,10 +491,14 @@ classdef plotlabeled < handle
         ydat = flipud( ydat(:) );
       end
       
+      colormap( obj.color_func() );
+      
       for i = 1:n_subplots
         ax = subplot( c_shape(1), c_shape(2), i );
         
-        dat = squeeze( rowref(opts.summary_data, i) );
+        panel_ind = find( opts.p_c, opts.p_combs(i, :) );
+        
+        dat = squeeze( rowref(opts.summary_data, panel_ind) );
         
         if ( obj.invert_y ), dat = flipud( dat ); end
         if ( obj.add_smoothing ), dat = obj.smooth_func( dat ); end
@@ -1162,6 +1166,50 @@ classdef plotlabeled < handle
   end
   
   methods (Static = true, Access = public)
+    
+    %
+    %     CREATION
+    %
+    
+    function pl = make_spectrogram(freqs, t)
+      
+      %   MAKE_SPECTROGRAM -- Instantiate spectrogram configuration.
+      %
+      %     See also plotlabeled
+      %
+      %     IN:
+      %       - `freqs` (double)
+      %       - `t` (double)
+      %     OUT:
+      %       - `pl` (plotlabeled)
+      
+      if ( nargin < 2 ), t = []; end
+      if ( nargin < 1 ), freqs = []; end
+      
+      pl = plotlabeled();
+      pl.add_smoothing = true;
+      pl.smooth_func = @(x) imgaussfilt(x, 2);
+      pl.summary_func = @plotlabeled.nanmean;
+      pl.x = t;
+      pl.y = freqs;
+      pl.invert_y = true;
+    end
+    
+    function pl = make_common(varargin)
+      
+      %   MAKE_COMMON -- Instantiate common configuration.
+      %
+      %     See also plotlabeled
+      %
+      %     IN:
+      %       - `varargin`
+      %     OUT:
+      %       - `pl` (plotlabeled)
+      
+      pl = plotlabeled( varargin{:} );
+      pl.summary_func = @plotlabeled.nanmean;
+      pl.error_func = @plotlabeled.nansem;
+    end
     
     function y = noop(x)
       

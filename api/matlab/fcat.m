@@ -1474,7 +1474,7 @@ classdef fcat < handle
         if ( ischar(category) )
           cat_api( 'set_partial_cat', obj.id, category, to, uint64(at_indices) );
         else
-          cat_api( 'set_partial_cats', obj.id, categories, to, uint64(at_indices) );
+          cat_api( 'set_partial_cats', obj.id, category, to, uint64(at_indices) );
         end
       end
     end
@@ -1822,6 +1822,18 @@ classdef fcat < handle
       %     See also fcat/fcat
       
       cat_api( 'destroy', obj.id );
+    end
+    
+    function obj = transpose(obj)
+      
+      %   TRANPOSE -- Transposition is not supported. Use ' to copy.
+      %
+      %     For clarity, B = A.'; is an error. Use B = A'; or B = copy(A);
+      %
+      %     See also fcat/copy, fcat/ctranspose
+      
+      error( ['Copying with .'' is not supported. Use '' or the copy' ...
+        , ' function.'] );
     end
     
     function B = ctranspose(obj)
