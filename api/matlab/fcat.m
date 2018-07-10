@@ -2254,6 +2254,7 @@ classdef fcat < handle
       catch err
         %   It's legal to assign the empty character vector ('') as a label
         %   in an fcat object, but not in a categorical array.
+        disp( cellstr(obj) );
         warning( ['Object contains labels that are invalid Matlab categorical levels' ...
           , ' (such as ''''). Attempts to convert the object to a categorical' ...
           , ' matrix will fail. Use setdisp(obj, ''short'') to view contents.'] );
