@@ -8,6 +8,8 @@ function assert_rowsmatch(a, b)
 %       - `a` (/any/)
 %       - `b` (/any/)
 
-assert( rowsmatch(a, b), rowmsg(a, b) );
+if ( ~rowsmatch(a, b) )
+  error( rowmsg(a, b) );
+end
 
 end
