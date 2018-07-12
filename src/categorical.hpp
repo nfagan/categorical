@@ -123,6 +123,7 @@ public:
     void empty();
     util::u64 prune();
     
+    std::vector<std::string> get_uniform_categories() const;
     std::vector<std::string> get_categories() const;
     std::vector<std::string> get_labels() const;
     util::labels_t get_labels_and_ids() const;

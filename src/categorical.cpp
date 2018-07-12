@@ -2865,6 +2865,30 @@ util::u64 util::categorical::maximum(const std::vector<util::u64> &indices, util
     return max;
 }
 
+//  get_uniform_categories: Get categories that have only a single label.
+
+std::vector<std::string> util::categorical::get_uniform_categories() const
+{
+    using util::u64;
+    
+    std::vector<std::string> cats;
+    
+    for (const auto& cat_it : m_category_indices)
+    {
+        const u64 cat_idx = cat_it.second;
+        const std::string& cat = cat_it.first;
+        
+        const std::vector<u32>& labs = m_labels[cat_idx];
+        
+        if (is_uniform(labs))
+        {
+            cats.push_back(cat);
+        }
+    }
+    
+    return cats;
+}
+
 //  get_categories: Get all string categories.
 
 std::vector<std::string> util::categorical::get_categories() const

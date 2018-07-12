@@ -1117,28 +1117,49 @@ classdef fcat < handle
       end
     end
     
-    function C = getcats(obj)
+    function C = getcats(obj, flag)
      
       %   GETCATS -- Get category names.
       %
+      %     C = getcats( obj ); returns the category names of `obj` as a
+      %     cell array of strings.
+      %
+      %     C = getcats( obj, FLAG ); where `FLAG` is one of 'uniform' or
+      %     'nonuniform' returns only the uniform or non-uniform category
+      %     names of `obj`, respectively. A uniform category is one for
+      %     which all rows of the category are set to the same label.
+      %
       %     See also fcat/getlabs, fcat/fcat
       %
+      %     IN:
+      %       - `flag` (char) |OPTIONAL|
       %     OUT:
       %       - `C` (cell array of strings)
       
-      C = cat_api( 'get_cats', obj.id );      
+      if ( nargin == 1 )
+        C = cat_api( 'get_cats', obj.id );
+        return;
+      end
+      
+      if ( strncmpi('uniform', flag, numel(flag)) && numel(flag) > 1 )
+        C = cat_api( 'get_uniform_cats', obj.id );
+      elseif ( strncmpi('nonuniform', flag, numel(flag)) && numel(flag) > 1 )
+        C = setdiff( getcats(obj), cat_api('get_uniform_cats', obj.id) );
+      else
+        error( 'Flag must be one of:\n\n%s', strjoin({'uniform', 'nonuniform'}, ' | ') );
+      end
     end
     
-    function C = categories(obj)
+    function C = categories(obj, varargin)
       
       %   CATEGORIES -- Get category names.
       %
-      %     See also fcat/getlabs, fcat/fcat
+      %     See also fcat/getcats, fcat/getlabs, fcat/fcat
       %
       %     OUT:
       %       - `C` (cell array of strings)
       
-      C = cat_api( 'get_cats', obj.id );      
+      C = getcats( obj, varargin{:} );
     end
     
     function L = getlabs(obj)

@@ -56,7 +56,8 @@ namespace util {
             {"rename_cat",              util::ops::RENAME_CATEGORY},
             {"merge_new",               util::ops::MERGE_NEW},
             {"append_one",              util::ops::APPEND_ONE},
-            {"find_or",                 util::ops::FIND_OR}
+            {"find_or",                 util::ops::FIND_OR},
+            {"get_uniform_cats",        util::ops::GET_UNIFORM_CATEGORIES}
         });
         
         std::array<util::mex_func_t, util::ops::N_OPS> funcs;
@@ -125,6 +126,7 @@ void util::init_cat_functions()
     globals::funcs[ops::MERGE_NEW] =                &util::merge_new;
     globals::funcs[ops::APPEND_ONE] =               &util::append_one;
     globals::funcs[ops::FIND_OR] =                  &util::find_or;
+    globals::funcs[ops::GET_UNIFORM_CATEGORIES] =   &util::get_uniform_categories;
     
     globals::INITIALIZED = true;
     

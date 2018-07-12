@@ -43,6 +43,7 @@ namespace util {
     MEXFUNC(in_categories);
     
     MEXFUNC(get_categories);
+    MEXFUNC(get_uniform_categories);
     MEXFUNC(get_labels);
     MEXFUNC(has_label);
     MEXFUNC(has_category);
