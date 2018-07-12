@@ -12,6 +12,10 @@ function out = cellrefs(data, I, ref_func)
 %     double, or logical index vector. By default, `ref_func` is equivalent
 %     to `@(data, index) data(index)`
 %
+%     EX //
+%
+%     B = cellrefs( rand(10), {1 2; 3 4} )
+%
 %     See also fcat, rowref
 %
 %     IN:
