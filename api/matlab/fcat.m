@@ -266,7 +266,7 @@ classdef fcat < handle
       
       %   NCATS -- Get the current number of categories.
       %
-      %     See also fcat/size, fcat/labs, fcat/numel
+      %     See also fcat/size, fcat/nlabs, fcat/length
       %
       %     OUT:
       %       - `n` (uint64)
