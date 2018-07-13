@@ -1,4 +1,4 @@
-function v = ternary(cond, a, b)
+function a = ternary(cond, a, b)
 
 %   TERNARY -- One-line if/else.
 %
@@ -14,8 +14,8 @@ function v = ternary(cond, a, b)
 %       - `a` (/any/)
 %       - `b` (/any/)
 %     OUT:
-%       - `v` (/any/)
+%       - `a` (/any/)
 
-v = a;
-if ( ~cond ), v = b; end
+if ( ~cond ), a = b; end
+
 end

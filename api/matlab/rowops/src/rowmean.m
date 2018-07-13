@@ -12,6 +12,8 @@
 %
 %     Input `data` must be a 2-dimensional double array.
 %
+%     See also rowoperations, rowop, rownanmean
+%
 %     IN:
 %       - `data` (double)
 %       - `I` (cell array of uint64)

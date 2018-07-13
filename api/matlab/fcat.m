@@ -2060,7 +2060,8 @@ classdef fcat < handle
       
       function x = mkcell(x)
         %   MKCELL -- Ensure input is cell row vector.
-        if ( ~iscell(x) ), x = { x }; x = x(:)'; end
+        if ( ~iscell(x) ), x = { x }; end
+        x = x(:)';
       end
     end
     
