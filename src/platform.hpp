@@ -10,7 +10,7 @@
 #define CAT_HAS_TRIVIALLY_COPYABLE
 
 #ifdef __GNUC__
-    #if __GNUC__ < 4
+    #if __GNUC__ < 5
     #undef CAT_HAS_TRIVIALLY_COPYABLE
     #endif
 #endif
