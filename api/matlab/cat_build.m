@@ -29,7 +29,7 @@ end
 if ( isunix() && ~ismac() )
   compiler_spec = 'GCC=''/usr/bin/gcc-4.9'' G++=''/usr/bin/g++-4.9''';
   cxx_std = 'c++1y';
-  addtl_flags = '-fPIC ';
+  addtl_flags = '';
 else
   compiler_spec = '';
   cxx_std = 'c++14';
@@ -51,9 +51,9 @@ cat_lib_name = 'categorical';
 
 mex_func_path = strjoin( mex_func_paths, ' ' );
 
-build_cmd = sprintf( '-v %s CXXFLAGS="%s-std=%s" COPTIMFLAGS="-O3 -fwrapv -DNDEBUG" CXXOPTIMFLAGS="-O3 -fwrapv -DNDEBUG" %s -I%s -l%s -L%s -outdir %s' ...
+build_cmd = sprintf( '-v %s CXXFLAGS="%s-std=%s" COPTIMFLAGS="-O3 -fwrapv -DNDEBUG" CXXOPTIMFLAGS="-O3 -fwrapv -DNDEBUG" %s -I%s -L%s -l%s -outdir %s' ...
   , compiler_spec, addtl_flags, cxx_std, mex_func_path, cat_include_dir ...
-  , cat_lib_name, cat_lib_dir, api_dir );
+  , cat_lib_dir, cat_lib_name, api_dir );
 
 eval( sprintf('mex %s', build_cmd) );
 
