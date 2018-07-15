@@ -19,7 +19,7 @@ if (APPLE OR WIN32)
 	target_link_libraries(categorical-test categorical)
 	target_link_libraries(bit_array-test categorical)
 else()
-	SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -fPIC")
+	SET(CMAKE_CXX_FLAGS  "-fPIC")
 endif()
 
 install(TARGETS categorical DESTINATION ${CMAKE_SOURCE_DIR}/lib)
