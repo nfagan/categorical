@@ -8,6 +8,7 @@
 #pragma once
 
 #include "types.hpp"
+#include "platform.hpp"
 #include <cstdint>
 #include <new>
 #include <cstring>
@@ -44,7 +45,11 @@ public:
     static void copy(T* dest, T* source, util::u64 sz);
     static void dispose(T* data);
     
+#ifdef CAT_HAS_TRIVIALLY_COPYABLE
     constexpr static bool is_valid_alloc_t = std::is_trivially_copyable<T>::value;
+#else
+    constexpr static bool is_valid_alloc_t = true;
+#endif
 };
 
 template<typename T>
