@@ -75,6 +75,14 @@ public:
                                 util::u32* status,
                                 util::u64 index_offset = 0) const;
     
+    std::vector<util::u64> find_not(const std::vector<std::string>& labels,
+                                    util::u64 index_offset = 0) const;
+    
+    std::vector<util::u64> find_not(const std::vector<std::string>& labels,
+                                    const std::vector<util::u64>& indices,
+                                    util::u32* status,
+                                    util::u64 index_offset = 0) const;
+    
     std::vector<util::u64> find_or(const std::vector<std::string>& labels,
                                    util::u64 index_offset = 0) const;
     
@@ -82,6 +90,14 @@ public:
                                    const std::vector<util::u64>& indices,
                                    util::u32* status,
                                    util::u64 index_offset = 0) const;
+    
+    std::vector<util::u64> find_none(const std::vector<std::string>& labels,
+                                     util::u64 index_offset = 0) const;
+    
+    std::vector<util::u64> find_none(const std::vector<std::string>& labels,
+                                     const std::vector<util::u64>& indices,
+                                     util::u32* status,
+                                     util::u64 index_offset = 0) const;
     
     std::vector<std::vector<util::u64>> find_all(const std::vector<std::string>& categories,
                                     util::u64 index_offset = 0) const;
@@ -272,12 +288,14 @@ private:
     
     std::vector<util::u64> find_impl(const std::vector<std::string>& labels,
                                      const bool use_indices,
+                                     const bool flip_index,
                                      const std::vector<util::u64>& indices,
                                      util::u32* status,
                                      util::u64 index_offset) const;
     
     std::vector<util::u64> find_or_impl(const std::vector<std::string>& labels,
                                         const bool use_indices,
+                                        const bool flip_index,
                                         const std::vector<util::u64>& indices,
                                         util::u32* status,
                                         util::u64 index_offset) const;
@@ -332,12 +350,27 @@ private:
     util::u32 merge_check_collapsed_expressions(const util::categorical& other,
                                                 const bool overwrite_existing_categories = true) const;
     
+    static util::u32 find_flipped_apply_mask(util::bit_array& final_index,
+                                             const util::u64 sz,
+                                             const std::vector<util::u64>& indices,
+                                             const util::u64 index_offset);
+    
+    static std::vector<util::u64> find_flipped_get_complete_index(const bool use_indices,
+                                                                  const util::u64 sz,
+                                                                  const std::vector<util::u64>& indices,
+                                                                  const util::u64 index_offset,
+                                                                  util::u32* status);
+    
     static util::u32 get_id(const categorical* self, const categorical* other,
                             const std::unordered_set<util::u32>& new_ids);
     
     static void replace_labels(std::vector<std::vector<util::u32>>& labels,
                                util::u64 start, util::u64 stop,
                                const std::unordered_map<util::u32, util::u32>& replace_map);
+    
+    static util::u32 assign_bit_array(util::bit_array& mask,
+                                      const std::vector<util::u64>& at_indices,
+                                      util::u64 index_offset);
     
     static util::bit_array assign_bit_array(const std::vector<util::u32>& labels, util::u32 lab);
     static util::bit_array assign_bit_array(const std::vector<util::u32>& labels,

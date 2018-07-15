@@ -2,6 +2,10 @@ function cat_testall()
 
 %   CAT_TESTALL -- Run all tests.
 
+cat_test_run( @cat_test_findnone_indexed );
+cat_test_run( @cat_test_findnone );
+cat_test_run( @cat_test_findnot_indexed );
+cat_test_run( @cat_test_findnot );
 cat_test_run( @cat_test_getuncats );
 cat_test_run( @cat_test_count );
 cat_test_run( @cat_test_setpartcats );

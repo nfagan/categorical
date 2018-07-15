@@ -500,7 +500,10 @@ std::vector<util::u64> util::categorical::find(const std::vector<std::string>& l
 {
     std::vector<util::u64> dummy_indices;
     util::u32 dummy_status;
-    return find_impl(labels, false, dummy_indices, &dummy_status, index_offset);
+    const bool use_indices = false;
+    const bool flip_index = false;
+    
+    return find_impl(labels, use_indices, flip_index, dummy_indices, &dummy_status, index_offset);
 }
 
 //  find: Get indices of label combinations, from subsets of rows.
@@ -510,7 +513,37 @@ std::vector<util::u64> util::categorical::find(const std::vector<std::string>& l
                                                util::u32* status,
                                                util::u64 index_offset) const
 {
-    return find_impl(labels, true, indices, status, index_offset);
+    const bool use_indices = true;
+    const bool flip_index = false;
+    
+    return find_impl(labels, use_indices, flip_index, indices, status, index_offset);
+}
+
+//  find_not: Get indices of rows, except those associated with label combination.
+
+std::vector<util::u64> util::categorical::find_not(const std::vector<std::string>& labels,
+                                                   util::u64 index_offset) const
+{
+    std::vector<util::u64> dummy_indices;
+    util::u32 dummy_status;
+    const bool use_indices = false;
+    const bool flip_index = true;
+    
+    return find_impl(labels, use_indices, flip_index, dummy_indices, &dummy_status, index_offset);
+}
+
+//  find_not: Get indices of rows, except those associated with label combination, in
+//      subset of rows.
+
+std::vector<util::u64> util::categorical::find_not(const std::vector<std::string>& labels,
+                                                   const std::vector<util::u64>& indices,
+                                                   util::u32* status,
+                                                   util::u64 index_offset) const
+{
+    const bool use_indices = true;
+    const bool flip_index = true;
+    
+    return find_impl(labels, use_indices, flip_index, indices, status, index_offset);
 }
 
 //  find_or: Get indices of any among labels.
@@ -520,8 +553,10 @@ std::vector<util::u64> util::categorical::find_or(const std::vector<std::string>
 {
     std::vector<util::u64> dummy_indices;
     util::u32 dummy_status;
+    const bool use_indices = false;
+    const bool flip_index = false;
     
-    return find_or_impl(labels, false, dummy_indices, &dummy_status, index_offset);
+    return find_or_impl(labels, use_indices, flip_index, dummy_indices, &dummy_status, index_offset);
 }
 
 //  find_or: Get indices of any among labels, from subsets of rows.
@@ -531,13 +566,84 @@ std::vector<util::u64> util::categorical::find_or(const std::vector<std::string>
                                                   util::u32* status,
                                                   util::u64 index_offset) const
 {
-    return find_or_impl(labels, true, indices, status, index_offset);
+    const bool use_indices = true;
+    const bool flip_index = false;
+    
+    return find_or_impl(labels, use_indices, flip_index, indices, status, index_offset);
+}
+
+std::vector<util::u64> util::categorical::find_none(const std::vector<std::string>& labels,
+                                                    util::u64 index_offset) const
+{
+    std::vector<util::u64> dummy_indices;
+    util::u32 dummy_status;
+    const bool use_indices = false;
+    const bool flip_index = true;
+    
+    return find_or_impl(labels, use_indices, flip_index, dummy_indices, &dummy_status, index_offset);
+}
+
+//  find_or: Get indices of any among labels, from subsets of rows.
+
+std::vector<util::u64> util::categorical::find_none(const std::vector<std::string>& labels,
+                                                    const std::vector<util::u64>& indices,
+                                                    util::u32* status,
+                                                    util::u64 index_offset) const
+{
+    const bool use_indices = true;
+    const bool flip_index = true;
+    
+    return find_or_impl(labels, use_indices, flip_index, indices, status, index_offset);
+}
+
+util::u32 util::categorical::find_flipped_apply_mask(util::bit_array& final_index,
+                                                     const util::u64 sz,
+                                                     const std::vector<util::u64>& indices,
+                                                     const util::u64 index_offset)
+{
+    util::bit_array mask(sz, false);
+    
+    util::u32 assign_status = util::categorical::assign_bit_array(mask, indices, index_offset);
+    
+    if (assign_status != util::categorical_status::OK)
+    {
+        return assign_status;
+    }
+    
+    bit_array::unchecked_dot_and(final_index, final_index, mask, 0, sz);
+    
+    return util::categorical_status::OK;
+}
+
+std::vector<util::u64> util::categorical::find_flipped_get_complete_index(const bool use_indices,
+                                                                          const util::u64 sz,
+                                                                          const std::vector<util::u64>& indices,
+                                                                          const util::u64 index_offset,
+                                                                          util::u32* status)
+{
+    util::bit_array final_index(sz, true);
+    
+    std::vector<util::u64> empty_result;
+    
+    if (use_indices)
+    {
+        u32 tmp_status = categorical::find_flipped_apply_mask(final_index, sz, indices, index_offset);
+        
+        if (tmp_status != util::categorical_status::OK)
+        {
+            *status = tmp_status;
+            return empty_result;
+        }
+    }
+    
+    return util::bit_array::findv(final_index, index_offset);
 }
 
 //  find_impl [private]: Private implementation of find, with and without subsets
 
 std::vector<util::u64> util::categorical::find_impl(const std::vector<std::string>& labels,
                                                     const bool use_indices,
+                                                    const bool flip_index,
                                                     const std::vector<util::u64>& indices,
                                                     util::u32* status,
                                                     util::u64 index_offset) const
@@ -552,9 +658,17 @@ std::vector<util::u64> util::categorical::find_impl(const std::vector<std::strin
     
     *status = util::categorical_status::OK;
     
-    if (n_in == 0 || sz == 0)
+    if (n_in == 0)
     {
-        return out;
+        if (sz == 0 || !flip_index)
+        {
+            return out;
+        }
+        else
+        {
+            //  return complete / masked indices into `this`
+            return find_flipped_get_complete_index(use_indices, sz, indices, index_offset, status);
+        }
     }
     
     std::unordered_map<std::string, bit_array> index_map;
@@ -568,7 +682,14 @@ std::vector<util::u64> util::categorical::find_impl(const std::vector<std::strin
         //  label doesn't exist
         if (search_it == m_label_ids.endk())
         {
-            return out;
+            if (flip_index)
+            {
+                return find_flipped_get_complete_index(use_indices, sz, indices, index_offset, status);
+            }
+            else
+            {
+                return out;
+            }
         }
         
         u32 lab_id = search_it->second;
@@ -610,6 +731,22 @@ std::vector<util::u64> util::categorical::find_impl(const std::vector<std::strin
         bit_array::unchecked_dot_and(final_index, final_index, it.second, 0, sz);
     }
     
+    if (flip_index)
+    {
+        final_index.flip();
+        
+        if (use_indices)
+        {
+            u32 tmp_status = categorical::find_flipped_apply_mask(final_index, sz, indices, index_offset);
+            
+            if (tmp_status != util::categorical_status::OK)
+            {
+                *status = tmp_status;
+                return out;
+            }
+        }
+    }
+    
     return bit_array::findv(final_index, index_offset);
 }
 
@@ -617,6 +754,7 @@ std::vector<util::u64> util::categorical::find_impl(const std::vector<std::strin
 
 std::vector<util::u64> util::categorical::find_or_impl(const std::vector<std::string>& labels,
                                                        const bool use_indices,
+                                                       const bool flip_index,
                                                        const std::vector<util::u64>& indices,
                                                        util::u32* status,
                                                        util::u64 index_offset) const
@@ -631,9 +769,17 @@ std::vector<util::u64> util::categorical::find_or_impl(const std::vector<std::st
     
     *status = util::categorical_status::OK;
     
-    if (n_in == 0 || sz == 0)
+    if (n_in == 0)
     {
-        return out;
+        if (sz == 0 || !flip_index)
+        {
+            return out;
+        }
+        else
+        {
+            //  return complete / masked indices into `this`
+            return find_flipped_get_complete_index(use_indices, sz, indices, index_offset, status);
+        }
     }
     
     auto label_it_end = m_label_ids.endk();
@@ -676,7 +822,48 @@ std::vector<util::u64> util::categorical::find_or_impl(const std::vector<std::st
         bit_array::unchecked_dot_or(final_index, final_index, index, 0, sz);
     }
     
+    if (flip_index)
+    {
+        final_index.flip();
+        
+        if (use_indices)
+        {
+            u32 tmp_status = categorical::find_flipped_apply_mask(final_index, sz, indices, index_offset);
+            
+            if (tmp_status != util::categorical_status::OK)
+            {
+                *status = tmp_status;
+                return out;
+            }
+        }
+    }
+    
     return bit_array::findv(final_index, index_offset);
+}
+
+util::u32 util::categorical::assign_bit_array(util::bit_array& mask,
+                                              const std::vector<util::u64>& at_indices,
+                                              util::u64 index_offset)
+{
+    using util::u64;
+    
+    const u64 mask_sz = mask.size();
+    const u64 n_indices = at_indices.size();
+    const u64* indices = at_indices.data();
+    
+    for (u64 i = 0; i < n_indices; i++)
+    {
+        u64 assign_idx = indices[i] - index_offset;
+        
+        if (assign_idx >= mask_sz)
+        {
+            return util::categorical_status::OUT_OF_BOUNDS;
+        }
+        
+        mask.unchecked_place(true, assign_idx);
+    }
+    
+    return util::categorical_status::OK;
 }
 
 //  assign_bit_array: Assign true to bit_array where label id is found

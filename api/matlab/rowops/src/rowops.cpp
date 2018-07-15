@@ -1,5 +1,18 @@
 #include "rowops.hpp"
 #include <iostream>
+#include <cmath>
+#include <cstring>
+
+namespace {
+    void fill_nan(double* data, size_t rows, size_t cols, size_t crow)
+    {
+        for (size_t i = 0; i < cols; i++)
+        {
+            const size_t idx = crow + i * rows;
+            data[idx] = std::nan("");
+        }
+    }
+}
 
 void util::run(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[], 
         const char* func_id, util::rowop_t func)
@@ -23,6 +36,13 @@ void util::run(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[],
     {
         const mxArray* in_index = mxGetCell(in_indices, i);
         
+        //  if empty cell {}, fill row with NaN
+        if (in_index == nullptr)
+        {
+            fill_nan(out_data_ptr, n_indices, n_cols, i);
+            continue;
+        }
+        
         mxClassID index_class = mxGetClassID(in_index);
         
         if (index_class != mxUINT64_CLASS)
@@ -32,9 +52,11 @@ void util::run(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[],
         
         size_t n_index_els = mxGetNumberOfElements(in_index);
         
+        //  if empty index [], fill row with NaN
         if (n_index_els == 0)
         {
-            mexErrMsgIdAndTxt(func_id, "Individual indices cannot be empty.");
+            fill_nan(out_data_ptr, n_indices, n_cols, i);
+            continue;
         }
         
         uint64_t* indices = (uint64_t*) mxGetData(in_index);

@@ -1045,7 +1045,7 @@ classdef fcat < handle
     
     function I = find(obj, labels, inds)
       
-      %   FIND -- Get indices associated with label or label combination.
+      %   FIND -- Get indices of rows matching label combination.
       %
       %     I = find( obj, 'a' ) returns indices of rows identified by the 
       %     label 'a'.
@@ -1087,7 +1087,7 @@ classdef fcat < handle
     
     function I = findor(obj, labels, inds)
       
-      %   FINDOR -- Get indices associated with any among labels.
+      %   FINDOR -- Get indices of rows matching any among labels.
       %
       %     I = findor( obj, {'a', 'b', 'c'} ) returns indices associated
       %     with any among 'a', 'b' and 'c'. If all labels reside in the 
@@ -1114,6 +1114,82 @@ classdef fcat < handle
         I = cat_api( 'find_or', obj.id, labels );
       else
         I = cat_api( 'find_or', obj.id, labels, uint64(inds) );
+      end
+    end
+    
+    function I = findnot(obj, labels, inds)
+      
+      %   FINDNOT -- Get indices of rows not matching label combination.
+      %
+      %     I = findnot( obj, 'a' ) returns indices of rows of `obj`, 
+      %     except those matching 'a'.
+      %
+      %     I = findnot( obj, {'a', 'b'} ) returns indices of rows not 
+      %     identified by the label combination {'a', 'b'}. If 'a' and 'b' 
+      %     reside in the same category, `I` will index all rows, except
+      %     those matching 'a' OR 'b'. If 'a' and 'b' reside in different 
+      %     categories, `I` will index all rows, except those matching 
+      %     'a' AND 'b'.
+      %
+      %     I = findnot( ..., inds ) restricts the search to the subset of
+      %     rows identified by the uint64 index vector `inds`.
+      %
+      %     `findnot` is the logical opposite of `find`.
+      %
+      %     EX //
+      %
+      %     f = fcat.create( 'a', {'a', 'b'}, 'c', {'c', 'd'} )
+      %     findnot( f, {'a', 'b'} )
+      %     findnot( f, {'a', 'd'} )
+      %     findnot( f, {'a', 'c'} )
+      %
+      %     See also fcat/find, fcat/findnone, fcat/getlabs, fcat/getcats
+      %
+      %     IN:
+      %       - `labels` (cell array of strings, char)
+      %       - `inds` (uint64) |OPTIONAL|
+      %     OUT:
+      %       - `inds` (uint32)
+      
+      if ( nargin < 3 )
+        I = cat_api( 'find_not', obj.id, labels );
+      else
+        I = cat_api( 'find_not', obj.id, labels, uint64(inds) );
+      end
+    end
+    
+    function I = findnone(obj, labels, inds)
+      
+      %   FINDNONE -- Get indices of rows not matching any among labels.
+      %
+      %     I = findnone( obj, {'a', 'b', 'c'} ) returns indices of all
+      %     rows, except those identified by any among 'a', 'b', or 'c'. If
+      %     all labels reside in the same category, the output is 
+      %     equivalent to `findnot`.
+      %
+      %     I = findnone( ..., inds ) searches the subset of rows 
+      %     identified by the uint64 index vector `inds`.
+      %
+      %     `findnone` is the logical opposite of `findor`.
+      %
+      %     EX //
+      %
+      %     f = fcat.create( 'a', {'a', 'b'}, 'c', {'c', 'd'} )
+      %     findnot( f, {'a', 'd'} )
+      %     findnone( f, {'a', 'd'} )
+      %
+      %     See also fcat/findor, fcat/findnot
+      %
+      %     IN:
+      %       - `labels` (cell array of strings, char)
+      %       - `inds` (uint64) |OPTIONAL|
+      %     OUT:
+      %       - `inds` (uint32)
+      
+      if ( nargin < 3 )
+        I = cat_api( 'find_none', obj.id, labels );
+      else
+        I = cat_api( 'find_none', obj.id, labels, uint64(inds) );
       end
     end
     
@@ -1968,7 +2044,7 @@ classdef fcat < handle
       error( 'Unrecognized display mode "%s".', obj.displaymode );      
     end
     
-    function [tbl, rc] = tabular(obj, rows, cols)
+    function [tbl, rc] = tabular(obj, rows, cols, varargin)
       
       %   TABULAR -- Produce tabular cell matrix of indices.
       %
@@ -1983,6 +2059,9 @@ classdef fcat < handle
       %     category with the fewest unique labels, and rows are the
       %     remaining categories.
       %
+      %     T = tabular( ..., inds ) only considers the rows identified by
+      %     the uint64 index vector `inds`.
+      %
       %     [T, rc] = tabular(...) also returns cell arrays of fcat objects 
       %     that identify each row and column of `T`. The i-th row of rc{1}
       %     is the set of labels that identify the i-th row of `T`; the 
@@ -1996,6 +2075,7 @@ classdef fcat < handle
       %     IN:
       %       - `rows` (cell array of strings, char)
       %       - `cols` (cell array of strings, char)
+      %       - `mask` (uint64) |OPTIONAL|
       
       if ( nargin == 1 )
         rows = getcats( obj );
@@ -2015,7 +2095,7 @@ classdef fcat < handle
       
       spec = [ rows, cols ];
       
-      [I, C] = findall( obj, spec );
+      [I, C] = findall( obj, spec, varargin{:} );
       
       C = C';
       
@@ -2851,9 +2931,9 @@ classdef fcat < handle
         
         pattern = ' | ';
         
-        rlabs = fcat.strjoin( rowc, [], pattern );
+        rlabs = fcat.strjoin( strpad(rowc), [], pattern );
         clabs = fcat.strjoin( colc, [], pattern );
-        clabs = cellfun( @(x) makeValidName(fcat.trim(x)), clabs, 'un', false );
+        clabs = cellfun( @(x) makeValidName(fcat.trim(x)), clabs, 'un', 0 );
         
         inputs = { 'RowNames', rlabs, 'VariableNames', clabs };
 
@@ -2868,17 +2948,38 @@ classdef fcat < handle
       catch err
         throw( err );
       end
+
+      function c = strpad(c)
+        vl = verLessThan( 'matlab', '9.2' );
+        for i = 1:size(c, 1)
+          if ( vl )
+            %   old matlab doesn't have pad
+            c(i, :) = slowpad( c(i, :) );
+          else
+            c(i, :) = pad( c(i, :) );
+          end
+        end
+      end
+      
+      function row = slowpad(row)
+        N = max( cellfun(@numel, row) );
+        row = cellfun( @(x) [x, repmat(' ', 1, N-numel(x))], row, 'un', 0 );
+      end
       
       function validate(T, rowc, colc)
         n1 = size( rowc, 2 );
         n2 = size( colc, 2 );
         
-        msg = '%s combinations must have %d elements; %d were present.';
+        tmsg = '%s labels must be fcat or cellstr; was "%s".';
+        szmsg = '%s combinations must have %d elements; %d were present.';
         
         [row, col] = size( T );
         
-        assert( n1 == row, msg, 'Row', row, n1 );
-        assert( n2 == col, msg, 'Column', col, n2 );        
+        assert( n1 == row, szmsg, 'Row', row, n1 );
+        assert( n2 == col, szmsg, 'Column', col, n2 );
+        
+        assert( iscellstr(rowc), tmsg, 'Row', class(rowc) );
+        assert( iscellstr(colc), tmsg, 'Column', class(colc) );
       end
     end
     

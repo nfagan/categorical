@@ -17,7 +17,7 @@ cols = { 'dose' };
 
 [t, rc] = tabular( labs, rows, cols );
 
-means = cellfun( @(x) mean(egdat(x)), t );
+means = reshape( rowmean(egdat, t), size(t) );
 
 tbl = fcat.table( means, rc{:} )
 
@@ -29,7 +29,7 @@ clabs = rc{2}';
 addcat( rlabs, 'measure' );
 repset( rlabs, 'measure', {'mean', 'std'} );
 
-means = cellfun( @(x) mean(egdat(x)), t  );
-devs = cellfun( @(x) std(egdat(x)), t );
+means = reshape( rowmean(egdat, t), size(t) );
+devs = reshape( rowstd(egdat, t), size(t) );
 
 tbl2 = fcat.table( [means; devs], rlabs, clabs )
