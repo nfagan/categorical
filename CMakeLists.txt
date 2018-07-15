@@ -11,13 +11,15 @@ include_directories(${CMAKE_SOURCE_DIR}/src/)
 
 file(GLOB SOURCES "src/*.c" "src/*.cpp" "src/*.hpp" "src/*.h")
 
-add_library(categorical STATIC ${SOURCES})
-
 if (APPLE OR WIN32)
+	add_library(categorical STATIC ${SOURCES})
+
 	add_executable(categorical-test "test/categorical.cpp")
 	add_executable(bit_array-test "test/bit_array.cpp")
 	target_link_libraries(categorical-test categorical)
 	target_link_libraries(bit_array-test categorical)
+else()
+	add_library(categorical SHARED ${SOURCES})
 endif()
 
 if (UNIX AND NOT APPLE)
