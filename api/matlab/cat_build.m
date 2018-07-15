@@ -31,7 +31,7 @@ if ( isunix() && ~ismac() )
   cxx_std = 'c++1y';
 %   addtl_c_flags = ' CFLAGS="-fPIC" ';
   addtl_c_flags = '';
-  addtl_cxx_flags = '-fPIC ';
+  addtl_cxx_flags = '-fPIC -shared';
 else
   compiler_spec = '';
   cxx_std = 'c++14';
