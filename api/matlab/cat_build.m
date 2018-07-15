@@ -30,7 +30,7 @@ if ( isunix() && ~ismac() )
   compiler_spec = 'GCC=''/usr/bin/gcc-4.9'' G++=''/usr/bin/g++-4.9''';
   cxx_std = 'c++1y';
 %   addtl_c_flags = ' CFLAGS="-fPIC" ';
-  addtl_c_flags = ' -fPIC ';
+  addtl_c_flags = '';
   addtl_cxx_flags = '';
 else
   compiler_spec = '';
