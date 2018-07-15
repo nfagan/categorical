@@ -3073,6 +3073,9 @@ std::vector<std::string> util::categorical::get_uniform_categories() const
         }
     }
     
+    //  sort category names
+    std::sort(cats.begin(), cats.end());
+    
     return cats;
 }
 
@@ -3089,6 +3092,7 @@ std::vector<std::string> util::categorical::get_categories() const
         cats[i++] = it.first;
     }
     
+    //  sort category names
     std::sort(cats.begin(), cats.end());
     
     return cats;

@@ -377,6 +377,8 @@ classdef fcat < handle
       %     IN:
       %       - `varargin`
       
+      narginchk( 2, Inf );
+      
       N = varargin{1};
       
       %   replicate behavior of repmat, which creates an empty matrix if a
@@ -1070,7 +1072,7 @@ classdef fcat < handle
       %     find( f, {'a', 'd'} )
       %     find( f, {'a', 'c'} )
       %
-      %     See also fcat/findall, fcat/findor, fcat/getlabs, fcat/getcats
+      %     See also fcat/findall, fcat/findor, fcat/findnot, fcat/getlabs
       %
       %     IN:
       %       - `labels` (cell array of strings, char)
@@ -1102,7 +1104,7 @@ classdef fcat < handle
       %     find( f, {'a', 'd'} )
       %     findor( f, {'a', 'd'} )
       %
-      %     See also fcat/find, fcat/findall
+      %     See also fcat/find, fcat/findnone, fcat/findall
       %
       %     IN:
       %       - `labels` (cell array of strings, char)
@@ -1162,10 +1164,9 @@ classdef fcat < handle
       
       %   FINDNONE -- Get indices of rows not matching any among labels.
       %
-      %     I = findnone( obj, {'a', 'b', 'c'} ) returns indices of all
-      %     rows, except those identified by any among 'a', 'b', or 'c'. If
-      %     all labels reside in the same category, the output is 
-      %     equivalent to `findnot`.
+      %     I = findnone( obj, {'a', 'b', 'c'} ) returns indices of rows 
+      %     not matching 'a', 'b', or 'c'. If all labels reside in the same 
+      %     category, the output is equivalent to `findnot`.
       %
       %     I = findnone( ..., inds ) searches the subset of rows 
       %     identified by the uint64 index vector `inds`.
@@ -2044,7 +2045,7 @@ classdef fcat < handle
       error( 'Unrecognized display mode "%s".', obj.displaymode );      
     end
     
-    function [tbl, rc] = tabular(obj, rows, cols, varargin)
+    function varargout = tabular(obj, rows, cols, varargin)
       
       %   TABULAR -- Produce tabular cell matrix of indices.
       %
@@ -2081,6 +2082,8 @@ classdef fcat < handle
         rows = getcats( obj );
       end
       
+      nargoutchk( 0, 3 );
+      
       if ( nargin < 3 || isempty(cols) )
         [rows, cols] = getrc( obj, mkcell(rows) );
       elseif ( isempty(rows) )
@@ -2116,7 +2119,14 @@ classdef fcat < handle
         tbl{r, c} = I{i};
       end
       
-      rc = { rowf, colf };
+      varargout{1} = tbl;
+      
+      if ( nargout < 3 )      
+        varargout{2} = { rowf, colf };
+      else
+        varargout{2} = rowf;
+        varargout{3} = colf;
+      end
       
       function [r, c] = getrc(obj, cats)
         %   GETRC -- Get rows and cols, if some are emptied or unspecified.
@@ -2274,8 +2284,9 @@ classdef fcat < handle
       %     returned by `categorical( obj )`; 'categories' is the vector of
       %     category names identifying columns of 'labels'.
       %
-      %     s = gather( obj, FLAG ) where FLAG is either 'categorical' or
-      %     'cellstr', specifies the class of 'labels'.
+      %     s = gather( obj, 'categorical' ) is the same as gather( obj ).
+      %     s = gather( obj, 'cellstr' ) makes 'labels' a cell matrix of
+      %     strings, rather than a categorical matrix.
       %
       %     EX //
       %

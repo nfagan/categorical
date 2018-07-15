@@ -77,7 +77,7 @@ void util::validate(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[], 
     const char* wrong_indices_msg = "Indices must be a cell array of uint64";
     
     util::assert_nrhs(2, nrhs, func_id);
-    util::assert_nlhs(1, nlhs, func_id);
+    util::assert_nlhs(0, 1, nlhs, func_id);
     
     const mxArray* data = prhs[0];
     const mxArray* indices = prhs[1];
