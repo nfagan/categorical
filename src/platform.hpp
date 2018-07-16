@@ -12,5 +12,6 @@
 #ifdef __GNUC__
     #if __GNUC__ < 5
     #undef CAT_HAS_TRIVIALLY_COPYABLE
+    #define CAT_MEX_GCC49
     #endif
 #endif
