@@ -20,7 +20,7 @@
 %     data = fcat.example( 'smalldata' );
 %     I = findall( f, {'dose', 'monkey'} );
 %     mean1 = rowmean( data, I );
-%     mean2 = rowop( data, I, @(x) mean(x, 1) );
+%     mean2 = rowop( data, I, @mean );
 %     assert( isequaln(mean1, mean2) );
 %
 %     See also rowop, rowmean, fcat
