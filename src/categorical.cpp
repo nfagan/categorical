@@ -475,9 +475,7 @@ void util::categorical::set_collapsed_expressions(std::vector<util::u32> &labs,
         m_progenitor_ids.randomize();
     }
     
-#ifndef CAT_MEX_GCC49
     std::fill(labs.begin() + start_offset, labs.end(), id);
-#endif
 }
 
 //  set_all_collapsed_expressions: Initialize all categories with collapsed expressions.
