@@ -2561,7 +2561,14 @@ classdef fcat < handle
       %     OUT:
       %       - `obj` (fcat)
       
-      obj = fcat.from( B.categorical, B.categories );
+      try
+        obj = fcat.from( B.categorical, B.categories );
+      catch err
+        warning( ['Failed to load object, possibly because required mex' ...
+          , ' files are not available for your platform. Returning a struct' ...
+          , ' instead: \n\n%s'], err.message );
+        obj = B;
+      end
     end
     
     function obj = with(cats, sz)
@@ -3060,6 +3067,23 @@ classdef fcat < handle
         joined = strjoin( C(indices{:}), pattern );
         strs(indices{:}) = { joined };
       end      
+    end
+    
+    function tf = is(obj)
+      
+      %   IS -- True for fcat objects.
+      %
+      %     tf = fcat.is( A ); returns true if `A` is an fcat object, and
+      %     false otherwise.
+      %
+      %     See also fcat, fcat.from, fcat.create
+      %
+      %     IN:
+      %       - `obj` (/any/)
+      %     OUT:
+      %       - `tf` (logical)
+      
+      tf = isa( obj, 'fcat' );      
     end
     
     function ns = parse(strs, removing)
