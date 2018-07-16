@@ -14,6 +14,7 @@
 #include <iostream>
 #include <algorithm>
 #include <cstdint>
+#include <stdexcept>
 
 namespace util
 {
