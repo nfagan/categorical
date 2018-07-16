@@ -1123,11 +1123,11 @@ classdef fcat < handle
       
       %   FINDNOT -- Get indices of rows not matching label combination.
       %
-      %     I = findnot( obj, 'a' ) returns indices of rows of `obj`, 
-      %     except those matching 'a'.
+      %     I = findnot( obj, 'a' ) returns indices of rows of `obj` not
+      %     matching 'a'.
       %
       %     I = findnot( obj, {'a', 'b'} ) returns indices of rows not 
-      %     identified by the label combination {'a', 'b'}. If 'a' and 'b' 
+      %     matching the label combination {'a', 'b'}. If 'a' and 'b' 
       %     reside in the same category, `I` will index all rows, except
       %     those matching 'a' OR 'b'. If 'a' and 'b' reside in different 
       %     categories, `I` will index all rows, except those matching 
