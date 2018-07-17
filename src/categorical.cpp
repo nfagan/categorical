@@ -391,7 +391,7 @@ void util::categorical::unchecked_add_category(const std::string& category,
     
     std::vector<util::u32> new_labs(sz);
     m_category_indices[category] = n_categories();
-    m_labels.push_back(new_labs);
+    m_labels.push_back(std::move(new_labs));
     m_collapsed_expressions.insert(collapsed_expression);
     
     //  fill the category with the collapsed expression for the category.
