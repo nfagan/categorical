@@ -13,17 +13,18 @@ if (APPLE OR WIN32)
 	set(CMAKE_CXX_STANDARD 14)
 
 	add_library(categorical STATIC ${SOURCES})
+	add_executable(bit_array-test "test/bit_array.cpp")
+
+	target_link_libraries(bit_array-test categorical)
 else()
 	#set(CMAKE_CXX_FLAGS "-Wall -fPIC -std=c++1y")
 	set(CMAKE_CXX_STANDARD 14)
 	set(CMAKE_CXX_FLAGS "-Wall -fPIC")
+
 	add_library(categorical SHARED ${SOURCES})
 endif()
 
 add_executable(categorical-test "test/categorical.cpp")
-add_executable(bit_array-test "test/bit_array.cpp")
-
 target_link_libraries(categorical-test categorical)
-target_link_libraries(bit_array-test categorical)
 
 install(TARGETS categorical DESTINATION ${CMAKE_SOURCE_DIR}/lib)
