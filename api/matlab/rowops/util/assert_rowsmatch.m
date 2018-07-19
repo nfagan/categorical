@@ -1,4 +1,4 @@
-function assert_rowsmatch(a, b)
+function assert_rowsmatch(a, b, varargin)
 
 %   ASSERT_ROWSMATCH -- Ensure inputs have matching rows.
 %
@@ -9,7 +9,7 @@ function assert_rowsmatch(a, b)
 %       - `b` (/any/)
 
 if ( ~rowsmatch(a, b) )
-  error( rowmsg(a, b) );
+  error( rowmsg(a, b, varargin{:}) );
 end
 
 end

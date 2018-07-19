@@ -1,4 +1,4 @@
-function s = rowmsg(a, b)
+function s = rowmsg(a, b, A, B)
 
 %   ROWMSG -- Get a formatted error message for inputs with mismatching rows.
 %
@@ -13,7 +13,10 @@ function s = rowmsg(a, b)
 %     OUT:
 %       - `s` (char)
 
-s = sprintf( 'Inputs have mismatching rows. A has %d row(s); B has %d.' ...
-  , rows(a), rows(b) );
+if ( nargin < 4 ), B = 'B'; end
+if ( nargin < 3 ), A = 'A'; end
+
+s = sprintf( 'Inputs have mismatching rows. %s has %d row(s); %s has %d.' ...
+  , A, rows(a), B, rows(b) );
 
 end

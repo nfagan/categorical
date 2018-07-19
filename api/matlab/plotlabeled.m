@@ -1209,6 +1209,7 @@ classdef plotlabeled < handle
       pl = plotlabeled( varargin{:} );
       pl.summary_func = @plotlabeled.nanmean;
       pl.error_func = @plotlabeled.nansem;
+      pl.one_legend = true;
     end
     
     function y = noop(x)

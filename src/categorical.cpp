@@ -3652,6 +3652,8 @@ util::u32 util::get_id(std::function<bool(util::u32)> exists_func)
 
 util::categorical::progenitor_ids::progenitor_ids()
 {
+    a = 0;
+    b = 0;
     randomize();
 }
 

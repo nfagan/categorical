@@ -1629,6 +1629,58 @@ classdef fcat < handle
       
       cat_api( 'replace', obj.id, from, with );      
     end
+        
+    function obj = upper(obj)
+      
+      %   UPPER -- Convert labels to uppercase.
+      %
+      %     Because labels are case sensitive, this function will fail
+      %     if two labels differ only with regard to one being all-caps,
+      %     and the other all lower-case.
+      %
+      %     See also fcat/replace, fcat/lower, fcat/uppercat
+      
+      cellfun( @(x) replace(obj, x, upper(x)), getlabs(obj), 'un', 0 );
+    end
+    
+    function obj = lower(obj)
+      
+      %   LOWER -- Convert labels to lowercase.
+      %
+      %     Because labels are case sensitive, this function will fail
+      %     if two labels differ only with regard to one being all-caps, 
+      %     and the other all lower-case.
+      %
+      %     See also fcat/replace, fcat/upper.
+      
+      cellfun( @(x) replace(obj, x, lower(x)), getlabs(obj), 'un', 0 );
+    end
+    
+    function obj = uppercat(obj)
+      
+      %   UPPERCAT -- Convert categories to uppercase.
+      %
+      %     Because categories are case sensitive, this function will fail
+      %     if two categories differ only with regard to one being
+      %     all-caps, and the other all lower-case.
+      %
+      %     See also fcat/replace, fcat/lowercat, fcat/upper
+      
+      cellfun( @(x) renamecat(obj, x, upper(x)), getcats(obj), 'un', 0 );
+    end
+    
+    function obj = lowercat(obj)
+            
+      %   LOWERCAT -- Convert categories to lowercase.
+      %
+      %     Because categories are case sensitive, this function will fail
+      %     if two categories differ only with regard to one being
+      %     all-caps, and the other all lower-case.
+      %
+      %     See also fcat/replace, fcat/uppercat, fcat/lower
+      
+      cellfun( @(x) renamecat(obj, x, lower(x)), getcats(obj), 'un', 0 );
+    end
     
     function [obj, n] = prune(obj)
       
@@ -2794,6 +2846,100 @@ classdef fcat < handle
       
       function val = ensure_cell(val)
         if ( ~iscell(val) ), val = { val }; end
+      end
+    end
+    
+    function mask = mask(obj, varargin)
+
+      %   MASK -- Create mask by successively applying find-like functions.
+      %
+      %     mask = fcat.mask( obj, func, labels ), where `obj` is an fcat
+      %     object, calls function `func` with inputs `obj` and `labels`. 
+      %     `func` is a handle to a function that accepts up to three 
+      %     inputs -- the fcat object `obj`, a char or cell array of string 
+      %     `labels`, and a uint64 mask vector -- and returns an index 
+      %     vector. Usually, the function will be one of `find`, `findnot`, 
+      %     `findor`, or `findnone`, but it need not be.
+      %
+      %     mask = fcat.mask( obj, func1, labels1, func2, labels2, ... ) 
+      %     calls func1 with inputs `obj` and `labels`, as above. However, 
+      %     `func2` is then called with inputs `obj`, `labels2`, and, 
+      %     additionally, the output of the call to `func1`. In this way,
+      %     each function N will be called with the output of function N-1
+      %     as its third argument.
+      %
+      %     mask = fcat.mask( obj, initial_mask, ... ) works as above, but 
+      %     calls `func1` with the additional input `initial_mask`. In this 
+      %     way, the output `mask` will contain only elements already 
+      %     present in `initial_mask`.
+      %
+      %     EX 1 //
+      %
+      %     f = fcat.example;
+      %     M1 = find( f, {'face', 'saline'}, findnot(f, '0719') );
+      %     M2 = fcat.mask( f, @find, {'face', 'saline'}, @findnot, '0719' );
+      %     isequal( M1, M2 )
+      %
+      %     EX 2: Use initial mask `M` //
+      %
+      %     f = fcat.example;
+      %     M = 1:100;
+      %     M1 = find( f, {'low', 'saline'}, findnot(f, 'outdoors', M) );
+      %     M2 = fcat.mask( f, M, @find, {'low', 'saline'}, @findnot, 'outdoors' );
+      %     isequal( M1, M2 )
+      %
+      %     See also fcat/find, fcat/findor, fcat/findnone, fcat/findnot
+      %
+      %     IN:
+      %       - `varargin` (uint64, function_handle, char, cell array of strings)
+      %     OUT:
+      %       - `mask` (uint64)
+      
+      if ( ~fcat.is(obj) )
+        error( 'Input 1 must be an fcat object; was "%s".', class(obj) );
+      end
+
+      N = numel( varargin );
+
+      if ( N == 0 )
+        mask = reshape( 1:size(obj, 1), [], 1 );
+        return;
+      end
+
+      begin_with_mask = false;
+      start = 1;
+
+      if ( mod(N, 2) ~= 0 )
+        % check if mask input
+        maybe_mask = varargin{1};
+
+        if ( ~isnumeric(maybe_mask) )
+          error( ['variable inputs must come in (function, ''label'') pairs;' ...
+            , '  or else begin with a numeric mask vector.'] );
+        else
+          mask = uint64( maybe_mask );
+          start = start + 1;
+          begin_with_mask = true;
+        end
+      end
+
+      for i = start:2:N
+        func = varargin{i};
+        labs = varargin{i+1};
+
+        if ( ~isa(func, 'function_handle') )
+          error( 'Function must be function_handle; was "%s".', class(func) );
+        end
+
+        try
+          if ( i == start && ~begin_with_mask )
+            mask = func( obj, labs );
+          else
+            mask = func( obj, labs, mask );
+          end
+        catch err
+          throw( err );
+        end
       end
     end
     
