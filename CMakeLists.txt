@@ -19,7 +19,7 @@ if (APPLE OR WIN32)
 else()
 	#set(CMAKE_CXX_FLAGS "-Wall -fPIC -std=c++1y")
 	set(CMAKE_CXX_STANDARD 14)
-	set(CMAKE_CXX_FLAGS "-Wall -Wpedantic fPIC")
+	set(CMAKE_CXX_FLAGS "-Wall -Wpedantic -fPIC")
 
 	add_library(categorical SHARED ${SOURCES})
 endif()
