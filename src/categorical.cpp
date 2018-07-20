@@ -388,9 +388,10 @@ void util::categorical::unchecked_add_category(const std::string& category,
                                                const std::string& collapsed_expression)
 {
     util::u64 sz = size();
+    util::u64 ncats = n_categories();
     
     std::vector<util::u32> new_labs(sz);
-    m_category_indices[category] = n_categories();
+    m_category_indices[category] = ncats;
     m_labels.push_back(new_labs);
     m_collapsed_expressions.insert(collapsed_expression);
     
