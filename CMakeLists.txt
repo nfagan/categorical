@@ -17,9 +17,8 @@ if (APPLE OR WIN32)
 
 	target_link_libraries(bit_array-test categorical)
 else()
-	#set(CMAKE_CXX_FLAGS "-Wall -fPIC -std=c++1y")
 	set(CMAKE_CXX_STANDARD 14)
-	set(CMAKE_CXX_FLAGS "-Wall -Wpedantic -fPIC")
+	set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wpedantic -fPIC")
 
 	add_library(categorical SHARED ${SOURCES})
 endif()
