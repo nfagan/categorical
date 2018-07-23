@@ -69,6 +69,34 @@ classdef plotlabeled < handle
       end
     end
     
+    function pl = set_smoothing(pl, func_or_amt)
+      
+      %   SET_SMOOTHING -- Add smoothing function and flag to object.
+      %
+      %     set_smoothing( obj, AMOUNT ) sets the `smooth_func` property to 
+      %     a function equivalent to `@(x) smooth(x, AMOUNT)`, and sets 
+      %     the `add_smoothing` flag.
+      %
+      %     set_smoothing( obj, FUNC ) sets the `smooth_func` property to
+      %     `FUNC`, and also sets the `add_smoothing` flag.
+      %
+      %     IN:
+      %       - `func_or_amt` (double, function_handle)
+      
+      if ( nargin < 2 )
+        func_or_amt = 1;
+      end
+      
+      if ( isnumeric(func_or_amt) )
+        smooth_func = @(x) smooth(x, func_or_amt); %#ok
+      else
+        smooth_func = func_or_amt; %#ok
+      end
+      
+      pl.add_smoothing = true;
+      pl.smooth_func = smooth_func; %#ok
+    end
+    
     function axs = lines(obj, varargin)
       
       %   LINES -- Plot lines for subsets of data.
@@ -1206,10 +1234,13 @@ classdef plotlabeled < handle
       %     OUT:
       %       - `pl` (plotlabeled)
       
-      pl = plotlabeled( varargin{:} );
+      pl = plotlabeled();
       pl.summary_func = @plotlabeled.nanmean;
       pl.error_func = @plotlabeled.nansem;
       pl.one_legend = true;
+      
+      %   overwrite opts as necessary
+      assign_pair_inputs( pl, varargin );
     end
     
     function y = noop(x)
