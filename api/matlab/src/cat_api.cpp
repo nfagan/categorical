@@ -60,7 +60,8 @@ namespace util {
             {"get_uniform_cats",        util::ops::GET_UNIFORM_CATEGORIES},
             {"find_not",                util::ops::FIND_NOT},
             {"find_none",               util::ops::FIND_NONE},
-            {"which_cat",               util::ops::WHICH_CATEGORY}
+            {"which_cat",               util::ops::WHICH_CATEGORY},
+            {"is_uniform_cat",          util::ops::IS_UNIFORM_CATEGORY}
         });
         
         std::array<util::mex_func_t, util::ops::N_OPS> funcs;
@@ -133,6 +134,7 @@ void util::init_cat_functions()
     globals::funcs[ops::FIND_NOT] =                 &util::find_not;
     globals::funcs[ops::FIND_NONE] =                &util::find_none;
     globals::funcs[ops::WHICH_CATEGORY] =           &util::which_category;
+    globals::funcs[ops::IS_UNIFORM_CATEGORY] =      &util::is_uniform_category;
     
     globals::INITIALIZED = true;
     

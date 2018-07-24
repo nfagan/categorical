@@ -3274,6 +3274,31 @@ bool util::categorical::is_uniform_category(const std::string& cat, bool* exists
     return is_uniform(lab_ids);
 }
 
+//  is_uniform_category: True if the category has a single label id, for subset of rows.
+
+bool util::categorical::is_uniform_category(const std::string &cat,
+                                            std::vector<util::u64> indices,
+                                            util::u32 *status,
+                                            util::u64 index_offset) const
+{
+    using util::u64;
+    using util::u32;
+    
+    *status = util::categorical_status::OK;
+    
+    auto cat_it = m_category_indices.find(cat);
+    
+    if (cat_it == m_category_indices.end())
+    {
+        *status = util::categorical_status::CATEGORY_DOES_NOT_EXIST;
+        return false;
+    }
+    
+    const std::vector<u32>& lab_ids = m_labels[cat_it->second];
+    
+    return is_uniform(lab_ids, indices, status, index_offset);
+}
+
 bool util::categorical::is_uniform(const std::vector<util::u32>& lab_ids) const
 {
     using util::u64;

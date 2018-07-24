@@ -156,6 +156,10 @@ public:
                                               util::u64 index_offset = 0) const;
     
     bool is_uniform_category(const std::string& cat, bool* exists) const;
+    bool is_uniform_category(const std::string& cat,
+                             std::vector<util::u64> indices,
+                             util::u32* status,
+                             util::u64 index_offset = 0) const;
     
     std::vector<std::string> in_category(const std::string& category, bool* exists) const;
     std::vector<std::string> in_category(const std::string& category) const;

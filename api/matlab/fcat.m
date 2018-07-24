@@ -1301,6 +1301,34 @@ classdef fcat < handle
       tf = cat_api( 'has_cat', obj.id, categories );      
     end
     
+    function tf = isuncat(obj, categories, inds)
+      
+      %   ISUNCAT -- True for category(ies) that are uniform.
+      %
+      %     tf = isuncat( obj, CATEGORIES ) returns an Mx1 logical array
+      %     `tf` whose elements are true for `CATEGORIES` that are uniform.
+      %     A uniform category is one for which all rows of the category
+      %     are set to the same label, or else a category with 0 rows.
+      %
+      %     tf = isuncat( ..., inds ) considers only the subset of rows
+      %     identified by the uint64 index vector `inds`. If `inds` is
+      %     empty, `tf` is false for all categories.
+      %
+      %     See also fcat/getcats, fcat/hascat
+      %
+      %     IN:
+      %       - `categories` (cell array of strings, char)
+      %       - `inds` (uint64) |OPTIONAL|
+      %     OUT:
+      %       - `tf` (logical)
+      
+      if ( nargin == 2 )
+        tf = cat_api( 'is_uniform_cat', obj.id, categories );
+      else
+        tf = cat_api( 'is_uniform_cat', obj.id, categories, uint64(inds) );
+      end
+    end
+    
     function C = fullcat(obj, categories)
       
       %   FULLCAT -- Get complete category or categories.
