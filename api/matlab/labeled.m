@@ -697,7 +697,7 @@ classdef labeled < handle
       I = find( obj.labels, labels );
     end
     
-    function C = getcats(obj)
+    function C = getcats(obj, varargin)
      
       %   GETCATS -- Get category names.
       %
@@ -706,10 +706,10 @@ classdef labeled < handle
       %     OUT:
       %       - `C` (cell array of strings)
       
-      C = getcats( obj.labels );
+      C = getcats( obj.labels, varargin{:} );
     end
     
-    function C = categories(obj)
+    function C = categories(obj, varargin)
      
       %   GETCATS -- Get category names.
       %
@@ -718,7 +718,7 @@ classdef labeled < handle
       %     OUT:
       %       - `C` (cell array of strings)
       
-      C = categories( obj.labels );
+      C = categories( obj.labels, varargin{:} );
     end
     
     function L = getlabs(obj)
