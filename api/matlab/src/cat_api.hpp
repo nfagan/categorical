@@ -41,6 +41,7 @@ namespace util {
     MEXFUNC(partial_category);
     MEXFUNC(in_category);
     MEXFUNC(in_categories);
+    MEXFUNC(which_category);
     
     MEXFUNC(get_categories);
     MEXFUNC(get_uniform_categories);

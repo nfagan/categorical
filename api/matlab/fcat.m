@@ -959,6 +959,16 @@ classdef fcat < handle
       keepeach( obj, getcats(obj) );
     end
     
+    function obj = sortrows(obj)
+      
+      %   SORTROWS -- Sort rows in ascending alphabetical order.
+      %
+      %     See also sortrows, fcat/unique
+      
+      [~, I] = sortrows( categorical(obj) );
+      keep( obj, I );
+    end
+    
     function C = combs(obj, categories, inds)
       
       %   COMBS -- Get present combinations of labels in categories.
@@ -1265,7 +1275,7 @@ classdef fcat < handle
     
     function tf = haslab(obj, labels)
       
-      %   HASLAB -- True if the label(s) exists.
+      %   HASLAB -- True if label(s) exists.
       %
       %     See also fcat/hascat, fcat/fcat
       %
@@ -1279,7 +1289,7 @@ classdef fcat < handle
     
     function tf = hascat(obj, categories)
       
-      %   HASLAB -- True if the category(ies) exists.
+      %   HASLAB -- True if category(ies) exists.
       %
       %     See also fcat/haslab, fcat/fcat
       %
@@ -1338,7 +1348,7 @@ classdef fcat < handle
       %     See also fcat/fullcat
       %
       %     IN:
-      %       - `category` (char)
+      %       - `category` (char, cell array of strings)
       %     OUT:
       %       - `C` (cell array of strings)
       
@@ -1347,6 +1357,28 @@ classdef fcat < handle
       else
         C = cat_api( 'in_cats', obj.id, category );
       end
+    end
+    
+    function C = whichcat(obj, labels)
+      
+      %   WHICHCAT -- Get the category(ies) in which label(s) reside.
+      %
+      %     C = whichcat( obj, labels ) returns the category names `C` in
+      %     which `labels` reside. An error is thrown if any of `labels`
+      %     are not present in `obj`. `C` is an Mx1 cell array of strings
+      %     where each `C(i)` corresponds to each `labels(i)`.
+      %
+      %     Use `C = whichcat( obj, labels(haslab(obj, labels)) );` to
+      %     filter out non-present labels.
+      %
+      %     See also fcat/incat, fcat/addcat
+      %
+      %     IN:
+      %       - `labels` (char, cell array of strings)
+      %     OUT:
+      %       - `C` (cell array of strings)
+      
+      C = cat_api( 'which_cat', obj.id, labels );
     end
     
     function str = joincat(obj, categories, pattern)

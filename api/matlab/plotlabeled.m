@@ -38,6 +38,7 @@ classdef plotlabeled < handle
     panel_order = {};
     x = [];
     y = [];
+    sort_combinations = false;
     mask = 'off';
   end
   
@@ -784,6 +785,12 @@ classdef plotlabeled < handle
       p_combs = fcat.from( combs(data, panels)', panels );
       g_combs = fcat.from( combs(data, groups)', groups );
       
+      if ( obj.sort_combinations )
+        plotlabeled.fcat_sortrows( x_combs );
+        plotlabeled.fcat_sortrows( p_combs );
+        plotlabeled.fcat_sortrows( g_combs );
+      end
+      
       %   order panels, groups, and x ticks, if specified
       keep( x_combs, plotlabeled.orderby(x_combs, obj.x_order) );
       keep( g_combs, plotlabeled.orderby(g_combs, obj.group_order) );
@@ -1347,6 +1354,19 @@ classdef plotlabeled < handle
       n_rows = round( sqrt(N) );
       n_cols = ceil( N/n_rows );
       shape = [ n_rows, n_cols ];
+    end
+    
+    function f = fcat_sortrows(f)
+      
+      %   FCAT_SORTROWS -- Sort rows of an fcat object.
+      %
+      %     IN:
+      %       - `f` (fcat)
+      %     OUT:
+      %       - `f` (fcat)
+      
+      [~, I] = sortrows( categorical(f) );
+      keep( f, I );
     end
     
     function shape = try_subplot_shape(shape, N)

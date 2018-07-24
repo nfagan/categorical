@@ -160,6 +160,7 @@ public:
     std::vector<std::string> in_category(const std::string& category, bool* exists) const;
     std::vector<std::string> in_category(const std::string& category) const;
     std::vector<std::string> in_categories(const std::vector<std::string>& categories, bool* exist) const;
+    std::string which_category(const std::string& label, bool* exists) const;
     
     void collapse_category(const std::string& category, bool* exists);
     void collapse_category(const std::string& category);

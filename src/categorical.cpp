@@ -3354,6 +3354,25 @@ bool util::categorical::is_uniform(const std::vector<util::u32>& lab_ids,
     return true;
 }
 
+//  which_category: Determine the category in which a label resides.
+//
+//      Pass in pointer to `exists` to verify that
+//      the label exists.
+
+std::string util::categorical::which_category(const std::string &label, bool *exists) const
+{
+    if (!has_label(label))
+    {
+        *exists = false;
+        return std::string();
+    }
+    
+    *exists = true;
+    
+    auto cat_it = m_in_category.find(label);
+    
+    return cat_it->second;
+}
 
 //  in_category: Get all labels in a category.
 //

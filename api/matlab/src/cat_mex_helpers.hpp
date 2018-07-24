@@ -34,6 +34,7 @@ namespace util {
     
     std::string get_error_text_missing_category(const std::string& in_category);
     std::string get_error_text_present_category(const std::string& in_category);
+    std::string get_error_text_missing_label(const std::string& lab);
     std::string get_error_text_label_exists();
 }
 

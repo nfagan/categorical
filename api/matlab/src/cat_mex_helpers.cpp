@@ -17,6 +17,11 @@ std::string util::get_error_text_label_exists()
     return "A given label already exists in another category.";
 }
 
+std::string util::get_error_text_missing_label(const std::string& lab)
+{
+    return "The label '" + lab + "' does not exist.";
+}
+
 mxArray* util::string_vector_to_array(const std::vector<std::string>& in_vec)
 {
     uint64_t sz = in_vec.size();
