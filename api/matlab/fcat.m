@@ -1214,7 +1214,8 @@ classdef fcat < handle
       %     C = getcats( obj, FLAG ); where `FLAG` is one of 'uniform' or
       %     'nonuniform' returns only the uniform or non-uniform category
       %     names of `obj`, respectively. A uniform category is one for
-      %     which all rows of the category are set to the same label.
+      %     which all rows of the category are set to the same label, or
+      %     else a category with 0 rows.
       %
       %     See also fcat/getlabs, fcat/fcat
       %
