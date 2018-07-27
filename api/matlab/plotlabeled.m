@@ -98,6 +98,72 @@ classdef plotlabeled < handle
       pl.smooth_func = smooth_func; %#ok
     end
     
+    function [figs, axes] = figures(obj, func, data, labels, figcats, varargin)
+      
+      %   FIGURES -- Generate plots in separate figures for subsets of data.
+      %
+      %     figs = figures( pl, func, data, labels, figcats, ... ) calls
+      %     the plotting function `func` for each combination of labels in
+      %     `figcats` categories, plotting each in a separate figure.
+      %     `func` is a function like `lines`, `bar`, etc. that takes
+      %     `data` and an fcat object `labels`, and additional category
+      %     specifiers. output `figs` is an array of figure handles.
+      %
+      %     [..., axes] = figures(...) also returns an Mx1 vector of axes
+      %     handles `axes`, containing all of the axes across `figs`.
+      %
+      %     EX //
+      %
+      %     labs = fcat.example();
+      %     dat = fcat.example( 'smalldata' );
+      %     pl = plotlabeled.make_common();
+      %     %   plot bar graphs with bars for each 'image', grouped by each 
+      %     %   'dose', with panels for each 'roi'--in a separate figure
+      %     %   for each 'roi'
+      %     figs = pl.figures( @bar, dat, labs, 'roi', 'image', 'dose', 'roi' );
+      %
+      %     See also plotlabeled/lines, plotlabeled/bar, plotlabeled
+      %
+      %     IN:
+      %       - `func` (function_handle)
+      %       - `data` (/any/)
+      %       - `labels` (fcat)
+      %       - `figcats` (cell array of strings, char, {})
+      %     OUT:
+      %       - `figs` (figure)
+      %       - `axes` (axes)
+      
+      assert_ispair( data, labels );
+      assert_hascat( labels, figcats );
+      assert( ~has_mask(obj), 'Masking with figures is not yet supported.' );
+      
+      if ( iscell(figcats) && isempty(figcats) )
+        I = { fcat.mask(labels) };
+      else
+        I = findall( labels, figcats );
+      end
+      
+      figs = cell( size(I) );
+      axes = cell( size(I) );
+      
+      current_fig = obj.fig;
+      
+      for i = 1:numel(I)
+        obj.fig = figure(i);
+        
+        ind = I{i};
+        axs = func( obj, rowref(data, ind), labels(ind), varargin{:} );
+        
+        figs{i} = obj.fig;
+        axes{i} = axs(:);
+      end
+      
+      figs = vertcat( figs{:} );
+      axes = vertcat( axes{:} );
+      
+      obj.fig = current_fig;
+    end
+    
     function axs = lines(obj, varargin)
       
       %   LINES -- Plot lines for subsets of data.
@@ -1245,6 +1311,7 @@ classdef plotlabeled < handle
       pl.summary_func = @plotlabeled.nanmean;
       pl.error_func = @plotlabeled.nansem;
       pl.one_legend = true;
+      pl.sort_combinations = true;
       
       %   overwrite opts as necessary
       assign_pair_inputs( pl, varargin );
@@ -1348,7 +1415,10 @@ classdef plotlabeled < handle
 
       if ( N <= 3 )
         shape = [ 1, N ];
-        return;
+        return
+      elseif ( N == 8 )
+        shape = [ 2, 4 ];
+        return
       end
 
       n_rows = round( sqrt(N) );

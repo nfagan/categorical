@@ -959,11 +959,20 @@ classdef fcat < handle
       keepeach( obj, getcats(obj) );
     end
     
-    function obj = sortrows(obj)
+    function [obj, I] = sortrows(obj)
       
       %   SORTROWS -- Sort rows in ascending alphabetical order.
       %
+      %     sortrows( obj ) sorts the rows of `obj`.
+      %
+      %     [B, I] = sortrows( copy(obj) ) returns the uint64 index vector 
+      %     `I` such that `obj(I) == B`.
+      %
       %     See also sortrows, fcat/unique
+      %
+      %     OUT:
+      %       - `obj` (fcat)
+      %       - `I` (uint64)
       
       [~, I] = sortrows( categorical(obj) );
       keep( obj, I );

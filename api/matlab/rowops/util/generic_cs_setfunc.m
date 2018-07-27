@@ -2,7 +2,7 @@ function varargout = generic_cs_setfunc(func, a, b, varargin)
 
 %   GENERIC_CS_SETFUNC -- cellstr set-membership function.
 %
-%     a = generic_cs_setfunc( FUNC, A, B ) calls the set-membership binary
+%     a = generic_cs_setfunc( FUNC, A, B ) calls the binary set-membership
 %     function `FUNC` with inputs `A` and `B`. `A` and `B` can be any
 %     combination of string-like inputs that can be converted to a cell
 %     array of strings with the `cellstr` function; output `a` is always a
