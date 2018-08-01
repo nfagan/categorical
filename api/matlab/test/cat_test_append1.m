@@ -64,4 +64,29 @@ end
 
 assert( prune(a) == prune(b), 'Pruned multi-row subsets assigned from empty were not equal.' );
 
+%   test append1 with n reps
+f2 = f';
+
+for i = 1:iters
+  
+  ind = randperm( length(f), randi(length(f)) );
+  n_reps = randi( 100 );
+  
+  z = append1( f2', f, ind, n_reps );
+  z2 = f2';
+  
+  for j = 1:n_reps
+    append1( z2, f, ind );
+  end
+  
+  assert( z2 == z, 'Appending subsets with repetitions were not equal.' );
+end
+
+%   append1 with 0 reps should be equal to not appending
+
+f2 = f';
+
+assert( append1(f2, f, rowmask(f), 0) == f, 'Appending with 0 reps modified the obj.' );
+
+
 end

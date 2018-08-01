@@ -7,7 +7,7 @@ void util::append_one(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]
     
     const char* func_id = "categorical:append1";
     
-    util::assert_nrhs(3, 4, nrhs, func_id);
+    util::assert_nrhs(3, 5, nrhs, func_id);
     util::assert_nlhs(nlhs, 0, func_id);
     
     util::categorical* cat_a = util::detail::mat_to_ptr<util::categorical>(prhs[1]);
@@ -25,7 +25,25 @@ void util::append_one(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]
         
         std::vector<u64> indices = util::numeric_array_to_vector64(prhs[3], func_id);
         
-        status = cat_a->append_one(*cat_b, indices, index_offset);
+        if (nrhs == 4)
+        {
+            status = cat_a->append_one(*cat_b, indices, index_offset);
+        }
+        else
+        {
+            const char* msg = "Repetitions must be a uin64 scalar.";
+            u64 repetitions = util::get_scalar_with_trap<u64>(prhs[4], mxUINT64_CLASS, func_id, msg);
+            
+            if (repetitions == 0)
+            {
+                // in matlab, 0 repetition should not mutate object.
+                status = util::categorical_status::OK;
+            }
+            else
+            {
+                status = cat_a->append_one(*cat_b, indices, index_offset, repetitions-1);
+            }
+        }
     }
     
     if (status == util::categorical_status::OK)

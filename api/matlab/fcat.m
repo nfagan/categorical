@@ -1481,6 +1481,23 @@ classdef fcat < handle
       cat_api( 'require_cat', obj.id, category );
     end
     
+    function obj = addsetcat(obj, cat, varargin)
+      
+      %   ADDSETCAT -- Add category and assign contents.
+      %
+      %     addsetcat( obj, CAT, to ) is shorthand for 
+      %     setcat( addcat(obj, CAT), CAT, to ).
+      %
+      %     See also fcat/addcat, fcat/setcat
+      %
+      %     IN:
+      %       - `cat` (cell array of strings, char)
+      %       - `varargin` (/any/)
+      
+      addcat( obj, cat );
+      setcat( obj, cat, varargin{:} );
+    end
+    
     function obj = rmcat(obj, category)
       
       %   RMCAT -- Remove category(ies).
@@ -1600,7 +1617,7 @@ classdef fcat < handle
     
     function obj = setcat(obj, category, to, at_indices)
       
-      %   SETCATEGORY -- Assign labels to category.
+      %   SETCAT -- Assign labels to category.
       %
       %     A) setcat( obj, 'hi', {'hello', 'hello', 'hello'} ) assigns
       %     {'hello', 'hello', 'hello'} to category 'hi'.
@@ -1806,7 +1823,7 @@ classdef fcat < handle
       end
     end
     
-    function obj = append1(obj, B, inds)
+    function obj = append1(obj, B, inds, reps)
       
       %   APPEND1 -- Append single collapsed fcat object.
       %
@@ -1817,6 +1834,9 @@ classdef fcat < handle
       %
       %     append1( A, B, I ) considers only the rows of `B` identified by
       %     the uint64 index vector `I`.
+      %
+      %     append1( A, B, I, REPS ) appends `REPS` replications of the
+      %     single collapsed row of `B`.
       %
       %     append1( A, B ) is the same as append( A, one(B(:)) ), but
       %     is generally much faster, since it avoids copying `B`.
@@ -1847,8 +1867,10 @@ classdef fcat < handle
       
       if ( nargin == 2 )
         cat_api( 'append_one', obj.id, B.id );
-      else
+      elseif ( nargin == 3 )
         cat_api( 'append_one', obj.id, B.id, uint64(inds) );
+      else
+        cat_api( 'append_one', obj.id, B.id, uint64(inds), uint64(reps) );
       end
     end
     
@@ -3253,10 +3275,12 @@ classdef fcat < handle
       %     `strs`, whose elements are the elements of `C` joined along
       %     columns.
       %
-      %     strs = ... strjoin( ..., DIM ) operates along dimension `DIM`.
+      %     strs = ... strjoin( C, PATTERN ) where `PATTERN` is char, joins
+      %     elements with `PATTERN`.
       %
-      %     strs = ... strjoin( ..., PATTERN ) uses `PATTERN` to join
-      %     elements of `C`.
+      %     strs = ... strjoin( C, DIM ) operates along dimension `DIM`.
+      %
+      %     strs = ... strjoin( C, DIM, PATTERN ) works as above.
       %
       %     See also fcat/combs
       %
@@ -3265,7 +3289,13 @@ classdef fcat < handle
       %       - `dim` (double)
       %       - `pattern` (char) |OPTIONAL|
       
-      if ( nargin < 3 ), pattern = '_'; end
+      if ( nargin == 2 && ischar(dim) )
+        pattern = dim;
+        dim = 2;
+      elseif ( nargin < 3 )
+        pattern = '_';
+      end
+      
       if ( nargin < 2 || isempty(dim) ), dim = 2; end
       
       N = size( C, dim );

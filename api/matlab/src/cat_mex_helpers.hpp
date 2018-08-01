@@ -21,6 +21,9 @@ namespace util {
     std::vector<uint64_t> numeric_array_to_vector64(const mxArray* in_arr, const char* func_id);
     std::vector<uint32_t> numeric_array_to_vector32(const mxArray* in_arr, const char* func_id);
     
+    template<typename T>
+    T get_scalar_with_trap(const mxArray* in_arr, unsigned int class_id, const char* func_id, const char* msg);
+    
     mxArray* string_vector_to_array(const std::vector<std::string>& in_vec);
     void assign_string_vector_to_array(const std::vector<std::string>& in_vec, 
         mxArray* out_cell, uint64_t start_idx);

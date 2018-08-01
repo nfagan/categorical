@@ -2125,7 +2125,7 @@ util::u32 util::categorical::unchecked_append_progenitors_match_indexed(const ut
 
 util::u32 util::categorical::append_one(const util::categorical& other)
 {
-    return append_one_impl(other, false, std::vector<util::u64>(), 0);
+    return append_one_impl(other, false, std::vector<util::u64>(), 0, 0);
 }
 
 //  append_one: Append another categorical object, collapsing
@@ -2133,15 +2133,17 @@ util::u32 util::categorical::append_one(const util::categorical& other)
 
 util::u32 util::categorical::append_one(const util::categorical& other,
                                         const std::vector<util::u64>& indices,
-                                        util::u64 index_offset)
+                                        util::u64 index_offset,
+                                        util::u64 repetitions)
 {
-    return append_one_impl(other, true, indices, index_offset);
+    return append_one_impl(other, true, indices, index_offset, repetitions);
 }
 
 util::u32 util::categorical::append_one_impl(const util::categorical& other,
                                              const bool use_indices,
                                              const std::vector<util::u64>& indices,
-                                             util::u64 index_offset)
+                                             util::u64 index_offset,
+                                             util::u64 repetitions)
 {
     using util::categorical;
     using util::u32;
@@ -2205,6 +2207,7 @@ util::u32 util::categorical::append_one_impl(const util::categorical& other,
     }
     
     tmp.prune();
+    tmp.repeat(repetitions);
     
     return append(tmp);
 }

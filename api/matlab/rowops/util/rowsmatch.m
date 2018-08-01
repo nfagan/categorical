@@ -1,15 +1,22 @@
-function tf = rowsmatch(a, b)
+function tf = rowsmatch(varargin)
 
 %   ROWSMATCH -- True if arrays have the same number of rows.
 %
-%     See also rows, joinsize
+%     See also rows, joinsize, sizesmatch
 %
 %     IN:
-%       - `a` (/any/)
-%       - `b` (/any/)
+%       - `varargin` (/any/)
 %     OUT:
 %       - `tf` (logical)
 
-tf = rows( a ) == rows( b );
+narginchk( 2, Inf );
+
+if ( nargin == 2 )
+  tf = rows( varargin{1} ) == rows( varargin{2} );
+  return
+end
+
+rws = cellfun( @rows, varargin, 'un', 0 );
+tf = isequal( rws{:} );
 
 end

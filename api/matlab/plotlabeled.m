@@ -11,8 +11,10 @@ classdef plotlabeled < handle
     error_func = @plotlabeled.std;
     smooth_func = @plotlabeled.noop;
     color_func = @jet;
+    fit_func = @(x, y) x;
     fig = [];
     shape = [];
+    add_fit = false;
     add_legend = true;
     one_legend = false;
     add_errors = true;
@@ -98,7 +100,7 @@ classdef plotlabeled < handle
       pl.smooth_func = smooth_func; %#ok
     end
     
-    function [figs, axes] = figures(obj, func, data, labels, figcats, varargin)
+    function [figs, axes, I] = figures(obj, func, data, labels, figcats, varargin)
       
       %   FIGURES -- Generate plots in separate figures for subsets of data.
       %
@@ -679,7 +681,9 @@ classdef plotlabeled < handle
       for i = 1:n_subplots
         ax = subplot( c_shape(1), c_shape(2), i );
         
-        dat = rowref( data, I{i} );
+        row = find( opts.p_c, opts.p_combs(i, :) );
+        
+        dat = rowref( data, I{row} );
         
         h = histogram( ax, dat, varargin{:} );
         
@@ -992,6 +996,14 @@ classdef plotlabeled < handle
             error( 'Unrecognized function name "%s".', func_name );
         end
         
+        if ( obj.add_fit )
+          try
+            apply_fit( obj, ax, h, summary_mat );
+          catch err
+            warning( err.message );
+          end
+        end
+        
         summary_mat(:) = NaN;
         errors_mat(:) = NaN;
         
@@ -1017,6 +1029,24 @@ classdef plotlabeled < handle
       end
       
       set_lims( obj, axs, 'ylim', get_ylims(obj, axs) );
+      
+      function apply_fit(obj, ax, hs, summary_mat)
+        np = get( ax, 'nextplot' );
+        set( ax, 'nextplot', 'add' );
+
+        for idx = 1:size(summary_mat, 2)
+          scol = summary_mat(:, idx);
+          x_ = 1:numel( scol );
+          nan_ind = isnan( scol );
+          scol(nan_ind) = [];
+          x_(nan_ind) = [];
+          
+          one_h = plot( ax, x_, obj.fit_func(x_, scol) );
+          set( one_h, 'color', get(hs(idx), 'color') );
+        end
+        
+        set( ax, 'nextplot', np );
+      end
     end
     
     function plot_points(obj, ax, hs, data, inds, I, colors)
@@ -1043,10 +1073,21 @@ classdef plotlabeled < handle
       for i = 1:numel(hs)
         h = hs(i);
         matching_inds = inds(:, i);
-        x_offset = get( h, 'xoffset' );
+        
+        try
+          x_offset = get( h, 'xoffset' );
+        catch err
+          x_offset = 0;
+        end
+        
         x_data = get( h, 'xdata' );
+        
         for j = 1:numel(matching_inds)
-          ind = I{matching_inds(j)};
+          match_ind = matching_inds(j);
+          
+          if ( isnan(match_ind) ), continue; end
+          
+          ind = I{match_ind};
           
           for k = 1:numel(pt_i)
             
@@ -1316,6 +1357,28 @@ classdef plotlabeled < handle
       %   overwrite opts as necessary
       assign_pair_inputs( pl, varargin );
     end
+    
+    %
+    %   FIT FUNCS
+    %
+    
+    function y = polyfit_linear(x, y)
+      
+      %   POLYFIT_LINEAR
+      
+      y = polyval( polyfit(x(:)', y(:)', 1), x );      
+    end
+    
+    function y = polyfit_quadratic(x, y)
+      
+      %   POLYFIT_QUADRATIC
+      
+      y = polyval( polyfit(x(:)', y(:)', 2), x );      
+    end
+    
+    %
+    %   SUMMARY FUNCS
+    %
     
     function y = noop(x)
       

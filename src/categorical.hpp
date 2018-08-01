@@ -185,7 +185,8 @@ public:
     util::u32 append_one(const util::categorical& other);
     util::u32 append_one(const util::categorical& other,
                          const std::vector<util::u64>& indices,
-                         util::u64 index_offset = 0);
+                         util::u64 index_offset = 0,
+                         util::u64 repetitions = 0);
     
     util::u32 assign(const util::categorical& other,
                      const std::vector<util::u64>& to_indices,
@@ -282,7 +283,8 @@ private:
     util::u32 append_one_impl(const util::categorical& other,
                               const bool use_indices,
                               const std::vector<util::u64>& indices,
-                              util::u64 index_offset);
+                              util::u64 index_offset,
+                              util::u64 repetitions);
     
     bool categories_match(const categorical& other) const;
     bool is_uniform(const std::vector<util::u32>& lab_ids) const;
