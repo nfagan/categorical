@@ -85,7 +85,6 @@ end
 %   append1 with 0 reps should be equal to not appending
 
 f2 = f';
-
 assert( append1(f2, f, rowmask(f), 0) == f, 'Appending with 0 reps modified the obj.' );
 
 
