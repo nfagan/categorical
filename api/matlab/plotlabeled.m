@@ -1517,7 +1517,7 @@ classdef plotlabeled < handle
       %       - `shape` (double)
       
       if ( prod(shape(:)) < N )
-        shape = get_subplot_shape( N );
+        shape = plotlabeled.get_subplot_shape( N );
       end
     end
     
