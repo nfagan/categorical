@@ -2725,6 +2725,8 @@ classdef fcat < handle
       %     obj = fcat.with( ..., 1000 ) additionally resizes the object to
       %     contain 1000 rows.
       %
+      %     See also fcat.from, fcat.create
+      %
       %     IN:
       %       - `cats` (char, cell array of strings)
       %       - `sz` (uint64) |OPTIONAL|

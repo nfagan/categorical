@@ -36,7 +36,7 @@ if ( ~uniform )
   return;
 end
 
-if ( isnumeric(data) )
+if ( isnumeric(data) || islogical(data) )
   if ( ismatrix(data) )
     new_data = numeric_matrowop( data, I, func );
   else
@@ -77,7 +77,7 @@ end
 function new_data = numeric_matrowop(data, I, func)
 
 n_inds = numel( I );
-new_data = zeros( n_inds, size(data, 2) );
+new_data = zeros( n_inds, size(data, 2), 'like', data );
 
 for i = 1:n_inds
   new_data(i, :) = func( data(I{i}, :) );
