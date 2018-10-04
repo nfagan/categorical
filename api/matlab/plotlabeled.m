@@ -637,7 +637,7 @@ classdef plotlabeled < handle
       end
     end
     
-    function axs = hist(obj, data, labels, panels, varargin)
+    function [axs, indices] = hist(obj, data, labels, panels, varargin)
       
       %   HIST -- Create histograms for subsets of data.
       %
@@ -677,6 +677,7 @@ classdef plotlabeled < handle
       c_shape = opts.c_shape;
       
       axs = gobjects( n_subplots, 1 );
+      indices = cell( size(axs) );
       
       for i = 1:n_subplots
         ax = subplot( c_shape(1), c_shape(2), i );
@@ -690,6 +691,7 @@ classdef plotlabeled < handle
         conditional_add_legend( obj, h, opts.g_labs, i == 1 );
         title( ax, opts.p_labs(i, :) );
         
+        indices{i} = I{row};
         axs(i) = ax;
       end
             
