@@ -1,6 +1,6 @@
 function p = pnz(data)
 
-%   PNZ -- Percent non-zero elements.
+%   PNZ -- Proportion non-zero elements.
 %
 %     p = pnz( DATA ); returns the fraction of the number of elements in 
 %     `DATA` that are non-zero.
