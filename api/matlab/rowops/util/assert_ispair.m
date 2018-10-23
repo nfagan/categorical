@@ -12,7 +12,7 @@ function assert_ispair(data, labels)
 %       - `data` (/any/)
 %       - `labels` (/any/)
 
-assert( fcat.is(labels), 'labels must be an fcat object; was "%s".', class(labels) );
+validateattributes( labels, {'fcat'}, {}, 'assert_ispair', 'labels' );
 assert_rowsmatch( data, labels, 'data', 'labels' );
 
 end

@@ -983,7 +983,7 @@ classdef fcat < handle
       %   COMBS -- Get present combinations of labels in categories.
       %
       %     C = combs( obj ) returns an MxN cell array of N label
-      %     combination in M categories.
+      %     combinations in M categories.
       %
       %     C = combs( obj, 'cat1' ) returns the unique labels in 'cat1'.
       %
@@ -3008,7 +3008,7 @@ classdef fcat < handle
         maybe_mask = varargin{1};
 
         if ( ~isnumeric(maybe_mask) )
-          error( ['variable inputs must come in (function, ''label'') pairs;' ...
+          error( ['Variable inputs must come in (function, ''label'') pairs;' ...
             , '  or else begin with a numeric mask vector.'] );
         else
           mask = uint64( maybe_mask );
