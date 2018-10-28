@@ -1,5 +1,5 @@
 function rowrep_validate(n)
 
-assert( isnumeric(n) && isscalar(n), 'Size input must be an integer scalar.' );
+validateattributes( n, {'numeric'}, {'scalar', 'real', 'integer'}, 'rowrep_validate', 'n' );
 
 end

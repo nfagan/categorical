@@ -431,7 +431,7 @@ classdef plotlabeled < handle
         non_empties(:) = true;
         
         for j = 1:n_groups
-          g_ind = intersect( p_ind, find(labels, g_combs(j, :)) );
+          g_ind = find( labels, g_combs(j, :), p_ind );
           
           %   don't include empties
           if ( isempty(g_ind) && ~obj.plot_empties )
@@ -1087,7 +1087,10 @@ classdef plotlabeled < handle
         for j = 1:numel(matching_inds)
           match_ind = matching_inds(j);
           
-          if ( isnan(match_ind) ), continue; end
+          if ( isnan(match_ind) )
+            d = 10;
+            continue; 
+          end
           
           ind = I{match_ind};
           
@@ -1565,7 +1568,6 @@ classdef plotlabeled < handle
         [r, p] = corr( x, y, 'rows', 'complete' );
 
         xlims = get( ax, 'xlim' );
-        ylims = get( ax, 'ylim' );
         xticks = get( ax, 'xtick' );
 
         ps = polyfit( x, y, 1 );
@@ -1575,6 +1577,15 @@ classdef plotlabeled < handle
         set( ax, 'nextplot', 'add' );
         h = plot( ax, xticks, y );
         set( ax, 'nextplot', cstate );
+        
+        try
+          line_col = unique( ids(i).series.CData, 'rows' );
+          assert( size(line_col, 1) == 1 );
+          
+          set( h, 'Color', line_col );
+        catch err
+          % ignore color error
+        end
 
         h.Annotation.LegendInformation.IconDisplayStyle = 'off';
         hs(i) = h;  
@@ -1582,7 +1593,7 @@ classdef plotlabeled < handle
         coord_func = @(x) ((x(2)-x(1)) * 0.75) + x(1);
 
         xc = coord_func( xlims );
-        yc = coord_func( ylims );
+        yc = y(end);
 
         txt = sprintf( 'R = %0.2f, p = %0.3f', r, p);
 
@@ -1591,6 +1602,8 @@ classdef plotlabeled < handle
         text( ax, xc, yc, txt );
 
         store_stats(i, :) = [ r, p ];
+        
+        set( ax, 'xlim', xlims );
       end
     end
   end

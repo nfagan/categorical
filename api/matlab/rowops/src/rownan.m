@@ -2,9 +2,9 @@ function v = rownan(n, varargin)
 
 %   ROWNAN -- Row-vector of nan.
 %
-%     v = rownan( M ) returns an `M`x1 row vector of zeros.
+%     v = rownan( M ) returns an `M`x1 row vector of nan.
 %
-%     v = rownan( ..., 'like', A ) returns a vector of zeros with the
+%     v = rownan( ..., 'like', A ) returns a vector of nan with the
 %     same data type, sparsity, and complexity (real or complex) as the 
 %     numeric variable `A`.
 %
