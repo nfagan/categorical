@@ -306,6 +306,14 @@ classdef plotlabeled < handle
       end
     end
     
+    function axs = stackedbar(obj, varargin)
+      try
+        axs = groupplot( obj, 'stacked_bar', varargin{:} );
+      catch err
+        throw( err );
+      end
+    end
+    
     function axs = errorbar(obj, varargin)
       
       %   ERRORBAR -- Plot lines with errors for subsets of data.
@@ -606,8 +614,12 @@ classdef plotlabeled < handle
         xticks = get( ax, 'xtick' );
         yticks = get( ax, 'ytick' );
         
-        set( ax, 'xticklabels', xdat(xticks) );
-        set( ax, 'yticklabels', ydat(yticks) );
+        try
+          set( ax, 'xticklabels', xdat(xticks) );
+          set( ax, 'yticklabels', ydat(yticks) );
+        catch err
+          warning( err.message );
+        end
         
         title( ax, opts.p_labs{i} );
         
@@ -992,6 +1004,13 @@ classdef plotlabeled < handle
             else
               h = bar( summary_mat );
             end
+          case 'stacked_bar'
+            if ( rows(summary_mat) == 1 )
+              %   if only one x-combination
+              h = bar( [summary_mat; nan(1, size(summary_mat, 2))], 'stacked' );
+            else
+              h = bar( summary_mat, 'stacked' );
+            end
           case 'errorbar'
             h = errorbar( summary_mat, errors_mat );
           otherwise
@@ -1019,9 +1038,11 @@ classdef plotlabeled < handle
         
         if ( strcmp(func_name, 'errorbar') )
           set( ax, 'xlim', [0, n_ticks+1] );
+        elseif ( strcmp(func_name, 'stacked_bar') && rows(summary_mat) == 1 )
+          set( ax, 'xlim', [0, 2] );
         end
         
-        if ( obj.add_points )
+        if ( obj.add_points && ~strcmp(func_name, 'stacked_bar') )
           plot_points( obj, ax, h, opts.data, inds_mat, opts.I, color_map );
         end
         

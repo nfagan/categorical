@@ -8,12 +8,19 @@ function cs = colons(n)
 %     colons( 1 ) returns {':'}.
 %     colons( 2 ) returns {':', ':'}.
 %
+%     See also rowop, fcat
+%
 %     IN:
 %       - `n` (double)
 %     OUT:
 %       - `cs` (cell array of strings)
 
 c = {':'};
-cs = c(ones(1, n));
+
+try
+  cs = c(ones(1, n));
+catch err
+  throw( err );
+end
 
 end
