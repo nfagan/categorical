@@ -45,4 +45,10 @@ catch err
   end
 end
 
+z = fcat.create( 'a', {'a', 'b', 'c', 'h', 'e', 'f', 'g', 'h'} );
+renamecat( z, 'a', 'b' );
+
+cat_test_assert_fail( @() addsetcat(z, 'c', '<b>') ...
+  , 'Allowed inserting of collapsed expression of wrong category after renaming.' );
+
 end
