@@ -473,11 +473,12 @@ classdef plotlabeled < handle
     
     function axs = boxplot(obj, data, labs, groups, panels)
       
-      %   BOXPLOT -- Create boxplots plots for subsets of data.
+      %   BOXPLOT -- Create box plots for subsets of data.
       %
       %     boxplot( obj, data, labels, groups, panels ) creates a series
       %     of boxplots with panel labels drawn from the category(ies) in
       %     `panels`, and group labels from the category(ies) in `groups`.
+      %     `data` is an Mx1 vector; `labels` is an MxN fcat object.
       %
       %     axs = ... returns an array of handles to the subplotted axes.
       %
@@ -534,6 +535,97 @@ classdef plotlabeled < handle
         assert( size(data, 1) == length(labs), ['Number of rows of data' ...
           , ' must match number of rows of labels.'] );
       end
+    end
+    
+    function axs = violinplot(obj, data, labs, groups, panels, varargin)
+      
+      %   VIOLINPLOT -- Create violin plots for subsets of data.
+      %
+      %     violinplot( obj, data, labels, groups, panels ) creates a series
+      %     of violinplots with panel labels drawn from the category(ies) in
+      %     `panels`, and group labels from the category(ies) in `groups`.
+      %     `data` is an Mx1 vector; `labels` is an MxN fcat object.
+      %
+      %     violinplot( ..., 'NAME', value ) specifies additional 'name',
+      %     value-paired inputs to be passed to the `violinplot` function.
+      %     See `help violinplot` for more information.
+      %
+      %     axs = ... returns an array of handles to the subplotted axes.
+      %
+      %     This function depends on the Violinplot-Matlab repository,
+      %     currently available at: https://github.com/bastibe/Violinplot-Matlab
+      %
+      %     Note that the ordering of groups is not supported.
+      %
+      %     EX //
+      %
+      %     f = fcat.example();
+      %     dat = fcat.example( 'smalldata' );
+      %     pl = plotlabeled();
+      %     pl.violinplot( dat, f, 'dose', 'monkey' )
+      %
+      %     See also violinplot, plotlabeled/scatter, plotlabeled/bar,
+      %       plotlabeled/boxplot
+      %
+      %     IN:
+      %       - `data` (double)
+      %       - `labs` (fcat)
+      %       - `groups` (cell array of strings, char)
+      %       - `panels` (cell array of strings, char)
+      %     OUT:
+      %       - `axs` (axes)
+      
+      validateattributes( labs, {'fcat'}, {}, mfilename, 'labels' );
+      validateattributes( data, {'numeric'} ...
+        , {'vector', 'column', 'nrows', length(labs)}, mfilename, 'data' );
+      
+      if ( isempty(which('violinplot')) )
+        error( ['This function depends on the Violinplot-Matlab repository, ' ...
+          , ' available at: https://github.com/bastibe/Violinplot-Matlab '] );
+      end
+      
+      try
+        opts = matplotopts( obj, labs, {}, groups, panels, false );
+      catch err
+        throw( err );
+      end
+      
+      labs = addcat( copy(labs), opts.specificity );
+      M = get_mask( obj, length(labs) );
+      
+      n_subplots = opts.n_subplots;
+      c_shape = opts.c_shape;
+      g_cats = opts.g_cats;
+      
+      axs = gobjects( 1, n_subplots );
+      
+      for i = 1:n_subplots
+        ax = subplot( c_shape(1), c_shape(2), i );
+        
+        I = find( labs, opts.p_combs(i, :), M );
+        
+        pltdat = rowref( data, I );
+        pltlabs = categorical( labs, g_cats, I );
+        
+        [cats, ~, ic] = unique( pltlabs, 'rows' );
+        xlabs = fcat.strjoin( cellstr(cats)', obj.join_pattern );
+        
+        grp = cell( length(pltlabs), 1 );
+        unique_ic = unique( ic );
+        
+        for j = 1:numel(unique_ic)
+          ind = unique_ic(j);
+          
+          grp(ic == ind) = xlabs(ind);
+        end
+        
+        violinplot( pltdat, grp, varargin{:} );
+        
+        title( ax, opts.p_labs(i, :) );
+        axs(i) = ax;
+      end
+      
+      set_lims( obj, axs, 'ylim', get_ylims(obj, axs) );
     end
     
     function axs = imagesc(obj, varargin)

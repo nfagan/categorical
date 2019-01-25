@@ -1,6 +1,6 @@
 function B = columnize(A)
 
-%   COLUMNIZE -- Make row-vector.
+%   COLUMNIZE -- Make column-vector.
 %
 %     B = columnize(A) is the same as A(:).
 %

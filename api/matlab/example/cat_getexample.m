@@ -15,13 +15,14 @@ function f = cat_getexample(kind)
 %     OUT:
 %       - `f` (fcat)
 
-root = fullfile( fcat.apiroot(), 'data' );
-
-options = { 'small', 'large', 'smalldata', 'largedata' };
-
 if ( nargin < 1 )
   kind = 'small';
 end
+
+root = fullfile( fcat.apiroot(), 'data' );
+
+options = { 'small', 'large', 'smalldata', 'largedata' };
+kind = validatestring( kind, options, mfilename, 'kind' );
 
 switch ( kind )
   case 'large'

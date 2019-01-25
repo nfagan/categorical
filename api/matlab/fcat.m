@@ -2189,6 +2189,51 @@ classdef fcat < handle
       error( 'Unrecognized display mode "%s".', obj.displaymode );      
     end
     
+    function b = bytes(obj, unit)
+      
+      %   BYTES -- Get approximate memory usage of object.
+      %
+      %     b = bytes( obj ); returns the approximate number of bytes `obj` 
+      %     occupies. The actual amount of space used by `obj` will be
+      %     higher than reported; `b` is a lower-bound.
+      %
+      %     b = bytes( obj, UNIT ); where unit is one of 'b', 'kb', 'mb', 
+      %     or 'gb', returns the quantity in bytes, kilobytes, megabytes, 
+      %     or gigabytes, respectively.
+      %
+      %     See also fcat, zeros, rowop
+      %
+      %     IN:
+      %       - `var` (/any/)
+      %       - `unit` (char) |OPTIONAL|
+      %     OUT:
+      %       - `b` (double)
+
+      if ( nargin < 2 )
+        unit = 'b';
+      else
+        unit = validatestring( unit, {'b', 'kb', 'mb', 'gb'}, mfilename, 'format' );
+      end
+      
+      b = 4 * double( numel(obj) ); % sizeof uint32 * n elements
+
+      switch ( unit )
+        case 'b'
+          return
+        case 'kb'
+          b = b / 1024;
+          return
+        case 'mb'
+          b = b / (1024 * 1024);
+          return
+        case 'gb'
+          b = b / (1024 * 1024 * 1024);
+          return
+        otherwise
+          error( 'Internal error: unimplemented unit string: "%s".', unit );
+      end
+    end
+    
     function varargout = tabular(obj, rows, cols, varargin)
       
       %   TABULAR -- Produce tabular cell matrix of indices.
@@ -2810,6 +2855,10 @@ classdef fcat < handle
             throw( err );
           end
           return;
+          
+        elseif ( isa(arr, 'fcat') )
+          obj = arr;
+          return
           
         else
           error( 'Cannot convert to fcat from objects of type "%s"', class(arr) );
