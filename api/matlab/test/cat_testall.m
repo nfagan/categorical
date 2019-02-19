@@ -2,6 +2,7 @@ function cat_testall()
 
 %   CAT_TESTALL -- Run all tests.
 
+cat_test_run( @cat_test_find_empty_indexed );
 cat_test_run( @cat_test_isuncat );
 cat_test_run( @cat_test_whichcat );
 cat_test_run( @cat_test_sortrows );

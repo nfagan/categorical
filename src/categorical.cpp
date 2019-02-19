@@ -611,8 +611,11 @@ util::u32 util::categorical::find_flipped_apply_mask(util::bit_array& final_inde
     {
         return assign_status;
     }
-    
-    bit_array::unchecked_dot_and(final_index, final_index, mask, 0, sz);
+  
+    if (sz > 0)
+    {
+        bit_array::unchecked_dot_and(final_index, final_index, mask, 0, sz);
+    }
     
     return util::categorical_status::OK;
 }
@@ -727,24 +730,27 @@ std::vector<util::u64> util::categorical::find_impl(const std::vector<std::strin
     }
     
     util::bit_array final_index(sz, true);
-    
-    for (const auto& it : index_map)
+  
+    if (sz > 0)
     {
-        bit_array::unchecked_dot_and(final_index, final_index, it.second, 0, sz);
-    }
-    
-    if (flip_index)
-    {
-        final_index.flip();
-        
-        if (use_indices)
+        for (const auto& it : index_map)
         {
-            u32 tmp_status = categorical::find_flipped_apply_mask(final_index, sz, indices, index_offset);
-            
-            if (tmp_status != util::categorical_status::OK)
+            bit_array::unchecked_dot_and(final_index, final_index, it.second, 0, sz);
+        }
+      
+        if (flip_index)
+        {
+            final_index.flip();
+          
+            if (use_indices)
             {
-                *status = tmp_status;
-                return out;
+                u32 tmp_status = categorical::find_flipped_apply_mask(final_index, sz, indices, index_offset);
+              
+                if (tmp_status != util::categorical_status::OK)
+                {
+                    *status = tmp_status;
+                    return out;
+                }
             }
         }
     }
@@ -820,8 +826,11 @@ std::vector<util::u64> util::categorical::find_or_impl(const std::vector<std::st
         {
             index = util::categorical::assign_bit_array(m_labels[cat_idx], lab_id);
         }
-        
-        bit_array::unchecked_dot_or(final_index, final_index, index, 0, sz);
+      
+        if (sz > 0)
+        {
+            bit_array::unchecked_dot_or(final_index, final_index, index, 0, sz);
+        }
     }
     
     if (flip_index)

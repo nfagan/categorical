@@ -1,6 +1,10 @@
-function cat_buildall()
+function cat_buildall(allow_overwrite)
 
 %   CAT_BUILDALL -- Build all mex functions.
+
+if ( nargin < 1 )
+  allow_overwrite = false;
+end
 
 cat_build( {...
       'cat_api.cpp' ...
@@ -61,6 +65,6 @@ cat_build( {...
     , 'cat_progenitorsmatch.cpp' ...
     , 'cat_addcat.cpp' ...
     , 'cat_incats.cpp' ...
-}, 'src' );
+}, 'src', allow_overwrite );
 
 end

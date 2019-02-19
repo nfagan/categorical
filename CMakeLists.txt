@@ -26,4 +26,12 @@ endif()
 add_executable(categorical-test "test/categorical.cpp")
 target_link_libraries(categorical-test categorical)
 
-install(TARGETS categorical DESTINATION ${CMAKE_SOURCE_DIR}/lib)
+if (APPLE)
+	set(OUTPUT_LIB_SUBDIR mac)
+elseif (WIN32)
+	set(OUTPUT_LIB_SUBDIR win)
+else()
+	set(OUTPUT_LIB_SUBDIR linux)
+endif()
+
+install(TARGETS categorical DESTINATION ${CMAKE_SOURCE_DIR}/lib/${OUTPUT_LIB_SUBDIR})

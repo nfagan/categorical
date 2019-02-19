@@ -754,6 +754,8 @@ classdef fcat < handle
       %     assigned to true at rows [1] and [2]. M is equal to 
       %     size( obj, 1 ).
       %
+      %     Note that no bounds checking is applied to `indices`.
+      %
       %     See also fcat/find, fcat/keep
       %
       %     IN:
@@ -884,9 +886,12 @@ classdef fcat < handle
     
     function obj = empty(obj)
       
-      %   EMPTY -- Retain 0 rows.
+      %   EMPTY -- Clear contents, except category names.
       %
-      %     See also fcat/keep
+      %     empty( obj ); leaves obj with 0 rows and no labels, but does
+      %     not remove its categories.
+      %
+      %     See also fcat/keep, fcat/none
       
       cat_api( 'empty', obj.id );
     end
@@ -948,15 +953,78 @@ classdef fcat < handle
       end
     end
     
-    function obj = unique(obj)
+    function varargout = keepeach_or_one(obj, varargin)
+      
+      %   KEEPEACH_OR_ONE -- Like keepeach, but take empty categories to
+      %     mean "collapse across all", instead of "include none".
+      %
+      %     B = keepeach_or_one( copy(A), categories ) is the same as 
+      %     B = keepeach( copy(A), categories ), except in the case that
+      %     `categories` is the empty cell array ({}). In that case,
+      %     keepeach_or_one returns an output equivalent to:
+      %     one( copy(A) ), whereas keepeach returns an empty fcat 
+      %     array. In other words, keepeach_or_one takes "no categories" 
+      %     ({}) to mean "collapse across all categories", whereas keepeach
+      %     takes that same input to mean "include nothing."
+      %
+      %     keepeach_or_one( ..., mask ) restricts the search to the subset
+      %     of rows identified by the uint64 index vector `mask`.
+      %
+      %     [..., I] also returns a cell array of uint64 indices `I` such
+      %     that each `I{i}` gives the indices into `A` used to
+      %     construct that row `i` of `B`. In the case that `categories` is
+      %     the empty cell array ({}), `I` is a 1x1 cell array containing
+      %     either `mask`, if a mask is provided, or 1:length(A), if no
+      %     mask is provided.
+      %
+      %     See also fcat/keepeach, fcat/one, fcat/collapsecat, fcat
+      
+      narginchk( 2, 3 );
+      nargoutchk( 0, 2 );
+      
+      categories = varargin{1};
+      
+      if ( iscell(categories) && isempty(categories) )
+        % keepeach_or_one( obj, {}, ... )
+        output_indices = nargout > 1;
+        
+        if ( nargin > 2 )
+          % keepeach_or_one( obj, {}, mask )
+          mask = uint64( varargin{2} );
+          one( keep(obj, mask) );
+        else
+          % keepeach_or_one( obj, {} )
+          if ( output_indices )
+            mask = (1:length(obj))';
+          end
+          
+          one( obj );
+        end
+        
+        varargout{1} = obj;
+        
+        if ( output_indices )
+          varargout{2} = { mask };
+        end
+      else
+        % Otherwise, same as keepeach
+        [varargout{1:nargout}] = keepeach( obj, varargin{:} );
+      end
+    end
+    
+    function [obj, I] = unique(obj)
       
       %   UNIQUE -- Retain unique rows.
       %
-      %     unique( obj ) keeps the unique rows of `obj`.
+      %     B = unique( copy(A) ) keeps the unique rows of `A`.
       %
-      %     See also fcat/combs, categorical/unique
+      %     [B, I] = unique( copy(A) ); also returns a cell array of indices 
+      %     `I` such that each element `i` of `I` gives the indices into `A` 
+      %     used to construct row `i` of `B`.
+      %
+      %     See also fcat/combs, fcat/keepeach, categorical/unique
       
-      keepeach( obj, getcats(obj) );
+      [~, I] = keepeach( obj, getcats(obj) );
     end
     
     function [obj, I] = sortrows(obj)
@@ -1061,6 +1129,57 @@ classdef fcat < handle
         else
           I = cat_api( 'find_all', obj.id, categories );
         end
+      end
+    end
+    
+    function I = findall_or_one(obj, varargin)
+      
+      %   FINDALL_OR_ONE -- Like findall, but take empty categories to
+      %     mean "across all", instead of "include none".
+      %
+      %     B = findall_or_one( A, categories ) is the same as 
+      %     B = findall( A, categories ), except in the case that
+      %     `categories` is the empty cell array ({}). In that case,
+      %     findall_or_one returns a 1x1 cell array containing all the 
+      %     indices into A, whereas findall returns an empty cell array. 
+      %     
+      %     In other words, findall_or_one takes "no categories" ({}) to 
+      %     mean "across all categories", whereas findall takes that same 
+      %     input to mean "include nothing."
+      %
+      %     findall_or_one( ..., mask ) restricts the search to the subset
+      %     of rows identified by the uint64 index vector `mask`. In the
+      %     case that `categories` is the empty cell array ({}), the output
+      %     I is equivalent to: {mask}.
+      %
+      %     EX //
+      %
+      %     f = fcat.example();
+      %     % "Find all in no categories" -> no results
+      %     I1 = findall( f, {}, 1:100 );
+      %     % "Find all across all categories" -> one result
+      %     I2 = findall_or_one( f, {}, 1:100 );
+      %
+      %     See also fcat/findall, fcat/keepeach, fcat/keepeach_or_one,
+      %       fcat
+      
+      narginchk( 2, 3 );
+      nargoutchk( 0, 1 );
+      
+      categories = varargin{1};
+      
+      if ( iscell(categories) && isempty(categories) )
+        % findall_or_one( obj, {}, ... )        
+        if ( nargin > 2 )
+          % findall_or_one( obj, {}, mask )
+          I = { uint64(varargin{2}) };
+        else
+          % findall_or_one( obj, {} )
+          I = { (1:length(obj))' };
+        end
+      else
+        % Otherwise, same as findall
+        I = findall( obj, varargin{:} );
       end
     end
     
@@ -2123,10 +2242,7 @@ classdef fcat < handle
       %     IN:
       %       - `mode` ({'short', 'full', 'auto'})
       
-      modes = fcat.DISPLAY_MODES;
-      if ( ~ischar(mode) || ~any(strcmp(modes, mode)) )
-        error( 'Invalid display mode. Options are: \n\n%s', strjoin(modes, ' | ') );
-      end
+      mode = validatestring( mode, fcat.DISPLAY_MODES, mfilename, 'mode' );
       obj.displaymode = mode;
     end
     
@@ -3147,13 +3263,13 @@ classdef fcat < handle
       cat_testall();      
     end
     
-    function build()
+    function build(varargin)
       
       %   BUILD -- Build cat_api.
       %
       %     See also fcat/buildconfig
       
-      cat_buildall();      
+      cat_buildall( varargin{:} );      
     end
     
     function addpath()

@@ -1,9 +1,9 @@
 function mask = rowmask(data)
 
-%   ROWMASK -- Create a row-vector mask, 1:rows(X).
+%   ROWMASK -- Create a column-vector mask, (1:rows(X))';
 %
-%     mask = rowmask( A ); creates an Mx1 row-vector, where M is equal to
-%     `size( A, 1 )`.
+%     mask = rowmask( A ); creates an Mx1 column-vector, where M is equal 
+%     to `size( A, 1 )`.
 %
 %     See also fcat, fcat/find, rows
 %
