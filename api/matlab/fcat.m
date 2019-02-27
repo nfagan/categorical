@@ -1163,16 +1163,20 @@ classdef fcat < handle
       %     See also fcat/findall, fcat/keepeach, fcat/keepeach_or_one,
       %       fcat
       
-      narginchk( 2, 3 );
+      narginchk( 1, 3 );
       nargoutchk( 0, 1 );
       
-      categories = varargin{1};
+      if ( nargin == 1 )
+        categories = getcats( obj );
+      else
+        categories = varargin{1};
+      end
       
       if ( iscell(categories) && isempty(categories) )
         % findall_or_one( obj, {}, ... )        
         if ( nargin > 2 )
           % findall_or_one( obj, {}, mask )
-          I = { uint64(varargin{2}) };
+          I = { reshape(uint64(varargin{2}), [], 1) };
         else
           % findall_or_one( obj, {} )
           I = { (1:length(obj))' };
@@ -2909,9 +2913,6 @@ classdef fcat < handle
       %     categories and labels as fcat object `A`, but 0 rows.
       %
       %     See also fcat/with, fcat/from
-      %
-      %     IN:
-      %       - `B` (fcat)
       
       if ( ~isa(B, 'fcat') )
         error( 'Input must be an fcat object; was "%s".', class(B) );
@@ -2942,11 +2943,6 @@ classdef fcat < handle
       %     f = fcat.from({'NY', 'NYC'; 'CA', 'LA'}, {'State', 'City'})
       %
       %     See also fcat/fcat
-      %
-      %     IN:
-      %       - `varargin`
-      %     OUT:
-      %       - `obj` (fcat)
       
       narginchk( 1, 2 );
       
@@ -3045,11 +3041,6 @@ classdef fcat < handle
       %     categories.
       %
       %     See also fcat/fcat
-      %
-      %     IN:
-      %       - `varargin` (cell array of strings)
-      %     OUT:
-      %       - `obj` (fcat)
       
       n = numel( varargin );
       
@@ -3148,11 +3139,6 @@ classdef fcat < handle
       %     isequal( M1, M2 )
       %
       %     See also fcat/find, fcat/findor, fcat/findnone, fcat/findnot
-      %
-      %     IN:
-      %       - `varargin` (uint64, function_handle, char, cell array of strings)
-      %     OUT:
-      %       - `mask` (uint64)
       
       if ( ~fcat.is(obj) )
         error( 'Input 1 must be an fcat object; was "%s".', class(obj) );
