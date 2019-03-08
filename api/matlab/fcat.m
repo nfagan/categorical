@@ -2969,7 +2969,7 @@ classdef fcat < handle
           return;
           
         elseif ( isa(arr, 'fcat') )
-          obj = arr;
+          obj = copy( arr );
           return
           
         else
