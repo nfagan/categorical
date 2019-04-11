@@ -691,11 +691,13 @@ classdef fcat < handle
             end
           case '{}'
             %
-            % f{:} | f{'days'} | f{{'days', 'doses'}}
+            % f{:} | f{1} | f{'days'} | f{{'days', 'doses'}}
             %
             if ( n_subs == 1 )
               if ( strcmp(subs{1}, ':') )
                 varargout{1} = categorical( obj );
+              elseif ( isnumeric(subs{1}) )
+                varargout{1} = categorical( obj, getcats(obj), subs{1} );
               else
                 varargout{1} = categorical( incat(obj, subs{1}) );
               end

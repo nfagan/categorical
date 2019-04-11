@@ -24,7 +24,7 @@ for i = 1:n_args
   func = varargin{i};
   
   if ( ~isa(func, 'function_handle') )
-    error( 'Inputs beyond the first must be function_handle; was "%s".', class(func) );
+    error( 'Input %d must be function_handle; was "%s".', i+1, class(func) );
   end
   
   value = func( value );

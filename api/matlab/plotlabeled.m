@@ -20,9 +20,11 @@ classdef plotlabeled < handle
     add_errors = true;
     add_smoothing = false;
     add_points = false;
+    add_x_tick_labels = true;
     plot_empties = true;
     points_are = {};
     points_color_map = [];
+    point_jitter = 0;
     x_tick_rotation = 60;
     invert_y = false;
     main_line_width = 1;
@@ -100,7 +102,8 @@ classdef plotlabeled < handle
       pl.smooth_func = smooth_func; %#ok
     end
     
-    function [figs, axes, I] = figures(obj, func, data, labels, figcats, varargin)
+    function [figs, axes, I, axes_indices] = ...
+        figures(obj, func, data, labels, figcats, varargin)
       
       %   FIGURES -- Generate plots in separate figures for subsets of data.
       %
@@ -147,6 +150,7 @@ classdef plotlabeled < handle
       
       figs = cell( size(I) );
       axes = cell( size(I) );
+      axes_indices = cell( size(I) );
       
       current_fig = obj.fig;
       
@@ -158,10 +162,12 @@ classdef plotlabeled < handle
         
         figs{i} = obj.fig;
         axes{i} = axs(:);
+        axes_indices{i} = repmat( i, numel(axs), 1 );
       end
       
       figs = vertcat( figs{:} );
       axes = vertcat( axes{:} );
+      axes_indices = vertcat( axes_indices{:} );
       
       obj.fig = current_fig;
     end
@@ -1125,8 +1131,11 @@ classdef plotlabeled < handle
         n_ticks = size( summary_mat, 1 );
         
         set( ax, 'xtick', 1:n_ticks );
-        set( ax, 'xticklabel', x_labs );
-        set( ax, 'xticklabelrotation', obj.x_tick_rotation );
+        
+        if ( obj.add_x_tick_labels )
+          set( ax, 'xticklabel', x_labs );
+          set( ax, 'xticklabelrotation', obj.x_tick_rotation );
+        end
         
         if ( strcmp(func_name, 'errorbar') )
           set( ax, 'xlim', [0, n_ticks+1] );
@@ -1201,7 +1210,6 @@ classdef plotlabeled < handle
           match_ind = matching_inds(j);
           
           if ( isnan(match_ind) )
-            d = 10;
             continue; 
           end
           
@@ -1240,6 +1248,12 @@ classdef plotlabeled < handle
             
             subset_values = values(full_ind);
             x_points = repmat( x_data(j) + x_offset, size(subset_values) );
+            
+            if ( obj.point_jitter > 0 )
+              jitter = (obj.point_jitter/2) - (obj.point_jitter * rand(numel(x_points), 1));
+              x_points = x_points + reshape( jitter, size(x_points) );
+            end
+            
             h_p = plot( ax, x_points, subset_values, plot_cmds{:} );
             set( h_p, 'color', color );  
             
