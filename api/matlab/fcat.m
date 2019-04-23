@@ -3335,8 +3335,8 @@ classdef fcat < handle
       import matlab.lang.makeValidName;
       
       try
-        if ( isa(rowc, 'fcat') ), rowc = cellstr( rowc )'; end
-        if ( isa(colc, 'fcat') ), colc = cellstr( colc )'; end
+        if ( ischar(rowc) || isa(rowc, 'fcat') ), rowc = cellstr( rowc )'; end
+        if ( ischar(colc) || isa(colc, 'fcat') ), colc = cellstr( colc )'; end
         
         validate( T, rowc, colc );
         

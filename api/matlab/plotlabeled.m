@@ -21,6 +21,7 @@ classdef plotlabeled < handle
     add_smoothing = false;
     add_points = false;
     add_x_tick_labels = true;
+    per_panel_labels = false;
     plot_empties = true;
     points_are = {};
     points_color_map = [];
@@ -44,6 +45,8 @@ classdef plotlabeled < handle
     y = [];
     sort_combinations = false;
     mask = 'off';
+    prefer_multiple_groups = false;
+    prefer_multiple_xs = false;
   end
   
   methods
@@ -477,7 +480,7 @@ classdef plotlabeled < handle
       set_lims( obj, axs, 'ylim', get_ylims(obj, axs) );
     end
     
-    function axs = boxplot(obj, data, labs, groups, panels)
+    function axs = boxplot(obj, data, labs, groups, panels, add_means)
       
       %   BOXPLOT -- Create box plots for subsets of data.
       %
@@ -514,6 +517,10 @@ classdef plotlabeled < handle
         throw( err );
       end
       
+      if ( nargin < 6 )
+        add_means = false;
+      end
+      
       labs = addcat( copy(labs), opts.specificity );
       M = get_mask( obj, length(labs) );
       
@@ -528,13 +535,38 @@ classdef plotlabeled < handle
         
         I = find( labs, opts.p_combs(i, :), M );
         
-        boxplot( ax, rowref(data, I), categorical(labs, g_cats, I) );
+        plt_dat = rowref( data, I );
+        plt_labs = categorical( labs, g_cats, I );
+        
+        boxplot( ax, plt_dat, plt_labs );
+        
+        if ( add_means )
+          plot_means( ax, data, labs, g_cats, I );       
+        end
         
         title( ax, opts.p_labs(i, :) );
         axs(i) = ax;
       end
       
       set_lims( obj, axs, 'ylim', get_ylims(obj, axs) );
+      
+      function plot_means(ax, dat, labs, g_cats, current_ind)
+        
+        g_I = findall( labs, g_cats, current_ind );
+        means = rowop( dat, g_I, @(x) nanmean(x, 1) );
+        
+        hold( ax, 'on' );
+        xtick = 1:numel( means );
+        
+        for j = 1:numel(xtick)
+          x0 = xtick(j) - 0.05;
+          x1 = xtick(j) + 0.05;
+          
+          ys = repmat( means(j), 1, 2 );
+          
+          plot( ax, [x0, x1], ys, 'b' );
+        end
+      end
       
       function validate_data(data, labs)
         plotlabeled.assert_isa( labs, 'fcat', 'data labels' );
@@ -931,6 +963,15 @@ classdef plotlabeled < handle
       %   ensure all categories exist.
       validate_categories( data, specificity );
       
+      if ( obj.prefer_multiple_groups )
+        [groups, panels, xcats] = maybe_redistribute( obj, getlabels(data), groups, panels, xcats );
+        specificity = [ xcats(:)', groups(:)', panels(:)' ];
+      end
+      if ( obj.prefer_multiple_xs )
+        [xcats, panels, groups] = maybe_redistribute( obj, getlabels(data), xcats, panels, groups );
+        specificity = [ xcats(:)', groups(:)', panels(:)' ];
+      end
+      
       if ( summarize )
         [summary, I, C] = each( copy(data), specificity, obj.summary_func );
         errors = each( copy(data), specificity, obj.error_func );
@@ -1029,6 +1070,44 @@ classdef plotlabeled < handle
       end
     end
     
+    function [target_cats, pcats, other_cats] = maybe_redistribute(obj, labels, target_cats, pcats, other_cats)
+      
+      n_targ = numel( findall(labels, target_cats) );
+      
+      if ( n_targ > 1 )
+        return
+      end
+      
+      non_scalar_pcats = try_find_non_scalar( labels, pcats );
+      
+      if ( ~isempty(non_scalar_pcats) )
+        pcats = setdiff( pcats, non_scalar_pcats );
+        target_cats = union( target_cats, non_scalar_pcats );
+      else
+        non_scalar_other_cats = try_find_non_scalar( labels, other_cats );
+
+        if ( ~isempty(non_scalar_other_cats) )
+          target_cats = union( target_cats, non_scalar_other_cats );
+          other_cats = setdiff( other_cats, non_scalar_other_cats );
+        end        
+      end
+      
+      function cats = try_find_non_scalar(labels, cats)
+        n_per_p = cellfun( @(x) numel(findall(labels, x)), cats );
+        is_non_scalar = n_per_p > 1;
+
+        if ( any(is_non_scalar) )
+          non_scalar_inds = find( is_non_scalar );
+          [~, min_ind] = min( n_per_p(non_scalar_inds) );        
+
+          cats = cats(non_scalar_inds(min_ind));
+        else
+          cats = {};
+        end
+      end
+      
+    end
+    
     function axs = groupplot(obj, func_name, varargin)
       
       %   GROUPPLOT -- Internal utility to plot grouped, row-vector data.
@@ -1110,7 +1189,14 @@ classdef plotlabeled < handle
               h = bar( summary_mat, 'stacked' );
             end
           case 'errorbar'
-            h = errorbar( summary_mat, errors_mat );
+            if ( size(summary_mat, 1) == 1 )
+              repeated = [ summary_mat; summary_mat ];
+              repeated_errs = [ errors_mat; errors_mat ];
+              
+              h = errorbar( ones(size(repeated)), repeated, repeated_errs );
+            else
+              h = errorbar( summary_mat, errors_mat );
+            end
           otherwise
             error( 'Unrecognized function name "%s".', func_name );
         end
@@ -1126,7 +1212,11 @@ classdef plotlabeled < handle
         summary_mat(:) = NaN;
         errors_mat(:) = NaN;
         
-        conditional_add_legend( obj, h, g_labs, i == 1 );
+        if ( obj.per_panel_labels )
+          add_per_panel_labels( h, g_labs );
+        else
+          conditional_add_legend( obj, h, g_labs, i == 1 );
+        end
         
         n_ticks = size( summary_mat, 1 );
         
@@ -1153,6 +1243,24 @@ classdef plotlabeled < handle
       end
       
       set_lims( obj, axs, 'ylim', get_ylims(obj, axs) );
+      
+      function add_per_panel_labels(h, g_labs)
+        if ( ~obj.add_legend )
+          return
+        end
+        
+        if ( ~strcmp(func_name, 'errorbar') )
+          return
+        end
+        
+        is_missing_series = arrayfun( @(x) all(columnize(isnan(x.YData))), h );
+        
+        if ( all(is_missing_series) )
+          return
+        end
+        
+        legend( h(~is_missing_series), g_labs(~is_missing_series) );
+      end
       
       function apply_fit(obj, ax, hs, summary_mat)
         np = get( ax, 'nextplot' );
@@ -1683,7 +1791,7 @@ classdef plotlabeled < handle
       if ( nargin < 4 ), alpha = 0.05; end
 
       hs = gobjects( size(ids) );
-      store_stats = zeros( numel(ids), 2 );
+      store_stats = nan( numel(ids), 2 );
 
       for i = 1:numel(ids)
         ax = ids(i).axes;
@@ -1691,6 +1799,10 @@ classdef plotlabeled < handle
 
         x = X(ind);
         y = Y(ind);
+        
+        if ( isempty(x) )
+          continue;
+        end
 
         [r, p] = corr( x, y, 'rows', 'complete' );
 
