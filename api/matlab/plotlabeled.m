@@ -964,11 +964,23 @@ classdef plotlabeled < handle
       validate_categories( data, specificity );
       
       if ( obj.prefer_multiple_groups )
-        [groups, panels, xcats] = maybe_redistribute( obj, getlabels(data), groups, panels, xcats );
+        if ( isa(data, 'labeled') )
+          tmp_labs = getlabels( data );
+        else
+          tmp_labs = data;
+        end
+        
+        [groups, panels, xcats] = maybe_redistribute( obj, tmp_labs, groups, panels, xcats );
         specificity = [ xcats(:)', groups(:)', panels(:)' ];
       end
       if ( obj.prefer_multiple_xs )
-        [xcats, panels, groups] = maybe_redistribute( obj, getlabels(data), xcats, panels, groups );
+        if ( isa(data, 'labeled') )
+          tmp_labs = getlabels( data );
+        else
+          tmp_labs = data;
+        end
+        
+        [xcats, panels, groups] = maybe_redistribute( obj, tmp_labs, xcats, panels, groups );
         specificity = [ xcats(:)', groups(:)', panels(:)' ];
       end
       

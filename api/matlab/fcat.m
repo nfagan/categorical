@@ -945,6 +945,8 @@ classdef fcat < handle
         end
         if ( ~ischar(categories) && numel(categories) > 0 )
           C = reshape( C, numel(categories), numel(C) / numel(categories) );
+        else
+          C = C(:)';
         end
       else
         if ( nargin == 3 )
