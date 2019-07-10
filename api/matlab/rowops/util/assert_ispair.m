@@ -6,11 +6,24 @@ function assert_ispair(data, labels)
 %     fcat object, or if `data` and `labels` do not have the same number of
 %     rows.
 %
-%     See also rowsmatch, rows, fcat
+%     assert_ispair( pair ); throws an error if `pair` is not a struct with
+%     fields 'data' and 'labels', or if those fields contain values that
+%     violate the above conditions.
 %
-%     IN:
-%       - `data` (/any/)
-%       - `labels` (/any/)
+%     See also rowsmatch, rows, fcat
+
+narginchk( 1, 2 );
+
+if ( nargin == 1 )
+  validateattributes( data, {'struct'}, {'scalar'}, mfilename, 'pair' );
+  
+  if ( ~all(isfield(data, {'data', 'labels'})) )
+    error( 'Pair must be a struct with fields ''data'' and ''labels''.' );
+  end
+ 
+  labels = data.labels;
+  data = data.data;
+end
 
 validateattributes( labels, {'fcat'}, {}, 'assert_ispair', 'labels' );
 assert_rowsmatch( data, labels, 'data', 'labels' );

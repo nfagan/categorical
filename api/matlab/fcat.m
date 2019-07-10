@@ -31,7 +31,7 @@ classdef fcat < handle
       %     FCAT object with categories set to values, see the static
       %     method `create`. To construct an FCAT object with empty 
       %     categories, see the static method `with`. To convert to FCAT
-      %     from a compatible source, such as a cell mtarix of strings or 
+      %     from a compatible source, such as a cell matrix of strings or 
       %     categorical matrix, see the static method `from`.
       %
       %     EX 1 //
@@ -81,11 +81,6 @@ classdef fcat < handle
       %     object functions if those progenitors match.
       %
       %     See also fcat/eq, fcat/findall
-      %
-      %     IN:
-      %       - `B` (/any/)
-      %     OUT:
-      %       - `tf` (logical)
 
       if ( ~isa(obj, 'fcat') || ~isa(B, 'fcat') )
         tf = false;
@@ -107,11 +102,6 @@ classdef fcat < handle
       %     same underlying object.
       %
       %     See also fcat/ne, fcat/findall
-      %
-      %     IN:
-      %       - `B` (/any/)
-      %     OUT:
-      %       - `tf` (logical)
       
       if ( ~isa(obj, 'fcat') || ~isa(B, 'fcat') )
         tf = false;
@@ -126,11 +116,6 @@ classdef fcat < handle
       %   NE -- True if objects are not fcat objects with equal contents.
       %
       %     See also fcat/eq
-      %
-      %     IN:
-      %       - `B` (/any/)
-      %     OUT:
-      %       - `tf` (logical)
       
       tf = ~eq( obj, B );
     end
@@ -142,9 +127,6 @@ classdef fcat < handle
       %     N = numel( obj ) is equivalent to N = prod( size(obj) );
       %
       %     See also fcat/size, fcat/length
-      %
-      %     OUT:
-      %       - `n` (uint64)
       
       n = prod( size(varargin{1}), 'native' );  %#ok<PSIZE>
     end
@@ -154,9 +136,6 @@ classdef fcat < handle
       %   ISEMPTY -- True if the object has 0 rows.
       %
       %     See also fcat/size, fcat/length
-      %
-      %     OUT:
-      %       - `tf` (logical)
       
       tf = length( obj ) == 0;      %#ok<ISMT>
     end
@@ -167,11 +146,6 @@ classdef fcat < handle
       %
       %     l = length( obj ) returns the number of rows in `obj`, and is
       %     equivalent to `size(obj, 1)`.
-      %
-      %     See also fcat/size, fcat/numel
-      %
-      %     OUT:
-      %       - `l` (uint64)
       
       l = size( obj, 1 );
     end
@@ -190,11 +164,6 @@ classdef fcat < handle
       %     dimensions > 2 is 1.
       %
       %     See also fcat/numel, fcat/length, fcat/getlabs
-      %
-      %     IN:
-      %       - `dimension` |OPTIONAL| (numeric)
-      %     OUT:
-      %       - `sz` (uint64)
       
       if ( nargin == 1 )
         if ( isvalid(obj) )
@@ -240,12 +209,6 @@ classdef fcat < handle
     function s = end(obj, ind, N)
       
       %   END -- Get the final index in a given dimension.
-      %
-      %     IN:
-      %       - `ind` (double)
-      %       - `N` (double)
-      %     OUT:
-      %       - `s` (double)
       
       s = size( obj, ind );
     end
@@ -253,11 +216,6 @@ classdef fcat < handle
     function n = nlabs(obj)
       
       %   NLABS -- Get the current number of labels.
-      %
-      %     See also fcat/size, fcat/ncats, fcat/numel
-      %
-      %     OUT:
-      %       - `n` (uint64)
       
       n = cat_api( 'n_labs', obj.id );      
     end
@@ -265,11 +223,6 @@ classdef fcat < handle
     function n = ncats(obj)
       
       %   NCATS -- Get the current number of categories.
-      %
-      %     See also fcat/size, fcat/nlabs, fcat/length
-      %
-      %     OUT:
-      %       - `n` (uint64)
       
       n = cat_api( 'n_cats', obj.id );      
     end
@@ -288,12 +241,6 @@ classdef fcat < handle
       %     uint64 index vector `inds`.
       %
       %     See also fcat/find, fcat/prune
-      %
-      %     IN:
-      %       - `labels` (char, cell array of strings)
-      %       - `inds` (uint64) |OPTIONAL|
-      %     OUT:
-      %       - `c` (uint64)
       
       if ( nargin == 2 )
         c = cat_api( 'count', obj.id, labels );
@@ -314,12 +261,6 @@ classdef fcat < handle
       %     strings. Each column `i` of `C` is associated with each `c(i)`.
       %
       %     See also fcat/keepeach, fcat/findall, fcat/count
-      %
-      %     IN:
-      %       - `categories` (cell array of strings, char)
-      %     OUT:
-      %       - `c` (uint64)
-      %       - `C` (cell array of strings)
       
       if ( nargout == 1 )
         I = findall( obj, categories );
@@ -342,9 +283,6 @@ classdef fcat < handle
       %     effect.
       %
       %     See also fcat/size
-      %
-      %     IN:
-      %       - `to` (uint64)
       
       cat_api( 'resize', obj.id, uint64(to) );      
     end
@@ -357,9 +295,6 @@ classdef fcat < handle
       %     repeat( obj, 0 ) has no effect.
       %
       %     See also fcat/resize, fcat/repmat
-      %
-      %     IN:
-      %       - `n_times` (uint64, double)
       
       cat_api( 'repeat', obj.id, uint64(n_times) );      
     end
@@ -373,9 +308,6 @@ classdef fcat < handle
       %     repmat( obj, 0 ) is equivalent to keep( obj, [] );
       %
       %     See also fcat/repeat, fcat/resize
-      %
-      %     IN:
-      %       - `varargin`
       
       narginchk( 2, Inf );
       
@@ -408,10 +340,6 @@ classdef fcat < handle
       %     repset( f, 'city', {'NYC', 'Buffalo', 'Albany'} )
       %
       %     See also fcat/repmat, fcat/setcat, fcat/resize
-      %
-      %     IN:
-      %       - `cat` (char)
-      %       - `to` (cell array of strings, char)
 
       if ( ~iscell(to) ), to = { to }; end
       
@@ -453,10 +381,6 @@ classdef fcat < handle
       %     output of `getcats`.
       %
       %     See also fcat/subsref, fcat/fcat, fcat/getcats
-      %
-      %     IN:
-      %       - `s` (struct)
-      %       - `values` (/any/)
       
       try
         switch ( s(1).type )
@@ -604,11 +528,6 @@ classdef fcat < handle
       %     c = obj(:) creates a copy of `obj`.
       %
       %     See also fcat/subsasgn, fcat/fcat, fcat/getcats
-      %
-      %     IN:
-      %       - `s` (struct)
-      %     OUT:
-      %       - `varargout` (cell)
       
       subs = s(1).subs;
       type = s(1).type;
@@ -759,11 +678,6 @@ classdef fcat < handle
       %     Note that no bounds checking is applied to `indices`.
       %
       %     See also fcat/find, fcat/keep
-      %
-      %     IN:
-      %       - `indices` (uint64)
-      %     OUT:
-      %       - `tf` (logical)
       
       tf = false( size(obj, 1), 1 );
       tf(indices) = true;
@@ -791,12 +705,6 @@ classdef fcat < handle
       %     f3 = only( copy(f), {'a', 'c'} )
       %
       %     See also fcat/keep, fcat/find
-      %
-      %     IN:
-      %       - `labels` (cell array of strings, char)
-      %     OUT:
-      %       - `obj` (fcat)
-      %       - `I` (uint64)
       
       I = find( obj, labels );
       keep( obj, I );
@@ -826,12 +734,6 @@ classdef fcat < handle
       %     f2 = onlynot( copy(f), {'a', 'c'} )
       %
       %     See also fcat/only, fcat/keep, fcat/find
-      %
-      %     IN:
-      %       - `labels` (cell array of strings, char)
-      %     OUT:
-      %       - `obj` (fcat)
-      %       - `I` (uint64)
       
       to_rm = find( obj, labels );
       to_keep = setdiff( 1:size(obj, 1), to_rm );
@@ -859,12 +761,6 @@ classdef fcat < handle
       %     f2 = remove( copy(f), {'a', 'd'} )
       %
       %     See also fcat/keep, fcat/find, fcat/only, fcat/onlynot
-      %
-      %     IN:
-      %       - `labels` (cell array of strings, char)
-      %     OUT:
-      %       - `obj` (fcat)
-      %       - `I` (uint64)
       
       I = cat_api( 'remove', obj.id, labels );
     end
@@ -879,9 +775,6 @@ classdef fcat < handle
       %     in that order.
       %
       %     See also fcat/fcat, fcat/findall
-      %
-      %     IN:
-      %       - `indices` (uint64)
       
       cat_api( 'keep', obj.id, uint64(indices) );     
     end
@@ -902,11 +795,19 @@ classdef fcat < handle
       
       %   KEEPEACH -- Retain one row for each combination of labels.
       %
-      %     keepeach( obj, {'cities', 'states'} ) retains one row of labels
-      %     for each combination of categories 'cities' and 'states'.
-      %     Additional categories of `obj` are collapsed if, for a given
-      %     combination of 'cities' and 'states', more than one label of
-      %     the category is identified by that combination.
+      %     keepeach( obj, category ), for the char vector or scalar cell
+      %     array of strings `category`, retains one row for each unique
+      %     label in `category`. At each new row, for each remaining
+      %     category, the remaining category will either retain its 
+      %     original value, or be set to the collapsed expression 
+      %     for that category. A remaining category will retain its original 
+      %     row label if the corresponding row label in `category` would 
+      %     match the same set of row indices in `obj`; otherwise, it is
+      %     collapsed. 
+      %
+      %     keepeach( obj, categories ), for the cell array of strings
+      %     `categories`, works by extension of the above, retaining one
+      %     row for each unique combination of labels in `categories`.
       %
       %     keepeach( ..., inds ) restricts the search to the subset of
       %     rows identified by the uint64 index vector `inds`.
@@ -920,22 +821,22 @@ classdef fcat < handle
       %     EX //
       %
       %     f1 = fcat.create( ...
-      %         'cities', {'NYC', 'NYC', 'Santa Fe'} ...
-      %       , 'states', {'NY', 'NY', 'NM'} ...
-      %       , 'attractions', {'met', 'moma', 'nmart'} ...
+      %         'city', {'NYC', 'NYC', 'Santa Fe'} ...
+      %       , 'attraction', {'met', 'moma', 'nmart'} ...
       %     )
       %
-      %     f2 = keepeach( copy(f1), 'cities' )
-      %     f3 = keepeach( copy(f1), 'attractions' )
+      %     % One row is kept for each 'city'. Because there is
+      %     % more than one 'attraction' associated with the city 'NYC',
+      %     % the 'attraction' category is set to the category's collapsed
+      %     % expression, '<attraction>', for that row.
+      %     f2 = keepeach( copy(f1), 'city' )
       %
-      %     See also fcat/findall
+      %     % One row is kept for each 'attraction'. But because each
+      %     % 'attraction' is only ever associated with one 'city', the
+      %     % 'city' category needn't ever be collapsed.
+      %     f3 = keepeach( copy(f1), 'attraction' )
       %
-      %     IN:
-      %       - `categories` (char, cell array of strings)
-      %     OUT:
-      %       - `obj` (fcat) -- Modified object.
-      %       - `I` (cell array of uint64)
-      %       - `C` (cell array of strings)
+      %     See also fcat/findall, fcat/collapsecat
       
       if ( nargout > 2 )
         if ( nargin == 3 )
@@ -959,8 +860,8 @@ classdef fcat < handle
     
     function varargout = keepeach_or_one(obj, varargin)
       
-      %   KEEPEACH_OR_ONE -- Like keepeach, but take empty categories to
-      %     mean "collapse across all", instead of "include none".
+      %   KEEPEACH_OR_ONE -- Retain one row for each combination of labels,
+      %     or a single row across all categories.
       %
       %     B = keepeach_or_one( copy(A), categories ) is the same as 
       %     B = keepeach( copy(A), categories ), except in the case that
@@ -1041,10 +942,6 @@ classdef fcat < handle
       %     `I` such that `obj(I) == B`.
       %
       %     See also sortrows, fcat/unique
-      %
-      %     OUT:
-      %       - `obj` (fcat)
-      %       - `I` (uint64)
       
       [~, I] = sortrows( categorical(obj) );
       keep( obj, I );
@@ -1052,26 +949,35 @@ classdef fcat < handle
     
     function C = combs(obj, categories, inds)
       
-      %   COMBS -- Get present combinations of labels in categories.
+      %   COMBS -- Combinations of labels in categories.
       %
-      %     C = combs( obj ) returns an MxN cell array of N label
-      %     combinations in M categories.
+      %     C = combs( obj, category ), where `category` is a char vector
+      %     or scalar cell array of strings, returns a 1xN cell array of
+      %     strings containing the unique labels in `category`.
       %
-      %     C = combs( obj, 'cat1' ) returns the unique labels in 'cat1'.
+      %     C = combs( obj, categories ), where `categories` is a cell
+      %     array of strings, works by extension of the above such that `C`
+      %     is an MxN cell array of N label combinations drawn from `M`
+      %     `categories`.
       %
-      %     C = combs( obj, {'cat1', 'cat2'} ) returns a 2xN cell array of
-      %     N label combinations in categories 'cat1' and 'cat2'.
+      %     C = combs( ..., inds ) returns combinations in the subset
+      %     of rows given by the uint64 index vector `inds`.
       %
-      %     C = combs( ..., inds ) returns the combinations in the subset
-      %     of rows identified by the uint64 index vector `inds`.
+      %     C = combs( obj ) returns the combinations across all categories
+      %     of `obj`.
       %
-      %     See also fcat/findall
+      %     If a given category does not exist in `obj`, then `C` is empty.
+      % 
+      %     Note that the combinations in `C` are not sorted; their order
+      %     is given by the order of their appearence in `obj`.
       %
-      %     IN:
-      %       - `categories` (char, cell array of strings)
-      %       - `inds` (uint64) |OPTIONAL|
-      %     OUT:
-      %       - `cmbs` (uint32)
+      %     EX //
+      %
+      %     f = fcat.example();
+      %     doses = combs( f, 'dose' );
+      %     doses_rois = combs( f, {'dose', 'roi'} );
+      %
+      %     See also fcat/findall, fcat/keepeach, fcat/find
       
       if ( nargin == 1 )
         categories = getcats( obj );
@@ -1086,14 +992,21 @@ classdef fcat < handle
     
     function [I, C] = findall(obj, categories, inds)
       
-      %   FINDALL -- Get indices of combinations of labels in categories.
+      %   FINDALL -- Find indices of combinations of labels in categories.
       %
-      %     I = findall( obj, {'a', 'b'} ) returns a cell array of uint64 
-      %     indices `I`, where each index in I identifies a unique
-      %     combination of labels in categories 'a' and 'b'.
+      %     I = findall( obj, category ), for the char vector or scalar 
+      %     cell array of strings `category`, returns an Mx1 cell array of 
+      %     uint64 index vectors `I`. Each index is the set of row indices 
+      %     matching one of `M` unique labels in the given `category`.
       %
-      %     I = findall( ..., inds ) searches the subset of rows identified
-      %     by the uint64 index vector `inds`.
+      %     I = findall( obj, categories ), where `categories` is a cell
+      %     array of strings, works by extension of the above such that 
+      %     each index is the set of row indices matching one of M unique 
+      %     combinations of labels in `categories`.
+      %
+      %     I = findall( ..., inds ) searches the subset of rows given by
+      %     the uint64 index vector `inds`, such that each element of `I` 
+      %     is a unique subset of `inds`.
       %
       %     I = findall( obj ) finds all possible combinations of labels in
       %     all categories.
@@ -1102,14 +1015,15 @@ classdef fcat < handle
       %     N combinations, where each column `i` of C identifies the
       %     labels used to generate the i-th index of I.
       %
-      %     See also fcat/combs, fcat/find
+      %     If a given category does not exist in `obj`, then `I` is empty.
       %
-      %     IN:
-      %       - `categories` (char, cell array of strings)
-      %       - `inds` (uint64) |OPTIONAL|
-      %     OUT:
-      %       - `I` (cell array of uint64)
-      %       - `C` (cell array of strings)
+      %     EX //
+      %
+      %     f = fcat.example();
+      %     dose_I = findall( f, 'dose' );
+      %     [dose_roi_I, dose_roi_C] = findall( f, {'dose', 'roi'} );
+      %
+      %     See also fcat/keepeach, fcat/combs, fcat/find
       
       if ( nargin < 2 )
         categories = getcats( obj );
@@ -1138,14 +1052,15 @@ classdef fcat < handle
     
     function I = findall_or_one(obj, varargin)
       
-      %   FINDALL_OR_ONE -- Like findall, but take empty categories to
-      %     mean "across all", instead of "include none".
+      %   FINDALL_OR_ONE -- Find indices of combinations of labels in 
+      %     categories, or single index across categories.
       %
       %     B = findall_or_one( A, categories ) is the same as 
       %     B = findall( A, categories ), except in the case that
       %     `categories` is the empty cell array ({}). In that case,
-      %     findall_or_one returns a 1x1 cell array containing all the 
-      %     indices into A, whereas findall returns an empty cell array. 
+      %     findall_or_one returns a scalar cell array containing all the 
+      %     indices into A (1:rows(A)), whereas findall returns an empty 
+      %     cell array.
       %     
       %     In other words, findall_or_one takes "no categories" ({}) to 
       %     mean "across all categories", whereas findall takes that same 
@@ -1176,7 +1091,7 @@ classdef fcat < handle
         categories = varargin{1};
       end
       
-      if ( iscell(categories) && isempty(categories) )
+      if ( iscell(categories) && isempty(categories) && ~isempty(obj) )
         % findall_or_one( obj, {}, ... )        
         if ( nargin > 2 )
           % findall_or_one( obj, {}, mask )
@@ -1193,23 +1108,29 @@ classdef fcat < handle
     
     function I = find(obj, labels, inds)
       
-      %   FIND -- Get indices of rows matching label combination.
+      %   FIND -- Find indices of rows matching label combination.
       %
-      %     I = find( obj, 'a' ) returns indices of rows identified by the 
-      %     label 'a'.
+      %     I = find( obj, label ) returns indices of rows matching
+      %     `label`, a char vector or scalar cell array of strings. `I` is
+      %     a uint64 column vector.
       %
-      %     I = find( obj, {'a', 'b'} ) returns indices of rows identified 
-      %     by the label combination {'a', 'b'}. If 'a' and 'b' reside in 
-      %     the same category, `I` will index rows associated with 'a' OR 
-      %     'b'. If 'a' and 'b' reside in different categories, `I` will 
-      %     index rows associated with 'a' AND 'b'.
+      %     I = find( obj, labels ) returns indices of rows that match the
+      %     label combination `labels`, a cell array of strings. If any
+      %     entry in `labels` does not exist in `obj`, `I` is empty.
+      %     Otherwise, entries in `labels` are grouped by the category(ies)
+      %     in which they reside. Within a category, `find` matches any of 
+      %     the entries in that category. Across categories, `find` returns 
+      %     the intersection of each category's matched indices.
+      %
+      %     For example, find(obj, {'ny', 'la'}), where 'ny' and 'la' 
+      %     reside in the same category, returns indices of rows matching
+      %     'ny' or 'la'. find(obj, {'ny', 'la', 'ford'}), where 'ford'
+      %     resides in a different category than 'ny' and 'la', returns
+      %     indices of rows matching ('ny' or 'la') and ('ford').
       %
       %     I = find( ..., inds ) restricts the search to the subset of
-      %     rows identified by the uint64 index vector `inds`.
-      %
-      %     Formally, within a category, indices are calculated via an 
-      %     `or` operation; across categories, indices are calculated via 
-      %     an `and` operation.
+      %     rows identified by the uint64 index vector `inds`, such that
+      %     `I` is a subset of `inds`.
       %
       %     EX //
       %
@@ -1219,12 +1140,6 @@ classdef fcat < handle
       %     find( f, {'a', 'c'} )
       %
       %     See also fcat/findall, fcat/findor, fcat/findnot, fcat/getlabs
-      %
-      %     IN:
-      %       - `labels` (cell array of strings, char)
-      %       - `inds` (uint64) |OPTIONAL|
-      %     OUT:
-      %       - `inds` (uint32)
       
       if ( nargin < 3 )
         I = cat_api( 'find', obj.id, labels );
@@ -1235,14 +1150,21 @@ classdef fcat < handle
     
     function I = findor(obj, labels, inds)
       
-      %   FINDOR -- Get indices of rows matching any among labels.
+      %   FINDOR -- Find indices of rows matching any among labels.
       %
-      %     I = findor( obj, {'a', 'b', 'c'} ) returns indices associated
-      %     with any among 'a', 'b' and 'c'. If all labels reside in the 
-      %     same category, the output is equivalent to `find`.
+      %     I = findor( obj, label ) returns indices of rows matching
+      %     `label`, a char vector or scalar cell array of strings. `I` is
+      %     a uint64 column vector.
+      %
+      %     I = findor( obj, labels ) returns indices of rows matching any 
+      %     among the entries in `labels`, a cell array of strings. Entries
+      %     in `labels` that do not exist in `obj` are skipped.
       %
       %     I = findor( ..., inds ) searches the subset of rows identified 
-      %     by the uint64 index vector `inds`.
+      %     by the uint64 index vector `inds`, such that `I` is a subset of
+      %     `inds`.
+      %
+      %     `findor` is the logical opposite of `findnone`.
       %
       %     EX //
       %
@@ -1251,12 +1173,6 @@ classdef fcat < handle
       %     findor( f, {'a', 'd'} )
       %
       %     See also fcat/find, fcat/findnone, fcat/findall
-      %
-      %     IN:
-      %       - `labels` (cell array of strings, char)
-      %       - `inds` (uint64) |OPTIONAL|
-      %     OUT:
-      %       - `inds` (uint32)
       
       if ( nargin < 3 )
         I = cat_api( 'find_or', obj.id, labels );
@@ -1267,20 +1183,34 @@ classdef fcat < handle
     
     function I = findnot(obj, labels, inds)
       
-      %   FINDNOT -- Get indices of rows not matching label combination.
+      %   FINDNOT -- Find indices of rows not matching label combination.
       %
-      %     I = findnot( obj, 'a' ) returns indices of rows of `obj` not
-      %     matching 'a'.
+      %     I = findnot( obj, label ) returns indices of rows that do not
+      %     match `label`, a char vector or scalar cell array of strings. 
+      %     `I` is a uint64 column vector.
       %
-      %     I = findnot( obj, {'a', 'b'} ) returns indices of rows not 
-      %     matching the label combination {'a', 'b'}. If 'a' and 'b' 
-      %     reside in the same category, `I` will index all rows, except
-      %     those matching 'a' OR 'b'. If 'a' and 'b' reside in different 
-      %     categories, `I` will index all rows, except those matching 
-      %     'a' AND 'b'.
+      %     I = findnot( obj, labels ) returns indices of all rows, except
+      %     those matching the label combination `labels`. If any of the
+      %     entries in `labels` does not exist in `obj`, then `I` is the
+      %     complete set of row indices, `1:size(labels, 1)`. Otherwise, 
+      %     entries of `labels` are grouped by the category(ies) in which 
+      %     they reside. Within a category, any of the entries in
+      %     that category are matched; across categories, the intersection
+      %     of all categories' matches is computed. `findnot` then returns
+      %     the remaining unmatched indices.
+      %
+      %     For example, findnot(obj, {'ny', 'la'}), where 'ny' and 'la' 
+      %     reside in the same category, returns indices of all rows of 
+      %     `obj`, except those matching 'ny' or 'la'. 
+      %
+      %     findnot(obj, {'ny', 'la', 'ford'}), where 'ford'
+      %     resides in a different category than 'ny' and 'la', returns
+      %     indices of all rows of `obj`, except those matching 
+      %     ('ny' or 'la') and ('ford').
       %
       %     I = findnot( ..., inds ) restricts the search to the subset of
-      %     rows identified by the uint64 index vector `inds`.
+      %     rows identified by the uint64 index vector `inds`, such that
+      %     `I` is a subset of `inds`.
       %
       %     `findnot` is the logical opposite of `find`.
       %
@@ -1292,12 +1222,6 @@ classdef fcat < handle
       %     findnot( f, {'a', 'c'} )
       %
       %     See also fcat/find, fcat/findnone, fcat/getlabs, fcat/getcats
-      %
-      %     IN:
-      %       - `labels` (cell array of strings, char)
-      %       - `inds` (uint64) |OPTIONAL|
-      %     OUT:
-      %       - `inds` (uint32)
       
       if ( nargin < 3 )
         I = cat_api( 'find_not', obj.id, labels );
@@ -1308,14 +1232,19 @@ classdef fcat < handle
     
     function I = findnone(obj, labels, inds)
       
-      %   FINDNONE -- Get indices of rows not matching any among labels.
+      %   FINDNONE -- Find indices of rows not matching any among labels.
       %
-      %     I = findnone( obj, {'a', 'b', 'c'} ) returns indices of rows 
-      %     not matching 'a', 'b', or 'c'. If all labels reside in the same 
-      %     category, the output is equivalent to `findnot`.
+      %     I = findnone( obj, label ) returns indices of rows that do not
+      %     match `label`, a char vector or scalar cell array of strings. 
+      %     `I` is a uint64 column vector.
+      %
+      %     I = findnone( obj, labels ) returns indices of rows that do not
+      %     match any among the entries in `labels`, a cell array of
+      %     strings.
       %
       %     I = findnone( ..., inds ) searches the subset of rows 
-      %     identified by the uint64 index vector `inds`.
+      %     identified by the uint64 index vector `inds`, such that `I` is
+      %     a subset of `inds`.
       %
       %     `findnone` is the logical opposite of `findor`.
       %
@@ -1326,12 +1255,6 @@ classdef fcat < handle
       %     findnone( f, {'a', 'd'} )
       %
       %     See also fcat/findor, fcat/findnot
-      %
-      %     IN:
-      %       - `labels` (cell array of strings, char)
-      %       - `inds` (uint64) |OPTIONAL|
-      %     OUT:
-      %       - `inds` (uint32)
       
       if ( nargin < 3 )
         I = cat_api( 'find_none', obj.id, labels );
@@ -1354,11 +1277,6 @@ classdef fcat < handle
       %     else a category with 0 rows.
       %
       %     See also fcat/getlabs, fcat/fcat
-      %
-      %     IN:
-      %       - `flag` (char) |OPTIONAL|
-      %     OUT:
-      %       - `C` (cell array of strings)
       
       if ( nargin == 1 )
         C = cat_api( 'get_cats', obj.id );
@@ -1379,9 +1297,6 @@ classdef fcat < handle
       %   CATEGORIES -- Get category names.
       %
       %     See also fcat/getcats, fcat/getlabs, fcat/fcat
-      %
-      %     OUT:
-      %       - `C` (cell array of strings)
       
       C = getcats( obj, varargin{:} );
     end
@@ -1391,9 +1306,6 @@ classdef fcat < handle
       %   GETLABS -- Get label names.
       %
       %     See also fcat/getcats, fcat/fcat
-      %
-      %     OUT:
-      %       - `L` (cell array of strings)
       
       L = cat_api( 'get_labs', obj.id );      
     end
@@ -1403,9 +1315,6 @@ classdef fcat < handle
       %   GETID -- Get unique instance id.
       %
       %     See also fcat/getlabs
-      %
-      %     OUT:
-      %       - `id` (uint64)
       
       id = obj.id;
     end
@@ -1415,11 +1324,6 @@ classdef fcat < handle
       %   HASLAB -- True if label(s) exists.
       %
       %     See also fcat/hascat, fcat/fcat
-      %
-      %     IN:
-      %       - `labels` (char, cell array of strings)
-      %     OUT:
-      %       - `tf` (logical)
       
       tf = cat_api( 'has_lab', obj.id, labels );      
     end
@@ -1429,11 +1333,6 @@ classdef fcat < handle
       %   HASLAB -- True if category(ies) exists.
       %
       %     See also fcat/haslab, fcat/fcat
-      %
-      %     IN:
-      %       - `categories` (char, cell array of strings)
-      %     OUT:
-      %       - `tf` (logical)
       
       tf = cat_api( 'has_cat', obj.id, categories );      
     end
@@ -1452,12 +1351,6 @@ classdef fcat < handle
       %     empty, `tf` is false for all categories.
       %
       %     See also fcat/getcats, fcat/hascat
-      %
-      %     IN:
-      %       - `categories` (cell array of strings, char)
-      %       - `inds` (uint64) |OPTIONAL|
-      %     OUT:
-      %       - `tf` (logical)
       
       if ( nargin == 2 )
         tf = cat_api( 'is_uniform_cat', obj.id, categories );
@@ -1471,11 +1364,6 @@ classdef fcat < handle
       %   FULLCAT -- Get complete category or categories.
       %
       %     See also fcat/setcat
-      %
-      %     IN:
-      %       - `categories` (char, cell array of strings)
-      %     OUT:
-      %       - `C` (cell array of strings)
       
       C = cat_api( 'full_cat', obj.id, categories );
       
@@ -1489,10 +1377,6 @@ classdef fcat < handle
       %   PARTCAT -- Get part of a category or categories.
       %
       %     See also fcat/fullcat, fcat/fcat
-      %
-      %     IN:
-      %       - `categories` (char)
-      %       - `indices` (uint64)
       
       C = cat_api( 'partial_cat', obj.id, categories, uint64(indices) );
       
@@ -1511,11 +1395,6 @@ classdef fcat < handle
       %     and 'cat2'. The order of labels in `C` is undefined.
       %
       %     See also fcat/fullcat
-      %
-      %     IN:
-      %       - `category` (char, cell array of strings)
-      %     OUT:
-      %       - `C` (cell array of strings)
       
       if ( ischar(category) )
         C = cat_api( 'in_cat', obj.id, category );
@@ -1537,11 +1416,6 @@ classdef fcat < handle
       %     filter out non-present labels.
       %
       %     See also fcat/incat, fcat/addcat
-      %
-      %     IN:
-      %       - `labels` (char, cell array of strings)
-      %     OUT:
-      %       - `C` (cell array of strings)
       
       C = cat_api( 'which_cat', obj.id, labels );
     end
@@ -1559,12 +1433,6 @@ classdef fcat < handle
       %     underscore.
       %
       %     See also fcat/incat, fcat/combs
-      %
-      %     IN:
-      %       - `categories` (char, cell array of strings)
-      %       - `pattern` (char) |OPTIONAL|
-      %     OUT:
-      %       - `str` (char)
       
       if ( nargin < 3 ), pattern = '_'; end
       
@@ -1589,9 +1457,6 @@ classdef fcat < handle
       %     Attempting to add ':' as a category is an error.
       %
       %     See also fcat/findall, fcat/fcat
-      %
-      %     IN:
-      %       - `category` (cell array of strings, char)
       
       cat_api( 'add_cat', obj.id, category );      
     end
@@ -1601,9 +1466,6 @@ classdef fcat < handle
       %   REQUIRECAT -- Add category if it does not exist.
       %
       %     See also fcat/addcat, fcat/findall
-      %
-      %     IN:
-      %       - `category` (char, cell array of strings)
       
       cat_api( 'require_cat', obj.id, category );
     end
@@ -1616,10 +1478,6 @@ classdef fcat < handle
       %     setcat( addcat(obj, CAT), CAT, to ).
       %
       %     See also fcat/addcat, fcat/setcat
-      %
-      %     IN:
-      %       - `cat` (cell array of strings, char)
-      %       - `varargin` (/any/)
       
       addcat( obj, cat );
       setcat( obj, cat, varargin{:} );
@@ -1636,9 +1494,6 @@ classdef fcat < handle
       %     that isempty(obj) returns true.
       %
       %     See also fcat/addcat
-      %
-      %     IN:
-      %       - `category` (char, cell array of strings)
       
       cat_api( 'rm_cat', obj.id, category );
     end
@@ -1656,10 +1511,6 @@ classdef fcat < handle
       %     in the to-be-renamed category.
       %
       %     See also fcat/addcat, fcat/fcat, fcat/collapsecat
-      %
-      %     IN:
-      %       - `from` (char)
-      %       - `to` (char)
       
       cat_api( 'rename_cat', obj.id, from, to );
     end
@@ -1679,9 +1530,6 @@ classdef fcat < handle
       %     indicate the absence of a specific label in that category.
       %
       %     See also fcat/addcat, fcat/makecollapsed, fcat/keepeach
-      %
-      %     IN:
-      %       - `category` (char, cell array of strings)
       
       cat_api( 'collapse_cat', obj.id, category );
     end
@@ -1699,11 +1547,6 @@ classdef fcat < handle
       %     indicate the absence of a specific label in that category.
       %
       %     See also fcat/collapsecat, fcat/keepeach, fcat/one, fcat/fcat
-      %
-      %     IN:
-      %       - `categories` (cell array of strings, char)
-      %     OUT:
-      %       - `s` (cell array of strings, char)
       
       func = @(x) sprintf( '<%s>', x );
       
@@ -1737,7 +1580,7 @@ classdef fcat < handle
       %     none( obj ) keeps 0 rows of `obj`, but does not remove labels
       %     from `obj`, and is equivalent to keep( obj, [] ).
       %
-      %     See also fcat/one, fcat/fcat
+      %     See also fcat/one, fcat/fcat, fcat/empty
       
       keep( obj, [] );
     end
@@ -1771,10 +1614,6 @@ classdef fcat < handle
       %     'hi' are set to 'hello'.
       %
       %     See also fcat/requirecat, fcat/fillcat
-      %
-      %     IN:
-      %       - `category` (char)
-      %       - `to` (cell array of strings)
       
       if ( nargin == 3 )
         if ( ischar(category) )
@@ -1796,10 +1635,6 @@ classdef fcat < handle
       %   SETCATS -- Assign values to categories.
       %
       %     See also fcat/subsref, fcat/setcat
-      %
-      %     IN:
-      %       - `categories` (char, cell array of strings)
-      %       - `to` (cell array of strings)
       
       if ( nargin == 3 )
         cat_api( 'set_cats', obj.id, categories, to );
@@ -1816,10 +1651,6 @@ classdef fcat < handle
       %     category 'cities'.
       %
       %     See also fcat/setcat
-      %
-      %     IN:
-      %       - `cat` (char)
-      %       - `lab` (char)
       
       cat_api( 'fill_cat', obj.id, cat, lab );      
     end
@@ -1836,10 +1667,6 @@ classdef fcat < handle
       %     for multiple labels.
       %
       %     See also fcat/fillcat, fcat/renamecat
-      %
-      %     IN:
-      %       - `from` (cell array of strings, char)
-      %       - `with` (char)
       
       cat_api( 'replace', obj.id, from, with );      
     end
@@ -1908,10 +1735,6 @@ classdef fcat < handle
       %     were removed.
       %
       %     See also fcat/keep, categorical/removecats
-      %
-      %     OUT:
-      %       - `obj` (fcat)
-      %       - `n` (uint64)
       
       n = cat_api( 'prune', obj.id );
     end
@@ -1931,10 +1754,6 @@ classdef fcat < handle
       %     objects must reside in consistent categories.
       %
       %     See also fcat/join, fcat/append1, fcat/fcat
-      %
-      %     IN:
-      %       - `B` (fcat)
-      %       - `inds` (uint64) |OPTIONAL|
       
       if ( ~isa(obj, 'fcat') )
         error( 'Cannot append objects of class "%s".', class(obj) );
@@ -1965,7 +1784,7 @@ classdef fcat < handle
       %     append1( A, B, I, REPS ) appends `REPS` replications of the
       %     single collapsed row of `B`.
       %
-      %     append1( A, B ) is the same as append( A, one(B(:)) ), but
+      %     append1( A, B ) is the same as append( A, one(copy(B)) ), but
       %     is generally much faster, since it avoids copying `B`.
       %
       %     append1( A, B, 1:10 ) is the same as append( A, one(B(1:10)) ).
@@ -1980,10 +1799,6 @@ classdef fcat < handle
       %     E = append1( A', B, find(B, 'image') )
       %
       %     See also fcat/one, fcat/append, fcat/collapsecat
-      %
-      %     IN:
-      %       - `B` (fcat)
-      %       - `inds` (uint64) |OPTIONAL|
       
       if ( ~isa(obj, 'fcat') )
         error( 'Cannot append objects of class "%s".', class(obj) );
@@ -2023,24 +1838,20 @@ classdef fcat < handle
       %     merge( A, B )
       %
       %     See also fcat/join, fcat/assign, fcat/setcat, fcat/fcat
-      %
-      %     IN:
-      %       - `B` (fcat)
       
       if ( ~isa(obj, 'fcat') )
         error( 'Cannot merge objects of class "%s".', class(obj) );
       end
       
-      try
-        cellfun( @(x) assert(isa(x, 'fcat'), ['Cannot merge objects of' ...
-          , ' class "%s".'], class(x)), varargin );
-      catch err
-        throwAsCaller( err );
-      end
-      
       N = numel( varargin );
       
       for i = 1:N
+        b_obj = varargin{i};
+        
+        if ( ~isa(b_obj, 'fcat') )
+          error( 'Cannot merge objects of class "%s".', class(b_obj) );
+        end
+        
         cat_api( 'merge', obj.id, varargin{i}.id );
       end
     end
@@ -2052,9 +1863,6 @@ classdef fcat < handle
       %     MERGENEW is not recommended. Use `join` instead.
       %
       %     See also fcat/join.
-      %
-      %     IN:
-      %       - `B` (fcat)
       
       obj = join( obj, varargin{:} );
     end
@@ -2083,9 +1891,6 @@ classdef fcat < handle
       %     D = merge( copy(A), B )
       %
       %     See also fcat/merge, fcat/assign, fcat/setcat, fcat/fcat
-      %
-      %     IN:
-      %       - `B` (fcat)
       
       if ( ~isa(obj, 'fcat') )
         error( 'Cannot join objects of class "%s".', class(obj) );
@@ -2125,9 +1930,6 @@ classdef fcat < handle
       %     Note that A will be modified unless explicitly copied. 
       %
       %     See also fcat/append
-      %
-      %     IN:
-      %       - `B` (fcat)
       
       for i = 1:numel(varargin)
         append( obj, varargin{i} );
@@ -2161,11 +1963,6 @@ classdef fcat < handle
       %     assign( obj, B, 1:10, 8 ) assigns row 8 of `B` to rows 1:10 of
       %     `obj`. In this case, the single row of `B` is implicitly
       %     repeated 10 times.
-      %
-      %     IN:
-      %       - `B` (fcat)
-      %       - `to_indices` (uint64)
-      %       - `from_indices` (uint64)
       
       if ( ~isa(obj, 'fcat') )
         error( 'Cannot assign objects of class "%s".', class(obj) );
@@ -2212,9 +2009,6 @@ classdef fcat < handle
       %     B = A'; is syntactic sugar for B = copy( A );
       %
       %     See also fcat/copy
-      %
-      %     OUT:
-      %       - `B` (fcat)
       
       B = copy( obj );
     end
@@ -2224,9 +2018,6 @@ classdef fcat < handle
       %   COPY -- Create a copy of the current instance.
       %
       %     See also fcat/fcat
-      %
-      %     OUT:
-      %       - `B` (fcat)
       
       B = fcat( cat_api('copy', obj.id) );
       B.displaymode = obj.displaymode;
@@ -2246,9 +2037,6 @@ classdef fcat < handle
       %     is less than 1000, and 'short' otherwise.
       %
       %     See also fcat/cellstr, fcat/categorical
-      %
-      %     IN:
-      %       - `mode` ({'short', 'full', 'auto'})
       
       mode = validatestring( mode, fcat.DISPLAY_MODES, mfilename, 'mode' );
       obj.displaymode = mode;
@@ -2326,12 +2114,6 @@ classdef fcat < handle
       %     or gigabytes, respectively.
       %
       %     See also fcat, zeros, rowop
-      %
-      %     IN:
-      %       - `var` (/any/)
-      %       - `unit` (char) |OPTIONAL|
-      %     OUT:
-      %       - `b` (double)
 
       if ( nargin < 2 )
         unit = 'b';
@@ -2360,36 +2142,32 @@ classdef fcat < handle
     
     function varargout = tabular(obj, rows, cols, varargin)
       
-      %   TABULAR -- Produce tabular cell matrix of indices.
+      %   TABULAR -- Produce cell matrix of indices.
       %
-      %     T = tabular( obj, 'a', 'b' ) produces an MxN cell array of
-      %     uint64 indices, where rows are composed of indices associated
-      %     with each unique label in category 'a', and where columns are
-      %     composed of indices associated with each unique label in
-      %     category 'b'.
+      %     T = tabular( obj, row_cats, col_cats ) produces an MxN cell 
+      %     array of uint64 indices, where rows are composed of indices 
+      %     associated with each label combination in `row_cats` categories, 
+      %     and where columns are composed of indices associated with each
+      %     label combination in `col_cats` categories.
       %
-      %     T = tabular( obj, {'a', 'b', 'c'} ) produces an array as
-      %     above, except that columns are chosen automatically as the
-      %     category with the fewest unique labels, and rows are the
-      %     remaining categories.
+      %     T = tabular( obj, categories ) produces an array as
+      %     above, except that column categories are chosen automatically 
+      %     as the category in `categories `with the fewest unique labels, 
+      %     and rows are the remaining categories.
       %
       %     T = tabular( ..., inds ) only considers the rows identified by
       %     the uint64 index vector `inds`.
       %
-      %     [T, rc] = tabular(...) also returns cell arrays of fcat objects 
-      %     that identify each row and column of `T`. The i-th row of rc{1}
-      %     is the set of labels that identify the i-th row of `T`; the 
-      %     j-th row of rc{2} identifies the j-th column of `T`.
+      %     [..., row_labels, col_labels] = tabular(...) also returns 
+      %     fcat objects that identify each row and column of `T`. The i-th 
+      %     row of `row_labels` is the set of labels that identifies the 
+      %     i-th row of `T`; the j-th row of `col_labels` identifies the 
+      %     j-th column of `T`.
       %
       %     Use the fcat.table function to convert the output of this
       %     function to a table.
       %
       %     See also fcat.table, fcat/findall
-      %
-      %     IN:
-      %       - `rows` (cell array of strings, char)
-      %       - `cols` (cell array of strings, char)
-      %       - `mask` (uint64) |OPTIONAL|
       
       if ( nargin == 1 )
         rows = getcats( obj );
@@ -2491,10 +2269,6 @@ classdef fcat < handle
       %     identifying the columns of `C`.
       %
       %     See also fcat/categorical, fcat/fullcat, fcat/fcat
-      %
-      %     OUT:
-      %       - `C` (cell array of strings)
-      %       - `cats` (cell array of strings)
       
       if ( nargin == 1 )
         cats = getcats( obj );
@@ -2547,13 +2321,6 @@ classdef fcat < handle
       %     object's contents.
       %
       %     See also fcat/cellstr
-      %
-      %     IN:
-      %       - `cats` (cell array of strings, numeric) |OPTIONAL|
-      %       - `inds` (uint64) |OPTIONAL|
-      %     OUT:
-      %       - `C` (categorical)
-      %       - `cats` (cell array of strings)
       
       if ( nargin == 1 )
         [N, labs, ids] = cat_api( 'to_numeric_mat', obj.id );
@@ -2578,10 +2345,6 @@ classdef fcat < handle
       %   DOUBLE -- Convert to Matlab double array.
       %
       %     See also fcat/categorical
-      %
-      %     OUT:
-      %       - `d` (double)
-      %       - `c` (cell array of strings)
       
       c = categorical( obj );
       d = double( c ); 
@@ -2607,11 +2370,6 @@ classdef fcat < handle
       %     y = fcat.from( x.labels, x.categories )
       %
       %     See also fcat/cellstr, fcat/categorical, fcat.from
-      %
-      %     IN:
-      %       - `flag` (char) |OPTIONAL|
-      %     OUT:
-      %       - `s` (struct)
       
       s = struct();
       
@@ -2636,9 +2394,6 @@ classdef fcat < handle
     function B = saveobj(obj)
       
       %   SAVEOBJ -- Convert object to struct in order to save.
-      %
-      %     OUT:
-      %       - `B` (struct)
       
       B = struct();
       B.categorical = categorical( obj );
@@ -2654,11 +2409,6 @@ classdef fcat < handle
       %
       %     inds = checkedfind(obj, [true, false]) returns 1, throwing an
       %     error if `obj` is not of size 2xN.
-      %
-      %     IN:
-      %       - `tf` (logical)
-      %     OUT:
-      %       - `inds` (uint64)
       
       N = size( obj, 1 );
       n = numel( tf );
@@ -2788,12 +2538,6 @@ classdef fcat < handle
       
       %   FROM_CATEGORICAL -- Private utility to convert from categorical
       %     array.
-      %
-      %     IN:
-      %       - `C` (categorical)
-      %       - `cats` (cell array of strings)
-      %     OUT:
-      %       - `obj` (fcat)
       
       nums = double( C );
       
@@ -2821,11 +2565,6 @@ classdef fcat < handle
     function obj = from_sp(sp)
       
       %   FROM_SP -- Private utility to convert from SparseLabels object.
-      %
-      %     IN:
-      %       - `sp` (SparseLabels)
-      %     OUT:
-      %       - `obj` (fcat)
       
       labs = sp.labels;
       inds = sp.indices;
@@ -2852,11 +2591,6 @@ classdef fcat < handle
     function obj = from_struct(s)
       
       %   FROM_STRUCT -- Private utility to convert to fcat from struct.
-      %
-      %     IN:
-      %       - `s` (struct)
-      %     OUT:
-      %       - `obj` (fcat)
       
       assert( all(isfield(s, {'labels', 'categories'})), ['Struct input' ...
         , ' must be a struct with fields ''labels'' and ''categories''.'] );
@@ -2870,9 +2604,6 @@ classdef fcat < handle
     function obj = loadobj(B)
       
       %   LOADOBJ -- Load and instantiate fcat.
-      %
-      %     OUT:
-      %       - `obj` (fcat)
       
       try
         obj = fcat.from( B.categorical, B.categories );
@@ -2895,12 +2626,6 @@ classdef fcat < handle
       %     contain 1000 rows.
       %
       %     See also fcat.from, fcat.create
-      %
-      %     IN:
-      %       - `cats` (char, cell array of strings)
-      %       - `sz` (uint64) |OPTIONAL|
-      %     OUT:
-      %       - `obj` (fcat)
       
       obj = requirecat( fcat(), cats );
       
@@ -3204,11 +2929,6 @@ classdef fcat < handle
       %     fs = fcat.empties( M, N, P, ... ) or 
       %     fcat.empties( [M, N, P, ...] ) creates an MxNxP... cell array
       %     of empty fcat objects.
-      %
-      %     IN:
-      %       - `sz` (double)
-      %     OUT:
-      %       - `fs` (cell array of fcat)
       
       %   leverage varargin input handling of cell function
       fs = cell( varargin{:} );
@@ -3231,11 +2951,6 @@ classdef fcat < handle
       %     fcat.example( 'largedata' ) returns a large vector of data.
       %
       %     See also fcat/test, fcat/from, fcat/with
-      %
-      %     IN:
-      %       - `kind` (char) |OPTIONAL|
-      %     OUT:
-      %       - `f` (fcat, double)
       
       try
         f = cat_getexample( varargin{:} );
@@ -3276,9 +2991,6 @@ classdef fcat < handle
       %   APIROOT -- Get the path to the fcat Matlab api directory.
       %
       %     See also fcat/buildconfig, fcat/fcat
-      %
-      %     OUT:
-      %       - `r` (char)
       
       conf = fcat.buildconfig();
       r = conf.apiroot;
@@ -3289,9 +3001,6 @@ classdef fcat < handle
       %   BUILDCONFIG -- Get config options with which the cat_api was built.
       %
       %     See also fcat/fcat
-      %
-      %     OUT:
-      %       - `conf` (struct)
       
       conf = cat_buildconfig();      
     end
@@ -3328,11 +3037,6 @@ classdef fcat < handle
       %     fcat.table( d, rc{:} )
       %
       %     See also fcat/tabular
-      %
-      %     IN:
-      %       - `T` (/any/)
-      %       - `rowc` (fcat, cell array of strings)
-      %       - `colc` (fcat, cell array of strings)
       
       import matlab.lang.makeValidName;
       
@@ -3407,11 +3111,6 @@ classdef fcat < handle
       %     strings `C`, returning a cell array of the same size as `C`.
       %
       %     See also fcat.strjoin, fcat/joincat
-      %
-      %     IN:
-      %       - `str` (cell array of strings, char)
-      %     OUT:
-      %       - `str` (cell array of strings, char)
       
       if ( iscell(str) )
         str = cellfun( @trim_func, str, 'un', false );
@@ -3440,11 +3139,6 @@ classdef fcat < handle
       %     strs = ... strjoin( C, DIM, PATTERN ) works as above.
       %
       %     See also fcat/combs
-      %
-      %     IN:
-      %       - `C` (cell array of strings)
-      %       - `dim` (double)
-      %       - `pattern` (char) |OPTIONAL|
       
       if ( nargin == 2 && ischar(dim) )
         pattern = dim;
@@ -3480,11 +3174,6 @@ classdef fcat < handle
       %     false otherwise.
       %
       %     See also fcat, fcat.from, fcat.create
-      %
-      %     IN:
-      %       - `obj` (/any/)
-      %     OUT:
-      %       - `tf` (logical)
       
       tf = isa( obj, 'fcat' );      
     end
@@ -3500,12 +3189,6 @@ classdef fcat < handle
       %     `strs` can be a char vector or cell array of strings.
       %
       %     See also fcat/strjoin, fcat/joincat
-      %
-      %     IN:
-      %       - `strs` (char, cell array of strings)
-      %       - `removing` (char) |OPTIONAL|
-      %     OUT:
-      %       - `ns` (double)
       
       if ( nargin < 2 ), removing = ''; end
       if ( ~isempty(removing) ), strs = regexprep( strs, removing, '' ); end

@@ -47,6 +47,7 @@ classdef plotlabeled < handle
     mask = 'off';
     prefer_multiple_groups = false;
     prefer_multiple_xs = false;
+    errorbar_connect_non_nan = false;
   end
   
   methods
@@ -175,7 +176,7 @@ classdef plotlabeled < handle
       obj.fig = current_fig;
     end
     
-    function axs = lines(obj, varargin)
+    function [axs, hs, inds] = lines(obj, varargin)
       
       %   LINES -- Plot lines for subsets of data.
       %
@@ -189,6 +190,17 @@ classdef plotlabeled < handle
       %     `data` is a numeric matrix, and `labels` is an fcat object with
       %     the same number of rows as `data`.
       %
+      %     axs = lines(...) returns an array of handles to the created
+      %     axes.
+      %
+      %     [..., hs] = lines(...) also returns `hs`, a cell array of
+      %     handles to the plotted line objects. `hs` has the same size as
+      %     `axs`.
+      %
+      %     [..., inds] = lines(...) also returns `inds`, a cell array of
+      %     cell arrays of uint64 indices identifying, for each line, the
+      %     elements of the input data used to generate that line.
+      %
       %     By default, the x-axis is generated automatically as
       %     1:size(data, 2). To use different values for the x-axis, set
       %     the `x` property.
@@ -197,13 +209,6 @@ classdef plotlabeled < handle
       %     in order to avoid specifying that dimension.
       %
       %     See also plotlabeled/bar, plotlabeled/plotlabeled
-      %
-      %     IN:
-      %       - `data` (labeled)
-      %       - `groups` (cell array of strings, char)
-      %       - `panels` (cell array of strings, char)
-      %     OUT:
-      %       - `axs` (axes)
       
       try
         [data, gp] = plotlabeled.parse_varargin( varargin, 3 );
@@ -240,9 +245,13 @@ classdef plotlabeled < handle
       
       xdata = get_matx( obj, summary_mat );
       
+      hs = cell( n_subplots, 1 );
+      inds = cell( n_subplots, 1 );
+      
       for i = 1:n_subplots
         
         ax = subplot( c_shape(1), c_shape(2), i );
+        inds{i} = {};
         
         %   which rows of `summary` are associated with the current panel?
         panel_ind = find( opts.p_c, opts.p_combs(i, :) );
@@ -252,6 +261,8 @@ classdef plotlabeled < handle
           col = find( opts.g_combs, opts.g_c(row, :) );
           summary_mat(:, col) = summary_data(row, :);
           errors_mat(:, col) = errors_data(row, :);
+          
+          inds{i}{col} = opts.I{row};
         end
         
         if ( obj.add_smoothing )
@@ -276,6 +287,11 @@ classdef plotlabeled < handle
         title( opts.p_labs(i, :) );
         
         axs(i) = ax;
+        hs{i} = h;
+        
+        if ( numel(inds{i}) < numel(h) )
+          inds{i}(end+1:numel(h)) = { [] };
+        end
       end
       
       set_lims( obj, axs, 'ylim', get_ylims(obj, axs) );
@@ -573,6 +589,93 @@ classdef plotlabeled < handle
         assert( size(data, 1) == length(labs), ['Number of rows of data' ...
           , ' must match number of rows of labels.'] );
       end
+    end
+    
+    function axs = violinalt(obj, data, labs, groups, panels, varargin)
+      
+      %   VIOLINALT -- Create violin plots for subsets of data (alternative
+      %     method).
+      %
+      %     violinalt( obj, data, labels, groups, panels ) creates a series
+      %     of violin plots with panel labels drawn from the category(ies) in
+      %     `panels`, and group labels from the category(ies) in `groups`.
+      %     `data` is an Mx1 vector; `labels` is an MxN fcat object.
+      %
+      %     axs = ... returns an array of handles to the subplotted axes.
+      %
+      %     This function depends on the violin repository, currently 
+      %     available at: https://www.mathworks.com/matlabcentral/fileexchange/45134-violin-plot
+      %
+      %     Note that the ordering of groups is not supported.
+      %
+      %     EX //
+      %
+      %     f = fcat.example();
+      %     dat = fcat.example( 'smalldata' );
+      %     pl = plotlabeled();
+      %     pl.violinalt( dat, f, 'dose', 'monkey' )
+      %
+      %     See also plotlabeled/scatter, plotlabeled/bar, plotlabeled/boxplot
+      %
+      %     IN:
+      %       - `data` (double)
+      %       - `labs` (fcat)
+      %       - `groups` (cell array of strings, char)
+      %       - `panels` (cell array of strings, char)
+      %     OUT:
+      %       - `axs` (axes)
+      
+      validateattributes( labs, {'fcat'}, {}, mfilename, 'labels' );
+      validateattributes( data, {'numeric'} ...
+        , {'vector', 'column', 'nrows', length(labs)}, mfilename, 'data' );
+      
+      if ( isempty(which('violin_alt')) )
+        error( ['This function depends on the violin repository, ' ...
+          , ' available at: https://www.mathworks.com/matlabcentral/fileexchange/45134-violin-plot' ...
+          , ' Additionally, once downloaded, this file must be renamed to "violin_alt".'] );
+      end
+      
+      try
+        opts = matplotopts( obj, labs, {}, groups, panels, false );
+      catch err
+        throw( err );
+      end
+      
+      labs = addcat( copy(labs), opts.specificity );
+      M = get_mask( obj, length(labs) );
+      
+      n_subplots = opts.n_subplots;
+      c_shape = opts.c_shape;
+      g_cats = opts.g_cats;
+      
+      axs = gobjects( 1, n_subplots );
+      
+      for i = 1:n_subplots
+        ax = subplot( c_shape(1), c_shape(2), i );
+        
+        I = find( labs, opts.p_combs(i, :), M );
+        
+        [g_I, g_C] = findall( labs, g_cats, I );
+        g_dat = cellfun( @(x) data(x), g_I, 'un', 0 );
+        colors = obj.color_func( numel(g_I) );
+        
+        g_labs = fcat.strjoin( g_C, obj.join_pattern );
+        g_labs = cellfun( @(x) strrep(x, '_', ' '), g_labs, 'un', 0 );
+        
+        h = violin_alt( g_dat(:)' );
+        set( ax, 'xtick', 1:numel(g_I) );
+        set( ax, 'xticklabel', g_labs );
+        
+        for j = 1:numel(h)
+          set( h(j), 'FaceColor', colors(j, :) );
+          set( h(j), 'FaceAlpha', 1 );
+        end
+        
+        title( ax, opts.p_labs(i, :) );
+        axs(i) = ax;
+      end
+      
+      set_lims( obj, axs, 'ylim', get_ylims(obj, axs) );
     end
     
     function axs = violinplot(obj, data, labs, groups, panels, varargin)
@@ -1207,7 +1310,11 @@ classdef plotlabeled < handle
               
               h = errorbar( ones(size(repeated)), repeated, repeated_errs );
             else
-              h = errorbar( summary_mat, errors_mat );
+              if ( obj.errorbar_connect_non_nan )
+                h = plotlabeled.errorbar_connecting_non_nan( summary_mat, errors_mat );
+              else
+                h = errorbar( summary_mat, errors_mat );
+              end
             end
           otherwise
             error( 'Unrecognized function name "%s".', func_name );
@@ -1773,7 +1880,7 @@ classdef plotlabeled < handle
       end
     end
     
-    function [hs, store_stats] = scatter_addcorr(ids, X, Y, alpha)
+    function [hs, store_stats] = scatter_addcorr(ids, X, Y, alpha, add_text)
       
       %   SCATTER_ADDCORR -- Add correlation + regression lines to scatter plots.
       %
@@ -1801,6 +1908,7 @@ classdef plotlabeled < handle
       %       - `store_stats` (double)
       
       if ( nargin < 4 ), alpha = 0.05; end
+      if ( nargin < 5 ), add_text = true; end
 
       hs = gobjects( size(ids) );
       store_stats = nan( numel(ids), 2 );
@@ -1850,7 +1958,9 @@ classdef plotlabeled < handle
 
         if ( p < alpha ), txt = sprintf( '%s *', txt ); end
 
-        text( ax, xc, yc, txt );
+        if ( add_text )
+          text( ax, xc, yc, txt );
+        end
 
         store_stats(i, :) = [ r, p ];
         
@@ -1860,6 +1970,24 @@ classdef plotlabeled < handle
   end
     
   methods (Static = true, Access = private)
+    
+    function h = errorbar_connecting_non_nan(summary_mat, errors_mat)
+      
+      x_mat = nan( size(summary_mat) );
+      copy_summary_mat = nan( size(summary_mat) );
+      copy_errors_mat = nan( size(errors_mat) );
+      
+      for i = 1:size(summary_mat, 2)
+        non_nans = find( ~isnan(summary_mat(:, i)) );
+        num_non_nans = numel( non_nans );
+        
+        x_mat(1:num_non_nans, i) = non_nans;
+        copy_summary_mat(1:num_non_nans, i) = summary_mat(non_nans, i);
+        copy_errors_mat(1:num_non_nans, i) = errors_mat(non_nans, i);
+      end
+      
+      h = errorbar( x_mat, copy_summary_mat, copy_errors_mat );
+    end
     
     function s = get_identifiers()
       

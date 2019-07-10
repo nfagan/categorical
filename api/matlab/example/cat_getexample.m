@@ -28,7 +28,7 @@ switch ( kind )
   case 'large'
     f = doload( fullfile(root, 'bigfcat.mat') );
   case 'small'
-    x = doload( fullfile(root, 'categorical.mat') );
+    x = cache_load( fullfile(root, 'categorical.mat') );
     f = fcat.from( x.c, x.f );
   case 'smalldata'
     f = doload( fullfile(root, 'smalldata.mat') );
@@ -38,6 +38,27 @@ switch ( kind )
     error( 'Unrecognized data kind "%s". Options are: \n\n%s' ...
       , kind, strjoin(options, ' | ') );
 end
+
+end
+
+function data = cache_load(p)
+
+persistent out_data;
+
+if ( ~isempty(out_data) )
+  data = out_data;
+  return;
+end
+
+s = load( p );
+fs = fieldnames( s );
+if ( numel(fs) == 1 )
+  data = s.(fs{1}); 
+else
+  data = s; 
+end
+
+out_data = data;
 
 end
 
