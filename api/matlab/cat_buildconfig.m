@@ -6,8 +6,10 @@ function conf = cat_buildconfig()
 %       - `conf` (struct)
 
 conf = cat_api( 'get_build_config' );
+build_id = cat_api( 'version' );
 
 conf.apiroot = fileparts( which(mfilename) );
+conf.build_id = build_id;
 
 %
 % see: #define CAT_PRUNE_AFTER_ASSIGN

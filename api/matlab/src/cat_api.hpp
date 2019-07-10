@@ -77,4 +77,5 @@ namespace util {
     MEXFUNC(from_categorical);
     
     MEXFUNC(get_build_config);
+    MEXFUNC(get_version);
 }

@@ -60,7 +60,8 @@ namespace util {
         static constexpr uint32_t FIND_NONE = 53u;
         static constexpr uint32_t WHICH_CATEGORY = 54u;
         static constexpr uint32_t IS_UNIFORM_CATEGORY = 55u;
+        static constexpr uint32_t GET_VERSION = 56u;
         //
-        static constexpr uint32_t N_OPS = 56u;
+        static constexpr uint32_t N_OPS = 57u;
     }
 }
