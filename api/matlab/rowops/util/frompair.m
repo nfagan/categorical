@@ -5,7 +5,7 @@ function [data, labels] = frompair(data, labels)
 %     [data, labels] = frompair( pair ); returns the fields 'data' and
 %     'labels' from `pair`.
 %
-%     See also mkpair, indexpair, copypair
+%     See also mkpair, indexpair, copypair, frompair2
 
 if ( nargin == 1 )
   assert_ispair( data );

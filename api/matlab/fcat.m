@@ -173,36 +173,31 @@ classdef fcat < handle
         end
         return;
       end
-      
-      msg = [ 'Dimension argument must be a positive integer' ...
-          , ' scalar within indexing range.' ];
         
       if ( ~isnumeric(dim) || ~isscalar(dim) || dim < 1 )
-        error( msg );
+        error( ['Dimension argument must be a positive integer scalar' ...
+          , ' within indexing range.'] );
       end
       
-      if ( dim > 2 )
+      if ( dim == 1 )
         if ( isvalid(obj) )
-          sz = uint64( 1 );
+          sz = cat_api( 'size', obj.id );
         else
           sz = 0;
         end
-        return;
-      end
-      
-      if ( dim == 2 )
+      elseif ( dim == 2 )
         if ( isvalid(obj) )
           sz = ncats( obj );
         else
           sz = 0;
         end
-        return;
-      end
-      
-      if ( isvalid(obj) )
-        sz = cat_api( 'size', obj.id );
       else
-        sz = 0;
+        if ( mod(dim, 1) ~= 0 )
+          error( ['Dimension argument must be a positive integer scalar' ...
+          , ' within indexing range.'] );
+        else
+          sz = 1;
+        end
       end
     end
     

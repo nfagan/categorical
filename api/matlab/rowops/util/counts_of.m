@@ -1,12 +1,11 @@
-function [data, newlabs, I] = proportions_of(labs, proportions_each, proportions_of, mask)
+function [data, newlabs, I] = counts_of(labs, proportions_each, proportions_of, mask)
 
-%   PROPORTIONS_OF -- Proportions of the number of label combinations in
-%     categories.
+%   COUNTS_OF -- Counts of the number of label combinations in categories.
 %
-%     data = proportions_of( labels, props_each, props_of ); calculates, 
+%     data = counts_of( labels, counts_each, counts_of ); calculates, 
 %     for each combination of labels in the category(ies) 
-%     `props_each`, the proportions of the number of labels or label 
-%     combinations from the categories `props_of`. 
+%     `counts_each`, the counts of the number of labels or label 
+%     combinations from the categories `counts_of`. 
 %
 %     data = proportions_of( ..., mask ); restricts the calculation to rows
 %     of labels identified by `mask`. Label combinations of which to
@@ -20,9 +19,9 @@ function [data, newlabs, I] = proportions_of(labs, proportions_each, proportions
 %     EX //
 %
 %     f = fcat.example();
-%     % for each 'dose', what is the proportion of the number of rows of
+%     % for each 'dose', what is the count of the number of rows of
 %     % each 'image'?
-%     [data, labels] = proportions_of( f', 'dose', 'image' );
+%     [data, labels] = counts_of( f', 'dose', 'image' );
 
 if ( nargin < 4 )
   mask = rowmask( labs );
@@ -38,17 +37,14 @@ newlabs = fcat.like( plabs );
 
 for i = 1:numel(I)
   sub_mask = I{i};
-  
-  N = numel( sub_mask );
 
   for j = 1:n_combinations
     current_labels = props_of_labels(:, j);
     
     n_prop_of = numel( find(labs, current_labels, sub_mask) );
-    proportion_of = n_prop_of / N;
 
     assign_stp = (i-1) * n_combinations + j;
-    data(assign_stp) = proportion_of;
+    data(assign_stp) = n_prop_of;
     
     setcat( plabs, proportions_of, current_labels, i );
     append( newlabs, plabs, i );

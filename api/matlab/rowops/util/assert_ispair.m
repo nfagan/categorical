@@ -15,9 +15,7 @@ function assert_ispair(data, labels)
 narginchk( 1, 2 );
 
 if ( nargin == 1 )
-  validateattributes( data, {'struct'}, {'scalar'}, mfilename, 'pair' );
-  
-  if ( ~all(isfield(data, {'data', 'labels'})) )
+  if ( ~isstruct(data) || ~isscalar(data) || ~all(isfield(data, {'data', 'labels'})) )
     error( 'Pair must be a struct with fields ''data'' and ''labels''.' );
   end
  
@@ -25,7 +23,10 @@ if ( nargin == 1 )
   data = data.data;
 end
 
-validateattributes( labels, {'fcat'}, {}, 'assert_ispair', 'labels' );
+if ( ~isa(labels, 'fcat') )
+  error( 'Labels must be an fcat object; were of class "%s".', class(labels) );
+end
+
 assert_rowsmatch( data, labels, 'data', 'labels' );
 
 end
