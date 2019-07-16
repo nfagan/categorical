@@ -10,7 +10,7 @@ function assert_ispair(data, labels)
 %     fields 'data' and 'labels', or if those fields contain values that
 %     violate the above conditions.
 %
-%     See also rowsmatch, rows, fcat
+%     See also rowsmatch, rows, fcat, mkpair, indexpair
 
 narginchk( 1, 2 );
 

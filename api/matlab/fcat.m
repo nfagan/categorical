@@ -1914,6 +1914,25 @@ classdef fcat < handle
       vertcat( obj, varargin{:} );
     end
     
+    function obj = cat(dim, obj, varargin)
+      
+      %   CAT -- Overloaded concatenation.
+      %
+      %     cat( 1, obj1, obj2 ); appends the contents of `obj2` to `obj1`.
+      %
+      %     Note that only first-dimension (vertical) concatenation is
+      %     allowed.
+      %
+      %     See also fcat/append, fcat/vertcat
+      
+      if ( ~isscalar(dim) || dim ~= 1 )
+        error( ['Dimension argument must be the value 1; only vertical' ...
+          , ' concatenation is supported.'] );
+      end
+      
+      obj = vertcat( obj, varargin{:} );
+    end
+    
     function obj = vertcat(obj, varargin)
       
       %   VERTCAT -- Append fcat object(s).
