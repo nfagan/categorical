@@ -23,8 +23,8 @@ classdef fcat < handle
       %     elements are unique across columns. In this way, each column of 
       %     an FCAT object constitutes a category (or dimension) with an 
       %     arbitrary number of levels (or labels). Rows of observations 
-      %     can then be identified by a given combination of labels across 
-      %     all categories.
+      %     can then be identified by combinations of labels across 
+      %     categories.
       %
       %     The FCAT constructor generates an empty object into which
       %     categories and labels can be inserted. To directly construct an

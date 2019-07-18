@@ -9,13 +9,7 @@ function b = bytes(var, unit)
 %     returns the quantity in bytes, kilobytes, megabytes, or gigabytes, 
 %     respectively.
 %
-%     See also zeros, rowop
-%
-%     IN:
-%       - `var` (/any/)
-%       - `unit` (char) |OPTIONAL|
-%     OUT:
-%       - `b` (double)
+%     See also whos, zeros, rowop
 
 if ( nargin < 2 )
   unit = 'b';

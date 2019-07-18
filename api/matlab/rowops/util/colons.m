@@ -9,11 +9,6 @@ function cs = colons(n)
 %     colons( 2 ) returns {':', ':'}.
 %
 %     See also rowop, fcat
-%
-%     IN:
-%       - `n` (double)
-%     OUT:
-%       - `cs` (cell array of strings)
 
 c = {':'};
 
