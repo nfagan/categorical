@@ -13,13 +13,6 @@ function new_data = rowop(data, I, func, uniform)
 %     Mx1 cell array.
 %
 %     See also fcat, plotlabeled, rowmean, rownanmean
-%
-%     IN:
-%       - `data` (/T/)
-%       - `I` (cell array of integers, cell array of logical)
-%       - `func` (function_handle)
-%     OUT:
-%       - `data` (/T/)
 
 if ( nargin < 4 )
   uniform = true;

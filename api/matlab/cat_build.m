@@ -1,11 +1,15 @@
-function cat_build(mex_func, allow_overwrite)
+function cat_build(mex_func_sources, allow_overwrite)
 
-%   CAT_BUILD -- Build mex files.
+%   CAT_BUILD -- Build categorical mex function.
 %
-%     IN:
-%       - `mex_func` (char) -- Name of the .cpp file (mex function)
-%       - `allow_overwrite` (logical) -- True if existing mex-function can
-%       	be overwritten. Default is false.
+%     cat_build( sources ); builds the categorical mex function from
+%     `sources`, a cell array of source file names.
+%
+%     cat_build( ..., allow_overwrite ); indicates whether a new mex
+%     function can be built if a current one already exists for this 
+%     platform. Default is false.
+%
+%     See also fcat, cat_versioninfo
 
 if ( nargin < 2 || isempty(allow_overwrite) )
   allow_overwrite = false;
@@ -14,8 +18,8 @@ else
     , mfilename, 'allow_overwrite' );
 end
 
-if ( ~iscell(mex_func) )
-  mex_func = { mex_func };
+if ( ~iscell(mex_func_sources) )
+  mex_func_sources = { mex_func_sources };
 end
 
 api_dir = fileparts( which(mfilename) );
@@ -52,14 +56,14 @@ api_dir_index = strfind( api_dir, api_dir_search );
 repo_dir = api_dir(1:api_dir_index-1);
 platform_dir = get_platform_directory();
 
-mex_func_paths = cellfun( @(x) fullfile(src_dir, x), mex_func, 'un', false );
+mex_func_paths = cellfun( @(x) fullfile(src_dir, x), mex_func_sources, 'un', false );
 
-sources_by_func = make_file_sources( mex_func, mex_func_paths );
+sources_by_func = make_file_sources( mex_func_sources, mex_func_paths );
 version_info = conditionally_make_new_build_id_file( src_dir, sources_by_func, version_info );
 save_current_version_info( ver_dir, version_info, sources_by_func );
 
 cat_lib_dir = fullfile( repo_dir, 'lib', platform_dir );
-cat_include_dir= fullfile( repo_dir, 'include' );
+cat_include_dir = fullfile( repo_dir, 'include' );
 cat_lib_name = 'categorical';
 
 mex_func_path = strjoin( mex_func_paths, ' ' );
@@ -242,7 +246,7 @@ end
 function print_message_already_exists()
 
 fprintf( ['\n Not building because the cat_api mex function already exists\n' ...
-  , ' for your platform, and allow_overwrite is false. \n Rerun with allow_overwrite = true' ...
+  , ' for your platform, and allow_overwrite is false. \n\n Rerun with allow_overwrite = true' ...
   , ' to build.\n\n'] );
 
 end

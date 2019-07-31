@@ -10,13 +10,6 @@ function d = dimref(data, I, dim)
 %     retaining all elements along the remaining dimensions.
 %
 %     See also rowref
-%
-%     IN:
-%       - `data` (/T/)
-%       - `I` (double, uint64, logical)
-%       - `dim` (double)
-%     OUT:
-%       - `d` (/T/)
 
 assert( isscalar(dim) && dim > 0 && dim <= ndims(data) ...
   , 'Dimension must be an integer scalar within indexing range.' );

@@ -48,6 +48,7 @@ classdef plotlabeled < handle
     prefer_multiple_groups = false;
     prefer_multiple_xs = false;
     errorbar_connect_non_nan = false;
+    pie_include_percentages = false;
   end
   
   methods
@@ -67,9 +68,6 @@ classdef plotlabeled < handle
       %     property names.
       %
       %     See also plotlabeled/bar, plotlabeled/lines
-      %
-      %     IN:
-      %       - `varargin` (field, value)
       
       try
         assign_pair_inputs( obj, varargin );
@@ -88,9 +86,6 @@ classdef plotlabeled < handle
       %
       %     set_smoothing( obj, FUNC ) sets the `smooth_func` property to
       %     `FUNC`, and also sets the `add_smoothing` flag.
-      %
-      %     IN:
-      %       - `func_or_amt` (double, function_handle)
       
       if ( nargin < 2 )
         func_or_amt = 1;
@@ -132,15 +127,6 @@ classdef plotlabeled < handle
       %     figs = pl.figures( @bar, dat, labs, 'roi', 'image', 'dose', 'roi' );
       %
       %     See also plotlabeled/lines, plotlabeled/bar, plotlabeled
-      %
-      %     IN:
-      %       - `func` (function_handle)
-      %       - `data` (/any/)
-      %       - `labels` (fcat)
-      %       - `figcats` (cell array of strings, char, {})
-      %     OUT:
-      %       - `figs` (figure)
-      %       - `axes` (axes)
       
       assert_ispair( data, labels );
       assert_hascat( labels, figcats );
@@ -316,13 +302,6 @@ classdef plotlabeled < handle
       %     panels, in order to avoid specifying that dimension.
       %
       %     See also plotlabeled/lines, plotlabeled/errorbar
-      %
-      %     IN:
-      %       - `data` (labeled)
-      %       - `groups` (cell array of strings, char)
-      %       - `panels` (cell array of strings, char)
-      %     OUT:
-      %       - `axs` (axes)
       
       try
         axs = groupplot( obj, 'bar', varargin{:} );
@@ -358,18 +337,64 @@ classdef plotlabeled < handle
       %     panels, in order to avoid specifying that dimension.
       %
       %     See also plotlabeled/lines, plotlabeled/bar
-      %
-      %     IN:
-      %       - `data` (labeled)
-      %       - `groups` (cell array of strings, char)
-      %       - `panels` (cell array of strings, char)
-      %     OUT:
-      %       - `axs` (axes)
       
       try
         axs = groupplot( obj, 'errorbar', varargin{:} );
       catch err
         throw( err );
+      end
+    end
+    
+    function [axs, hs] = pie(obj, X, labels, groups, panels)
+      
+      %   PIE -- Create pie charts for subsets of data.
+      %
+      %     pie( obj, X, labels, groups, panels ) creates pie charts from
+      %     the data in `X` whose slices are drawn from `groups`,
+      %     separately for each `panels`. Combinations are identified by
+      %     the fcat object `labels`.
+      %
+      %     `X` must be a column vector with the same number of rows as
+      %     `labels`.
+      %
+      %     See also plotlabeled, plotlabeled/bar
+      
+      validateattributes( X, {'double', 'single'}, {'vector'}, mfilename, 'data' );
+      
+      try
+        opts = matplotopts( obj, labeled(X, labels), {}, groups, panels );
+      catch err
+        throwAsCaller( err );
+      end
+      
+      num_panels = double( length(opts.p_combs) );
+      num_groups = double( length(opts.g_combs) );
+      
+      hs = cell( num_panels, 1 );
+      axs = gobjects( size(hs) );
+      
+      for i = 1:num_panels
+        ax = subplot( opts.c_shape(1), opts.c_shape(2), i );
+        
+        p_ind = find( opts.p_c, opts.p_combs(i, :) );
+        pie_dat = nan( num_groups, 1 );
+        
+        for j = 1:num_groups
+          g_ind = find( opts.g_c, opts.g_combs(j, :), p_ind );
+          pie_dat(j) = opts.summary_data(g_ind);
+        end
+        
+        g_labs = opts.g_labs;
+        
+        if ( obj.pie_include_percentages )
+          g_labs = arrayfun( @(x, y) sprintf('%s (%0.3f%%)', x{1}, y) ...
+            , g_labs, pie_dat, 'un', 0 );
+        end
+        
+        hs{i} = pie( ax, pie_dat, g_labs );
+        title( ax, opts.p_labs(i, :) );
+        
+        axs(i) = ax;
       end
     end
     
@@ -411,16 +436,6 @@ classdef plotlabeled < handle
       %     [axs, ids] = pl.scatter( X, Y, f, 'dose', 'monkey' )
       %
       %     See also plotlabeled/lines, plotlabeled/bar
-      %
-      %     IN:
-      %       - `X` (/T/)
-      %       - `Y` (/T/)
-      %       - `labels` (fcat)
-      %       - `groups` (cell array of strings, char)
-      %       - `panels` (cell array of strings, char)
-      %     OUT:
-      %       - `axs` (axes)
-      %       - `ids` (array of struct)
       
       validate_scatter( obj, X, Y, labels );
       
@@ -517,14 +532,6 @@ classdef plotlabeled < handle
       %     pl.boxplot( dat, f, 'dose', 'monkey' )
       %
       %     See also plotlabeled/scatter, plotlabeled/bar
-      %
-      %     IN:
-      %       - `data` (double)
-      %       - `labs` (fcat)
-      %       - `groups` (cell array of strings, char)
-      %       - `panels` (cell array of strings, char)
-      %     OUT:
-      %       - `axs` (axes)
       
       try
         validate_data( data, labs );
@@ -616,14 +623,6 @@ classdef plotlabeled < handle
       %     pl.violinalt( dat, f, 'dose', 'monkey' )
       %
       %     See also plotlabeled/scatter, plotlabeled/bar, plotlabeled/boxplot
-      %
-      %     IN:
-      %       - `data` (double)
-      %       - `labs` (fcat)
-      %       - `groups` (cell array of strings, char)
-      %       - `panels` (cell array of strings, char)
-      %     OUT:
-      %       - `axs` (axes)
       
       validateattributes( labs, {'fcat'}, {}, mfilename, 'labels' );
       validateattributes( data, {'numeric'} ...
@@ -707,14 +706,6 @@ classdef plotlabeled < handle
       %
       %     See also violinplot, plotlabeled/scatter, plotlabeled/bar,
       %       plotlabeled/boxplot
-      %
-      %     IN:
-      %       - `data` (double)
-      %       - `labs` (fcat)
-      %       - `groups` (cell array of strings, char)
-      %       - `panels` (cell array of strings, char)
-      %     OUT:
-      %       - `axs` (axes)
       
       validateattributes( labs, {'fcat'}, {}, mfilename, 'labels' );
       validateattributes( data, {'numeric'} ...
@@ -794,11 +785,6 @@ classdef plotlabeled < handle
       %     This function is useful for creating time-series spectrograms, 
       %     in which case data are conceptually an array of N-trials by
       %     M-frequencies by P-time points.
-      %
-      %     IN:
-      %       - `varargin` (numeric, labeled, fcat, char, cell array of strings)
-      %     OUT:
-      %       - `axs` (axes)
       
       try
         [plt, panels] = validate_and_get_labeled( varargin{:} );
@@ -898,14 +884,6 @@ classdef plotlabeled < handle
       %     axes.
       %
       %     See also histogram, plotlabeled/imagesc, plotlabeled/scatter
-      %
-      %     IN:
-      %       - `data` (double)
-      %       - `labels` (fcat)
-      %       - `panels` (cell array of strings, char)
-      %     	- `varargin` (/any/)
-      %     OUT:
-      %       - `axs` (axes)
       
       try
         assert( ~has_mask(obj), 'Masking is not supported with `hist`.' );
