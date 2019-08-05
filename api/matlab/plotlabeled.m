@@ -561,7 +561,9 @@ classdef plotlabeled < handle
         plt_dat = rowref( data, I );
         plt_labs = categorical( labs, g_cats, I );
         
-        boxplot( ax, plt_dat, plt_labs );
+        if ( ~isempty(obj.group_order) )
+          boxplot( ax, plt_dat, plt_labs, 'grouporder', obj.group_order );
+        end
         
         if ( add_means )
           plot_means( ax, data, labs, g_cats, I );       

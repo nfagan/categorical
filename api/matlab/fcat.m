@@ -36,8 +36,8 @@ classdef fcat < handle
       %
       %     EX 1 //
       %
-      %     f = setcat( addcat(fcat, 'cities'), 'cities', {'ny' 'la' 'sf'} )
-      %     find( f, {'ny' 'la'} )
+      %     f = fcat.create( 'cities', {'ny', 'la', 'sf'} );
+      %     find( f, {'ny', 'sf'} )
       %
       %     EX 2 //
       %
@@ -47,7 +47,7 @@ classdef fcat < handle
       %       , 'attractions', {'met', 'moma', 'nmart'} ...
       %     ), 20 )
       %
-      %     [y, I, C] = keepeach( copy(f1), getcats(f1) )
+      %     [f2, I, C] = keepeach( copy(f1), getcats(f1) )
       %
       %     See also fcat/create, fcat/from, fcat/with, fcat/findall
       
@@ -2268,13 +2268,13 @@ classdef fcat < handle
       
       %   CELLSTR -- Convert to cell array of strings.
       %
-      %     C = cellstr( obj ) returns an MxN cell array of strings `C`,
-      %     whose rows are observations and columns are categories.
+      %     C = cellstr( obj ) returns the contents of `obj` as a cell
+      %     array of strings.
       %
-      %     C = cellstr( obj, CATS ) returns an MxN cell array of strings
-      %     drawn from `CATS` categories. `CATS` can be a cell array of
-      %     strings, or a numeric vector; the ordering of categories is
-      %     consistent with the output of `getcats()`.
+      %     C = cellstr( obj, cats ) returns a cell matrix of strings whose
+      %     columns are drawn from `cats` categories. `cats` can be a cell
+      %     array of strings, or a numeric vector; the ordering of 
+      %     categories is consistent with the output of `getcats()`.
       %
       %     C = cellstr( ..., inds ) draws from rows identified by the
       %     uint64 index vector `inds`.
@@ -2282,7 +2282,7 @@ classdef fcat < handle
       %     [C, cats] = ... also returns a 1xN cell array of strings `cats`
       %     identifying the columns of `C`.
       %
-      %     See also fcat/categorical, fcat/fullcat, fcat/fcat
+      %     See also fcat/categorical, fcat/fullcat, fcat/fcat, fcat.from
       
       if ( nargin == 1 )
         cats = getcats( obj );
@@ -2304,24 +2304,22 @@ classdef fcat < handle
     
     function [C, cats] = categorical(obj, cats, inds)
       
-      %   CATEGORICAL -- Convert to Matlab categorical matrix.
+      %   CATEGORICAL -- Convert to categorical matrix.
       %
-      %     C = categorical( obj ) converts `obj` to a Matlab categorical
-      %     matrix. Columns in `C` are in an order consistent with the
-      %     output of `getcats(obj)`.
+      %     C = categorical( obj ) returns the contents of `obj` as a 
+      %     categorical matrix. Columns in `C` are in an order consistent 
+      %     with the output of `getcats(obj)`.
       %
       %     [..., cats] = categorical( obj ) also returns the categories of
       %     `obj` as a cell array of strings.
       %
-      %     C = categorical( obj, 'cities' ) returns the category 'cities',
-      %     only.
+      %     C = categorical( obj, cats ) returns a categorical matrix whose 
+      %     columns are drawn from `cats` categories. `cats` can be a cell 
+      %     array of strings, or a numeric vector; the ordering of 
+      %     categories is consistent with the output of `getcats()`.
       %
-      %     C = categorical( obj, 1 ) returns the first category in `obj`.
-      %     The order of categories is consistent with the output of
-      %     `getcats(obj)`.
-      %
-      %     C = categorical( ..., INDS ) returns the subset of rows at
-      %     indices `INDS`.
+      %     C = categorical( ..., inds ) returns the subset of rows at
+      %     indices `inds`.
       %
       %     Note that there are certain restrictions on the format of
       %     labels (levels) of a categorical matrix that do not apply to
@@ -2334,7 +2332,7 @@ classdef fcat < handle
       %     method to obtain an exact, Matlab-native representation of the 
       %     object's contents.
       %
-      %     See also fcat/cellstr
+      %     See also fcat/cellstr, categorical, fcat.from
       
       if ( nargin == 1 )
         [N, labs, ids] = cat_api( 'to_numeric_mat', obj.id );
@@ -2358,7 +2356,7 @@ classdef fcat < handle
       
       %   DOUBLE -- Convert to Matlab double array.
       %
-      %     See also fcat/categorical
+      %     See also fcat/categorical, categorical/double
       
       c = categorical( obj );
       d = double( c ); 
@@ -2984,9 +2982,18 @@ classdef fcat < handle
     
     function build(varargin)
       
-      %   BUILD -- Build cat_api.
+      %   BUILD -- Build cat_api mex function.
       %
-      %     See also fcat/buildconfig
+      %     fcat.build(); attempts to build the cat_api mex function from
+      %     source, unless a valid mex function already exists for your
+      %     platform. You must have a suitable C++ compiler with c++14
+      %     support; consult the `mex` function documentation for more
+      %     information.
+      %
+      %     fcat.build( true ); will attempt to build the mex function 
+      %     even if a valid one already exists for your platform.
+      %
+      %     See also fcat/buildconfig, fcat.version, mex, cat_buildall
       
       cat_buildall( varargin{:} );      
     end
