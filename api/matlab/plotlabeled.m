@@ -563,6 +563,8 @@ classdef plotlabeled < handle
         
         if ( ~isempty(obj.group_order) )
           boxplot( ax, plt_dat, plt_labs, 'grouporder', obj.group_order );
+        else
+          boxplot( ax, plt_dat, plt_labs );
         end
         
         if ( add_means )
