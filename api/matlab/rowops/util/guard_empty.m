@@ -10,7 +10,7 @@ function varargout = guard_empty(X, func)
 %     outputs from `func`. If `X` is empty, each requested output is an 
 %     empty array ([]).
 %
-%     See also deal
+%     See also deal, conditional
 
 validateattributes( func, {'function_handle'}, {}, mfilename, 'func' );
 

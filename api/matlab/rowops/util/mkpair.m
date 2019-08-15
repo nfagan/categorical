@@ -11,10 +11,8 @@ function pair = mkpair(data, labels)
 
 assert_ispair( data, labels );
 
-if ( iscell(data) )
-  pair = struct( 'data', {data}, 'labels', labels );
-else
-  pair = struct( 'data', data, 'labels', labels );
-end
+pair = struct();
+pair.data = data;
+pair.labels = labels;
 
 end

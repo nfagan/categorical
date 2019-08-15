@@ -76,6 +76,18 @@ classdef plotlabeled < handle
       end
     end
     
+    function obj = set_property(obj, prop, value)
+      
+      %   SET_PROPERTY -- Set property to value.
+      %
+      %     set_property( obj, prop, to ); assigns `to` to property `prop`,
+      %     a char vector property name.
+      %
+      %     See also plotlabeled
+      
+      obj.(prop) = value;
+    end
+    
     function pl = set_smoothing(pl, func_or_amt)
       
       %   SET_SMOOTHING -- Add smoothing function and flag to object.
@@ -115,6 +127,14 @@ classdef plotlabeled < handle
       %
       %     [..., axes] = figures(...) also returns an Mx1 vector of axes
       %     handles `axes`, containing all of the axes across `figs`.
+      %
+      %     [..., I] = figures(...) also returns a cell array of index
+      %     vectors identifying subsets of `data` and `labels` plotted in 
+      %     each figure. `I` has the same number of elements as `figs`.
+      %
+      %     [..., axes_indices] = figures(...) also returns a vector the
+      %     same size as `axes`, whose elements give the index of the
+      %     figure in `figs` to which each axis belongs.
       %
       %     EX //
       %

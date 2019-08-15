@@ -15,7 +15,7 @@ function varargout = conditional(condition, true_expr, false_expr)
 %     executed expression function. If the result of `cond` is false-y and
 %     no `else_expr` is provided, then each output is the empty array ([]).
 %
-%     See also ternary, if, else
+%     See also ternary, if, else, guard_empty
 
 if ( condition() )
   [varargout{1:nargout}] = true_expr();
