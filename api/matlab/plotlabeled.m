@@ -1719,6 +1719,47 @@ classdef plotlabeled < handle
       assign_pair_inputs( pl, varargin );
     end
     
+    function n = num_category_specifiers(for_function_name)
+      
+      %   NUM_CATEGORY_SPECIFIERS -- Number of category specifiers for
+      %     function.
+      %
+      %     n = plotlabeled.num_category_specifiers( for_func ); returns
+      %     the number of category specifiers that the function uses. 
+      %
+      %     For example, plotlabeled.bar() requires categories specifiers 
+      %     for the x-axis, groups, and panels, and so
+      %     plotlabeled.num_category_specifiers( 'bar' ) returns 3.
+      %
+      %     See also plotlabeled
+      
+      persistent specifiers;
+      
+      if ( isempty(specifiers) || ~isvalid(specifiers) )
+        specifiers = containers.Map();
+        
+        specifiers('bar') = 3;
+        specifiers('boxplot') = 2;
+        specifiers('errorbar') = 3;
+        specifiers('hist') = 1;
+        specifiers('imagesc') = 1;
+        specifiers('lines') = 2;
+        specifiers('pie') = 2;
+        specifiers('scatter') = 2;
+        specifiers('stackedbar') = 3;
+        specifiers('violinalt') = 2;
+        specifiers('violinplot') = 2;
+      end
+      
+      validateattributes( for_function_name, {'char'}, {}, mfilename, 'function_name' );
+      
+      if ( ~ismethod('plotlabeled', for_function_name) )
+        error( '"%s" is not a plotlabeled plotting function.', for_function_name );
+      end
+      
+      n = specifiers(for_function_name);
+    end
+    
     %
     %   FIT FUNCS
     %
