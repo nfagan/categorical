@@ -249,7 +249,6 @@ classdef plotlabeled < handle
       c_shape = opts.c_shape;
       
       axs = gobjects( 1, n_subplots );
-      figure( opts.f );
       
       xdata = get_matx( obj, summary_mat );
       
@@ -548,7 +547,6 @@ classdef plotlabeled < handle
       p_labs = opts.p_labs;
       
       axs = gobjects( 1, n_subplots );
-      figure( opts.f );
       
       n_groups = double( size(g_combs, 1) );
       colors = obj.color_func( n_groups );
@@ -898,7 +896,6 @@ classdef plotlabeled < handle
       c_shape = opts.c_shape;
       
       axs = gobjects( 1, n_subplots );
-      figure( opts.f );
       
       xdat = get_x( obj, n_x );
       ydat = get_y( obj, n_y );
@@ -1332,7 +1329,6 @@ classdef plotlabeled < handle
       p_labs = opts.p_labs;
       
       axs = gobjects( 1, n_subplots );
-%       figure( opts.f );
       
       summary_mat = nan( size(x_combs, 1), size(g_combs, 1) );
       errors_mat = nan( size(summary_mat) );
@@ -2276,7 +2272,7 @@ classdef plotlabeled < handle
       
       %   BARWITHERR -- Plot a bar plot with error bars.
       %
-      %     Search fileexchange for 'barwitherr'
+      %     https://www.mathworks.com/matlabcentral/fileexchange/30639-barwitherr-errors-varargin
 
       % Check how the function has been called based on requirements for "bar"
       if nargin < 3
