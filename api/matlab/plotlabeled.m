@@ -1332,7 +1332,7 @@ classdef plotlabeled < handle
       p_labs = opts.p_labs;
       
       axs = gobjects( 1, n_subplots );
-      figure( opts.f );
+%       figure( opts.f );
       
       summary_mat = nan( size(x_combs, 1), size(g_combs, 1) );
       errors_mat = nan( size(summary_mat) );
