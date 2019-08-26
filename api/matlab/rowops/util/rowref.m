@@ -10,12 +10,6 @@ function d = rowref(data, I)
 %     vector, and all elements along the remaining dimensions.
 %
 %     See also rowasgn, fcat
-%
-%     IN:
-%       - `data` (/T/)
-%       - `I` (double, uint64, logical)
-%     OUT:
-%       - `d` (/T/)
 
 d = dimref( data, I, 1 );
 

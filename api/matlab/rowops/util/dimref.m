@@ -11,8 +11,10 @@ function d = dimref(data, I, dim)
 %
 %     See also rowref
 
-assert( isscalar(dim) && dim > 0 && dim <= ndims(data) ...
-  , 'Dimension must be an integer scalar within indexing range.' );
+if ( ~(isscalar(dim) && dim > 0 && dim <= ndims(data)) )
+  error( 'Dimension must be an integer scalar within indexing range.' );
+end
+
 indices = colons( ndims(data) );
 indices{dim} = I;
 d = data(indices{:});

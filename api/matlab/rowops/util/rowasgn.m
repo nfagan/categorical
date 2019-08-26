@@ -12,12 +12,6 @@ function to = rowasgn(to, inds, data)
 %     vector, and uses colons (':') for the remaining dimensions.
 %
 %     See also rowref, fcat
-%
-%     IN:
-%       - `data` (/T/)
-%       - `I` (double, uint64, logical)
-%     OUT:
-%       - `d` (/T/)
 
 colons = repmat( {':'}, 1, ndims(data)-1 );
 to(inds, colons{:}) = data;

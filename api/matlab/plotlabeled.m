@@ -35,9 +35,11 @@ classdef plotlabeled < handle
     x_lims = [];
     y_lims = [];
     c_lims = [];
+    r_lims = [];
     match_x_lims = true;
     match_y_lims = true;
     match_c_lims = true;
+    match_r_lims = true;
     x_order = {};
     group_order = {};
     panel_order = {};
@@ -362,6 +364,73 @@ classdef plotlabeled < handle
         axs = groupplot( obj, 'errorbar', varargin{:} );
       catch err
         throw( err );
+      end
+    end
+    
+    function [axs, hs, indices] = polarhistogram(obj, theta, labels, panels, varargin)
+      
+      %   POLARHISTOGRAM -- Create polar histograms for subsets of data.
+      %
+      %     polarhistogram( pl, theta, labels, panels ); creates polar
+      %     histograms from the vector of angles `theta`, with separate
+      %     panels for each subset of `theta` identified by a combination
+      %     of labels in `panels` categories.
+      %
+      %     polarhistogram( ..., 'name', value ); passes additional name-
+      %     value paired arguments to the built-in polarhistogram function.
+      %
+      %     axs = polarhistogram(...) returns an array of handles to the
+      %     created polar axes.
+      %
+      %     [..., hs] also returns a cell array of handles to the created
+      %     polar histogram plots.
+      %
+      %     [..., indices] also returns a cell array of uint64 index
+      %     vectors identifying the subset(s) of `theta` plotted in each
+      %     panel.
+      %
+      %     See also polarhistogram, plotlabeled.hist, 
+      %     plotlabeled.pie, plotlabeled, fcat
+      
+      try
+        assert( ~has_mask(obj), 'Masking is not supported with `polarhistogram`.' );
+
+        validate_data_labels( theta, labels );
+        opts = matplotopts( obj, labels, {}, {}, panels, false );
+      catch err
+        throw( err );
+      end
+
+      I = opts.I;
+
+      n_subplots = opts.n_subplots;
+      c_shape = opts.c_shape;
+
+      axs = gobjects( n_subplots, 1 );
+      hs = cell( size(axs) );
+      indices = cell( size(axs) );
+
+      for i = 1:n_subplots        
+        ax = subplot( c_shape(1), c_shape(2), i );
+        pax = polaraxes( 'units', ax.Units, 'position', ax.Position );
+        delete( ax );
+
+        row = find( opts.p_c, opts.p_combs(i, :) );
+        dat = rowref( theta, I{row} );
+
+        hs{i} = polarhistogram( pax, dat, varargin{:} );
+        title( pax, opts.p_labs(i, :) );
+
+        indices{i} = I{row};
+        axs(i) = pax;
+      end
+      
+      set_lims( obj, axs, 'rlim', get_rlims(obj, axs) );
+
+      function validate_data_labels(data, labels)
+        assert( isa(labels, 'fcat'), 'Labels must be fcat; were "%s".', class(labels) );
+        assert( size(data, 1) == length(labels) ...
+          , 'Length of labels must match number of rows of data.' );
       end
     end
     
@@ -1586,7 +1655,7 @@ classdef plotlabeled < handle
       %   GET_FIGURE
       
       if ( isempty(obj.fig) || ~isvalid(obj.fig) )
-        f = figure(1);
+        f = gcf();
       else
         f = obj.fig;
       end
@@ -1622,6 +1691,13 @@ classdef plotlabeled < handle
       %   GET_CLIMS
       
       c = get_current_lims( obj, 'c_lims', 'match_c_lims', 'clim', axs );      
+    end
+    
+    function r = get_rlims(obj, axs)
+      
+      %   GET_RLIMS
+      
+      r = get_current_lims( obj, 'r_lims', 'match_r_lims', 'rlim', axs );
     end
     
     function l = get_current_lims(obj, prop, match_prop, kind, axs)
@@ -1742,6 +1818,7 @@ classdef plotlabeled < handle
         specifiers('boxplot') = 2;
         specifiers('errorbar') = 3;
         specifiers('hist') = 1;
+        specifiers('polarhistogram') = 1;
         specifiers('imagesc') = 1;
         specifiers('lines') = 2;
         specifiers('pie') = 2;
