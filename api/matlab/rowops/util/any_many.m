@@ -1,6 +1,6 @@
 function out = any_many(varargin)
 
-%   ANY_MANY -- Any across all inputs.
+%   ANY_MANY -- Any across several inputs.
 %
 %     any_many( a, b ) is any( a | b );
 %     any_many( a, b, c, ... ) is any( a | b | c ... )

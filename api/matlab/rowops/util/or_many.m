@@ -10,7 +10,7 @@ function out = or_many(varargin)
 
 narginchk( 1, Inf );
 
-out = varargin{1};
+out = logical( varargin{1} );
 n = nargin;
 
 for i = 2:n

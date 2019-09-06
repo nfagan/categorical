@@ -279,18 +279,31 @@ classdef plotlabeled < handle
           end
         end
         
-        h = plot( xdata, summary_mat );
+        if ( obj.per_panel_labels )
+          all_nans = all( isnan(summary_mat), 1 );
+          plt_summary_mat = summary_mat(:, ~all_nans);
+          plt_errors_mat = errors_mat(:, ~all_nans);
+          plt_x = xdata(:, ~all_nans);
+          leg_ind = ~all_nans;
+        else
+          plt_summary_mat = summary_mat;
+          plt_errors_mat = errors_mat;
+          leg_ind = true( 1, size(summary_mat, 2) );
+          plt_x = xdata;
+        end
+        
+        h = plot( plt_x, plt_summary_mat );
         
         set( h, 'linewidth', obj.main_line_width );
         
         if ( obj.add_errors )
-          plotlabeled.plot_error_ribbon( ax, h, xdata, summary_mat, errors_mat );
+          plotlabeled.plot_error_ribbon( ax, h, plt_x, plt_summary_mat, plt_errors_mat );
         end
         
         summary_mat(:) = NaN;
         errors_mat(:) = NaN;
         
-        conditional_add_legend( obj, h, opts.g_labs, i == 1 );
+        conditional_add_legend( obj, h, opts.g_labs(leg_ind), i == 1 );
         title( opts.p_labs(i, :) );
         
         axs(i) = ax;
@@ -1356,10 +1369,16 @@ classdef plotlabeled < handle
           end
         end
         
+        if ( obj.per_panel_labels )
+          keep_ind = all( ~isnan(summary_mat), 2 );
+        else
+          keep_ind = true( size(summary_mat, 1), 1 );
+        end
+        
         switch ( func_name )
           case 'bar'
             if ( obj.add_errors )
-              h = plotlabeled.barwitherr( errors_mat, summary_mat );
+              h = plotlabeled.barwitherr( errors_mat(keep_ind, :), summary_mat(keep_ind, :) );
             else
               h = bar( summary_mat );
             end
@@ -1404,12 +1423,12 @@ classdef plotlabeled < handle
           conditional_add_legend( obj, h, g_labs, i == 1 );
         end
         
-        n_ticks = size( summary_mat, 1 );
+        n_ticks = sum( keep_ind );
         
         set( ax, 'xtick', 1:n_ticks );
         
         if ( obj.add_x_tick_labels )
-          set( ax, 'xticklabel', x_labs );
+          set( ax, 'xticklabel', x_labs(keep_ind) );
           set( ax, 'xticklabelrotation', obj.x_tick_rotation );
         end
         
@@ -1435,17 +1454,19 @@ classdef plotlabeled < handle
           return
         end
         
-        if ( ~strcmp(func_name, 'errorbar') )
-          return
+        if ( strcmp(func_name, 'errorbar') )
+        
+          is_missing_series = arrayfun( @(x) all(columnize(isnan(x.YData))), h );
+
+          if ( all(is_missing_series) )
+            return
+          end
+
+          legend( h(~is_missing_series), g_labs(~is_missing_series) );
+        elseif ( strcmp(func_name, 'bar') )
+          
+          legend( h, g_labs );
         end
-        
-        is_missing_series = arrayfun( @(x) all(columnize(isnan(x.YData))), h );
-        
-        if ( all(is_missing_series) )
-          return
-        end
-        
-        legend( h(~is_missing_series), g_labs(~is_missing_series) );
       end
       
       function apply_fit(obj, ax, hs, summary_mat)
