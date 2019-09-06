@@ -69,6 +69,10 @@ classdef fcat < handle
       
       %   PROGENITORSMATCH -- True if two fcats have the same source.
       %
+      %     tf = progenitorsmatch( a, b ); returns true if `a` and `b` are
+      %     fcat objects with the same labels, categories, and internal
+      %     mappings between string labels and numeric label-ids.
+      %
       %     Internally, fcat objects house matrices of uint32 ids mapped to
       %     string labels. Ids are chosen randomly upon insertion of new
       %     labels, such that two objects with semantically identical
@@ -80,7 +84,13 @@ classdef fcat < handle
       %     source of their label mapping -- and employ faster between-
       %     object functions if those progenitors match.
       %
-      %     See also fcat/eq, fcat/findall
+      %     EX //
+      %
+      %     f = fcat.example();
+      %     f2 = fcat.like( f );
+      %     progenitorsmatch( f, f2 ) %  true
+      %
+      %     See also fcat.like, fcat/eq, fcat/findall, fcat/append
 
       if ( ~isa(obj, 'fcat') || ~isa(B, 'fcat') )
         tf = false;

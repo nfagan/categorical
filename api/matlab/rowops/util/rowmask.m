@@ -6,11 +6,6 @@ function mask = rowmask(data)
 %     to `size( A, 1 )`.
 %
 %     See also fcat, fcat/find, rows
-%
-%     IN:
-%       - `data` (/any/)
-%     OUT:
-%       - `mask` (double)
 
 mask = (1:rows(data))';
 
