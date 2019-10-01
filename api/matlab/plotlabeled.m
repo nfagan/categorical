@@ -51,6 +51,7 @@ classdef plotlabeled < handle
     prefer_multiple_xs = false;
     errorbar_connect_non_nan = false;
     pie_include_percentages = false;
+    hist_add_summary_line = false;
   end
   
   methods
@@ -608,6 +609,7 @@ classdef plotlabeled < handle
         axs(i) = ax;
       end
       
+      set_lims( obj, axs, 'xlim', get_xlims(obj, axs) );
       set_lims( obj, axs, 'ylim', get_ylims(obj, axs) );
     end
     
@@ -1004,6 +1006,7 @@ classdef plotlabeled < handle
       
       axs = gobjects( n_subplots, 1 );
       indices = cell( size(axs) );
+      summary_stats = cell( size(axs) );
       
       for i = 1:n_subplots
         ax = subplot( c_shape(1), c_shape(2), i );
@@ -1014,6 +1017,10 @@ classdef plotlabeled < handle
         
         h = histogram( ax, dat, varargin{:} );
         
+        if ( obj.hist_add_summary_line )
+          summary_stats{i} = obj.summary_func( dat );
+        end
+        
         conditional_add_legend( obj, h, opts.g_labs, i == 1 );
         title( ax, opts.p_labs(i, :) );
         
@@ -1023,6 +1030,16 @@ classdef plotlabeled < handle
             
       set_lims( obj, axs, 'xlim', get_xlims(obj, axs) );
       set_lims( obj, axs, 'ylim', get_ylims(obj, axs) );
+      
+      if ( obj.hist_add_summary_line )
+        for i = 1:numel(axs)
+          ax = axs(i);
+          hold( ax, 'on' );
+          summary_dat = summary_stats{i};
+          plot( ax, [summary_dat; summary_dat], columnize(get(ax, 'ylim')), 'k--' );
+          text( ax, summary_dat, max(get(ax, 'ylim')), sprintf('%0.3f', summary_dat) );
+        end
+      end
       
       function validate_data_labels(data, labels)
         assert( isa(labels, 'fcat'), 'Labels must be fcat; were "%s".', class(labels) );
