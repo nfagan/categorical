@@ -1891,17 +1891,6 @@ classdef fcat < handle
       end
     end
     
-    function obj = mergenew(obj, varargin)
-      
-      %   MERGENEW -- Join other's contents, preserving present categories.
-      %
-      %     MERGENEW is not recommended. Use `join` instead.
-      %
-      %     See also fcat/join.
-      
-      obj = join( obj, varargin{:} );
-    end
-    
     function obj = join(obj, varargin)
       
       %   JOIN -- Join other's contents, preserving present categories.
