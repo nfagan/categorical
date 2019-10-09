@@ -359,6 +359,48 @@ util::u32 util::categorical::add_category(const std::string& category)
     return categorical_status::OK;
 }
 
+//  add_label: Add a label in a category.
+//
+//      An error code is returned if the label is already present
+//      in another category.
+
+util::u32 util::categorical::add_label(const std::string& category, const std::string& label) {
+    if (!has_category(category))
+    {
+        return util::categorical_status::CATEGORY_DOES_NOT_EXIST;
+    }
+    
+    if (has_label(label))
+    {
+        if (category == m_in_category.at(label))
+        {
+            //  Label already exists in this category.
+            return util::categorical_status::OK;
+        }
+        else 
+        {
+            return util::categorical_status::LABEL_EXISTS_IN_OTHER_CATEGORY;
+        }
+    }
+    
+    //  Check if the label is a collapsed expression. If it is, ensure it is the collapsed
+    //  expression for `category`.
+    for (const auto& categories : m_category_indices)
+    {
+        const std::string& test_category = categories.first;
+        
+        if (get_collapsed_expression(test_category) == label && test_category != category)
+        {
+            return util::categorical_status::COLLAPSED_EXPRESSION_IN_WRONG_CATEGORY;
+        }
+    }
+    
+    unchecked_insert_label(label, get_next_label_id(), category);
+    m_progenitor_ids.randomize();
+    
+    return util::categorical_status::OK;
+}
+
 //  require_category: Add category if it does not exist.
 //
 //      If a current category contains the label that is the collapsed expression
@@ -722,7 +764,7 @@ std::vector<util::u64> util::categorical::find_impl(const std::vector<std::strin
         {
             index_map[cat] = index;
         }
-        else
+        else if (sz > 0)
         {
             bit_array& current = index_map[cat];
             bit_array::unchecked_dot_or(current, current, index, 0, sz);

@@ -1466,6 +1466,36 @@ classdef fcat < handle
       cat_api( 'add_cat', obj.id, category );      
     end
     
+    function obj = addlab(obj, category, labels)
+      
+      %   ADDLAB -- Add label or labels to category(ies).
+      %
+      %     addlab( obj, category, label ); adds the char `label` to 
+      %     `category`. If `label` already exists, it must belong to 
+      %     `category`. If `label` is a collapsed expression, it must be 
+      %     the collapsed expression for `category`.
+      %
+      %     addlab( obj, category, labels ); for the cell array of strings
+      %     `labels` adds each label to `category`.
+      %
+      %     addlab( obj, categories, labels ); for the cell arrays of
+      %     strings `categories` and `labels` adds each entry in `labels`
+      %     to the corresponding category in `categories`. `labels` and
+      %     `categories` must have the same number of elements.
+      %
+      %     EX //
+      %
+      %     f1 = fcat.example();
+      %     f2 = addcat( fcat(), getcats(f1) );
+      %     % Insert all of f1's labels into f2.
+      %     addlab( f2, whichcat(f1, getlabs(f1)), getlabs(f1) );
+      %     all( haslab(f2, getlabs(f1)) )  % -> true
+      %
+      %     See also fcat/addcat, fcat/setcat, fcat/fcat
+      
+      cat_api( 'add_label', obj.id, category, labels );
+    end
+    
     function obj = requirecat(obj, category)
       
       %   REQUIRECAT -- Add category if it does not exist.

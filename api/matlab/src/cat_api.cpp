@@ -62,7 +62,8 @@ namespace util {
             {"find_none",               util::ops::FIND_NONE},
             {"which_cat",               util::ops::WHICH_CATEGORY},
             {"is_uniform_cat",          util::ops::IS_UNIFORM_CATEGORY},
-            {"version",                 util::ops::GET_VERSION}
+            {"version",                 util::ops::GET_VERSION},
+            {"add_label",               util::ops::ADD_LABEL}
         });
         
         std::array<util::mex_func_t, util::ops::N_OPS> funcs;
@@ -137,6 +138,7 @@ void util::init_cat_functions()
     globals::funcs[ops::WHICH_CATEGORY] =           &util::which_category;
     globals::funcs[ops::IS_UNIFORM_CATEGORY] =      &util::is_uniform_category;
     globals::funcs[ops::GET_VERSION] =              &util::get_version;
+    globals::funcs[ops::ADD_LABEL] =                &util::add_label;
     
     globals::INITIALIZED = true;
     

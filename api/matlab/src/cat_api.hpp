@@ -33,6 +33,7 @@ namespace util {
     MEXFUNC(set_partial_categories);
     MEXFUNC(require_category);
     MEXFUNC(add_category);
+    MEXFUNC(add_label);
     MEXFUNC(collapse_category);
     MEXFUNC(remove_category);
     MEXFUNC(rename_category);

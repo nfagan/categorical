@@ -213,6 +213,7 @@ public:
     util::u32 fill_category(const std::string& category, const std::string& lab);
     
     util::u32 add_category(const std::string& category);
+    util::u32 add_label(const std::string& category, const std::string& label);
     util::u32 require_category(const std::string& category);
     util::u32 rename_category(const std::string& from, const std::string& to);
     
