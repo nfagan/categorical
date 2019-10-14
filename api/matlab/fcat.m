@@ -922,7 +922,7 @@ classdef fcat < handle
       end
     end
     
-    function [obj, I] = unique(obj)
+    function [obj, I] = unique(obj, varargin)
       
       %   UNIQUE -- Retain unique rows.
       %
@@ -1920,17 +1920,16 @@ classdef fcat < handle
         error( 'Cannot join objects of class "%s".', class(obj) );
       end
       
-      try
-        cellfun( @(x) assert(isa(x, 'fcat'), ['Cannot join objects of' ...
-          , ' class "%s".'], class(x)), varargin );
-      catch err
-        throwAsCaller( err );
-      end
-      
       N = numel( varargin );
       
       for i = 1:N
-        cat_api( 'merge_new', obj.id, varargin{i}.id );
+        b_obj = varargin{i};
+        
+        if ( ~isa(b_obj, 'fcat') )
+          error( 'Cannot join objects of class "%s".', class(b_obj) );
+        end
+        
+        cat_api( 'merge_new', obj.id, b_obj.id );
       end
     end
     
@@ -2555,6 +2554,48 @@ classdef fcat < handle
   
   methods (Static = true, Access = private)
     
+    function [cats, mask_a, apply_mask_a, mask_b, apply_mask_b] = ...
+        parse_set_membership_function_inputs(a, b, inputs, output_indices)
+      
+      if ( ~isa(a, 'fcat') || ~isa(b, 'fcat') )
+        error( 'Sets must be fcat objects.' );
+      end
+      
+      if ( isempty(inputs) )
+        cats = intersect( getcats(a), getcats(b) );
+%         if ( ncats(b) ~= numel(cats) || ~all(hascat(b, cats)) )
+%           error( 'Categories must match between objects, unless a subset is specified.' );
+%         end
+      else
+        cats = inputs{1};
+      end
+      
+      if ( numel(inputs) < 2 )
+        if ( output_indices )
+          mask_a = rowmask( a );
+        else
+          mask_a = [];
+        end
+        
+        apply_mask_a = {};  
+      else
+        mask_a = inputs{2};
+        apply_mask_a = { inputs{2} };
+      end
+      if ( numel(inputs) < 3 )
+        if ( output_indices )
+          mask_b = rowmask( b );
+        else
+          mask_b = [];
+        end
+        
+        apply_mask_b = {};
+      else
+        mask_b = inputs{3};
+        apply_mask_b = { inputs{3} };
+      end
+    end
+    
     function validate_constructor_signature(stack)
       
       %   VALIDATE_CONSTRUCTOR_SIGNATURE -- Ensure constructor is 
@@ -2955,6 +2996,223 @@ classdef fcat < handle
         catch err
           throw( err );
         end
+      end
+    end
+    
+    function [out, ia, ib] = intersect(a, b, varargin)
+      
+      %   INTERSECT -- Set intersection for fcat objects.
+      %
+      %     out = fcat.intersect( a, b ); for fcat objects `a` and `b`
+      %     returns a new fcat object `out` that is intersection of the
+      %     sorted rows of `a` and `b`. `a` and `b` must have the same 
+      %     categories.
+      %
+      %     [out, ia, ib] = fcat.intersect( a, b ); also returns index 
+      %     vectors `ia` and `ib` such that `out` is given by `a(ia)` and 
+      %     `b(ib)`.
+      %
+      %     out = fcat.intersect( a, b, categories ); evaluates the 
+      %     intersection in `categories`, such that rows of `categories` in 
+      %     `out` constitute the intersection of rows of `categories` in 
+      %     `a` and `b`. In this case, `a` and `b` can have different 
+      %     category sets, but each must have all of `categories`. `out` 
+      %     contains the intersection of `a` and `b`'s category sets. For 
+      %     each category in `a` and `b` not specified in `categories`, the 
+      %     value of that category in `out` is determined by the following
+      %     rule:
+      %
+      %       - If there is only a single unique entry in `a` and `b` for 
+      %         that category, and this unique entry is the same between 
+      %         `a` and `b`, then the category is set to that value.
+      %       - Otherwise, the value is the collapsed expression for that
+      %         category.
+      %
+      %     out = fcat.intersect( a, b, categories, mask_a, mask_b ); 
+      %     evaluates the intersection of the subsets of rows of `a` and 
+      %     `b` given by the uint64 index vectors `mask_a` and `mask_b`, 
+      %     respectively.
+      %
+      %     See also fcat.union, fcat, intersect
+      
+      output_indices = nargout > 1;
+      
+      try
+        [cats, mask_a, apply_mask_a, mask_b, apply_mask_b] = ...
+          fcat.parse_set_membership_function_inputs( a, b, varargin, output_indices );
+      catch err
+        throw( err );
+      end
+
+      cat_a = categorical( a, cats, apply_mask_a{:} );
+      cat_b = categorical( b, cats, apply_mask_b{:} );
+
+      if ( output_indices )
+        [~, ia, ib] = intersect( cat_a, cat_b, 'rows' );
+        
+        if ( isempty(cat_a) || isempty(cat_b) )
+          ia = zeros( 0, 0, class(mask_a) );
+          ib = zeros( 0, 0, class(mask_b) );
+        else
+          ia = mask_a(ia);
+          ib = mask_b(ib);
+        end
+      else
+        [~, ia] = intersect( cat_a, cat_b, 'rows' );
+
+        if ( isempty(cat_a) || isempty(cat_b) )
+          ia = zeros( 0, 0, class(mask_a) );
+        end
+      end
+
+      a_cats = getcats( a );
+      shared_cats = intersect( a_cats, getcats(b) );
+      out = prune( rmcat(keep(copy(a), ia), setdiff(a_cats, shared_cats)) );
+
+      if ( isempty(out) )
+        return
+      end
+      
+      rest_cats = setdiff( shared_cats, cats );
+
+      for i = 1:numel(rest_cats)  
+        category = rest_cats{i};
+
+        is_un_a = isuncat( a, category, apply_mask_a{:} );
+        is_un_b = isuncat( b, category, apply_mask_b{:} );
+
+        if ( is_un_a && is_un_b )
+          combs_a = combs( a, category, apply_mask_a{:} );
+          combs_b = combs( b, category, apply_mask_b{:} );
+
+          if ( isempty(combs_a) )
+            set_to = combs_b;      
+          elseif ( isempty(combs_b) || strcmp(combs_a, combs_b) )
+            set_to = combs_a;
+          end
+        else
+          set_to = {};
+        end
+        
+        if ( iscell(set_to) && isempty(set_to) )
+          set_to = makecollapsed( a, category );
+        end
+
+        setcat( out, category, set_to );
+      end
+    end
+    
+    function [out, ia, ib] = union(a, b, varargin)
+      
+      %   UNION -- Set union for fcat objects.
+      %
+      %     out = fcat.union( a, b ); for fcat objects `a` and `b` returns
+      %     a new fcat object `out` that is the union of sorted rows of 
+      %     `a` and `b`. `a` and `b` must have the same categories.
+      %
+      %     [out, ia, ib] = fcat.union( a, b ); also returns index vectors 
+      %     `ia` and `ib` such that `out` is a sorted combination of 
+      %     `a(ia)` and `b(ib)`.
+      %
+      %     out = fcat.union( a, b, categories ); evaluates the union in
+      %     `categories`, such that rows of `categories` in `out` 
+      %     constitute the union of rows of `categories` in `a` and `b`. In 
+      %     this case, `a` and `b` can have different category sets, but 
+      %     each must have all of `categories`. `out` contains the union of 
+      %     `a` and `b`'s category sets. For each category in `a` and `b` 
+      %     not specified in `categories`, the value of that category in 
+      %     `out` is determined by the following rules:
+      %
+      %       - Given: both `a` and `b` have the category; there is only a
+      %         single unique entry in `a` and `b` for that category; and 
+      %         this unique entry is the same between `a` and `b`, then the 
+      %         category is set to that value.
+      %       - Given: `a` has the category and `b` does not, and there is 
+      %         only a single unique entry in `a` for that category, then 
+      %         it is set to that value.
+      %       - Given: `b` has the category and `a` does not, and there is 
+      %         only a single unique entry in `b` for that category, then 
+      %         it is set to that value.
+      %       - Otherwise, the value is the collapsed expression for that
+      %         category.
+      %
+      %     out = fcat.union( a, b, categories, mask_a, mask_b ); evaluates
+      %     the union of the subsets of rows of `a` and `b` given by 
+      %     the uint64 index vectors `mask_a` and `mask_b`, respectively.
+      %
+      %     See also fcat.intersect, fcat, union, fcat/collapsecat
+      
+      output_indices = nargout > 1;
+      
+      try
+        [cats, mask_a, apply_mask_a, mask_b, apply_mask_b] = ...
+          fcat.parse_set_membership_function_inputs( a, b, varargin, output_indices );
+      catch err
+        throw( err );
+      end
+
+      cat_a = categorical( a, cats, apply_mask_a{:} );
+      cat_b = categorical( b, cats, apply_mask_b{:} );
+
+      if ( output_indices )
+        [c, ia, ib] = union( cat_a, cat_b, 'rows' );
+
+        if ( isempty(cat_a) )
+          ia = zeros( 0, 0, class(mask_a) );
+        else
+          ia = mask_a(ia);
+        end
+
+        if ( isempty(cat_b) )
+          ib = zeros( 0, 0, class(mask_b) );
+        else
+          ib = mask_b(ib);
+        end
+      else
+        c = union( cat_a, cat_b, 'rows' );
+      end
+
+      out = fcat.from( c, cats );
+      rest_cats = setdiff( union(getcats(a), getcats(b)), cats );
+
+      if ( isempty(out) )
+        addcat( out, rest_cats );
+        return
+      end
+
+      for i = 1:numel(rest_cats)
+        cat = rest_cats{i};
+
+        has_a = hascat( a, cat );
+        has_b = hascat( b, cat );
+
+        is_un_a = has_a && isuncat( a, cat, apply_mask_a{:} );
+        is_un_b = has_b && isuncat( b, cat, apply_mask_b{:} );
+
+        if ( is_un_a && ~has_b )
+          set_to = combs( a, cat, apply_mask_a{:} );
+
+        elseif ( is_un_b && ~has_a )
+          set_to = combs( b, cat, apply_mask_b{:} );
+
+        elseif ( is_un_a && is_un_b )
+          set_a = combs( a, cat, apply_mask_a{:} );
+          set_b = combs( b, cat, apply_mask_b{:} );
+
+          if ( isempty(set_a) )
+            set_to = set_b;
+          elseif ( isempty(set_b) || strcmp(set_a, set_b) )
+            set_to = set_a;
+          end
+        else
+          set_to = makecollapsed( out, cat );
+        end
+        
+        if ( iscell(set_to) && isempty(set_to) )
+          set_to = makecollapsed( out, cat );
+        end
+
+        addsetcat( out, cat, set_to );
       end
     end
     
