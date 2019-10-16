@@ -62,7 +62,8 @@ namespace util {
         static constexpr uint32_t IS_UNIFORM_CATEGORY = 55u;
         static constexpr uint32_t GET_VERSION = 56u;
         static constexpr uint32_t ADD_LABEL = 57u;
+        static constexpr uint32_t UNION = 58u;
         //
-        static constexpr uint32_t N_OPS = 58u;
+        static constexpr uint32_t N_OPS = 59u;
     }
 }

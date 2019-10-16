@@ -10,6 +10,14 @@
 #include <iostream>
 #include <algorithm>
 
+namespace
+{
+    inline std::string make_label_id_hash_string(const util::u64 num_categories)
+    {
+        return std::string(num_categories * sizeof(util::u32), 'a');
+    }
+}
+
 //  !=: Check for inequality.
 
 bool util::categorical::operator !=(const util::categorical &other) const
@@ -138,6 +146,19 @@ bool util::categorical::has_label(util::u32 label_id) const
 bool util::categorical::has_category(const std::string &category) const
 {
     return m_category_indices.find(category) != m_category_indices.end();
+}
+
+bool util::categorical::has_categories(const std::vector<std::string>& categories) const
+{
+    for (const auto& category : categories)
+    {
+        if (!has_category(category))
+        {
+            return false;
+        }
+    }
+    
+    return true;
 }
 
 //  resize: Resize such that each column of label indices has N rows.
@@ -370,6 +391,16 @@ util::u32 util::categorical::add_label(const std::string& category, const std::s
         return util::categorical_status::CATEGORY_DOES_NOT_EXIST;
     }
     
+    return add_label_unchecked_has_category(category, label, true);
+}
+
+//  add_label_unchecked_has_category: Add a label in a category, without checking whether the category exists.
+//
+
+util::u32 util::categorical::add_label_unchecked_has_category(const std::string& category,
+                                                              const std::string& label,
+                                                              const bool confirm_not_wrong_collapsed_expression)
+{
     if (has_label(label))
     {
         if (category == m_in_category.at(label))
@@ -377,21 +408,24 @@ util::u32 util::categorical::add_label(const std::string& category, const std::s
             //  Label already exists in this category.
             return util::categorical_status::OK;
         }
-        else 
+        else
         {
             return util::categorical_status::LABEL_EXISTS_IN_OTHER_CATEGORY;
         }
     }
     
-    //  Check if the label is a collapsed expression. If it is, ensure it is the collapsed
-    //  expression for `category`.
-    for (const auto& categories : m_category_indices)
+    if (confirm_not_wrong_collapsed_expression)
     {
-        const std::string& test_category = categories.first;
-        
-        if (get_collapsed_expression(test_category) == label && test_category != category)
+        //  Check if the label is a collapsed expression. If it is, ensure it is the collapsed
+        //  expression for `category`.
+        for (const auto& categories : m_category_indices)
         {
-            return util::categorical_status::COLLAPSED_EXPRESSION_IN_WRONG_CATEGORY;
+            const std::string& test_category = categories.first;
+            
+            if (get_collapsed_expression(test_category) == label && test_category != category)
+            {
+                return util::categorical_status::COLLAPSED_EXPRESSION_IN_WRONG_CATEGORY;
+            }
         }
     }
     
@@ -3148,10 +3182,28 @@ std::vector<std::string> util::categorical::get_categories() const
         cats[i++] = it.first;
     }
     
-    //  sort category names
+    //  Important: sort category names
     std::sort(cats.begin(), cats.end());
     
     return cats;
+}
+
+//  get_categories_except: Get all categories, except those in `others`.
+
+std::vector<std::string> util::categorical::get_categories_except(const std::vector<std::string>& others) const
+{
+    std::vector<std::string> all_categories = get_categories();
+    std::vector<std::string> sorted_categories = others;
+    
+    std::sort(sorted_categories.begin(), sorted_categories.end());
+    auto categories_end = std::unique(sorted_categories.begin(), sorted_categories.end());
+    
+    std::vector<std::string> difference;
+    std::set_difference(all_categories.begin(), all_categories.end(),
+                        sorted_categories.begin(), categories_end,
+                        std::back_inserter(difference));
+    
+    return difference;
 }
 
 //  get_labels: Get all string labels.
@@ -3370,14 +3422,10 @@ bool util::categorical::is_uniform(const std::vector<util::u32>& lab_ids) const
     
     for (u64 i = 1; i < sz; i++)
     {
-        u32 curr = lab_ids[i];
-        
-        if (curr != last)
+        if (lab_ids[i] != last)
         {
             return false;
         }
-        
-        last = curr;
     }
     
     return true;
@@ -3421,14 +3469,10 @@ bool util::categorical::is_uniform(const std::vector<util::u32>& lab_ids,
             return false;
         }
         
-        u32 curr = lab_ids[idx];
-        
-        if (curr != last)
+        if (lab_ids[idx] != last)
         {
             return false;
         }
-        
-        last = curr;
     }
     
     return true;
@@ -3521,21 +3565,7 @@ std::vector<std::string> util::categorical::in_categories(const std::vector<std:
             }
         }
     }
-    
-//    for (util::u64 i = 0; i < n_labs; i++)
-//    {
-//        const std::string& lab = labs[i];
-//        const std::string& cat = m_in_category.at(lab);
-//
-//        for (util::u64 j = 0; j < n_cats; j++)
-//        {
-//            if (cat == categories[j])
-//            {
-//                result.push_back(lab);
-//            }
-//        }
-//    }
-    
+
     return result;
 }
 
@@ -3602,6 +3632,17 @@ void util::categorical::collapse_category(const std::string& category, bool* exi
 {
     using util::u32;
     
+#if 1
+    const bool is_uniform = is_uniform_category(category, exists);
+    if (!*exists || is_uniform)
+    {
+        return;
+    }
+    
+    std::vector<std::string> labs;
+    unchecked_in_category(labs, category);
+    u64 n_labs = labs.size();
+#else
     std::vector<std::string> labs = in_category(category, exists);
     u64 n_labs = labs.size();
     
@@ -3609,6 +3650,7 @@ void util::categorical::collapse_category(const std::string& category, bool* exi
     {
         return;
     }
+#endif
     
     std::string collapsed_expression = get_collapsed_expression(category);
     
@@ -3634,7 +3676,6 @@ void util::categorical::collapse_category(const std::string& category, bool* exi
     }
     
     std::vector<u32>& full_labs = m_labels[m_category_indices.at(category)];
-    
     std::fill(full_labs.begin(), full_labs.end(), lab_id);
     
     m_progenitor_ids.randomize();
@@ -3700,6 +3741,66 @@ bool util::categorical::progenitors_match(const util::categorical& other) const
     return m_progenitor_ids == other.m_progenitor_ids;
 }
 
+util::u32 util::categorical::reconcile_unique_label_id_matrices(util::categorical& a,
+                                                                const util::categorical& b,
+                                                                const std::vector<std::string>& categories,
+                                                                std::vector<std::vector<util::u32>>& unique_ids_b)
+{
+    std::unordered_map<u32, u32> visited_ids;
+    
+    for (u64 i = 0; i < unique_ids_b.size(); i++)
+    {
+        std::vector<u32>& column = unique_ids_b[i];
+        const std::string& category = categories[i];
+        const u64 num_rows = column.size();
+        
+        for (u64 j = 0; j < num_rows; j++)
+        {
+            const u32 id = column[j];
+            u32 dest_label_id;
+            
+            if (visited_ids.count(id) == 0)
+            {
+                const std::string label_b = b.m_label_ids.at(id);
+                const auto it_a = a.m_label_ids.find(label_b);
+                
+                if (it_a == a.m_label_ids.endk())
+                {
+                    //  Label does not exist -- attempt to add it.
+                    const bool confirm_not_collapsed_expression = false;
+                    const u32 add_status = a.add_label_unchecked_has_category(category, label_b, confirm_not_collapsed_expression);
+                    
+                    if (add_status != categorical_status::OK)
+                    {
+                        return add_status;
+                    }
+                    
+                    dest_label_id = a.m_label_ids.at(label_b);
+                }
+                else
+                {
+                    if (a.m_in_category.at(label_b) != category)
+                    {
+                        return categorical_status::LABEL_EXISTS_IN_OTHER_CATEGORY;
+                    }
+                    
+                    dest_label_id = it_a->second;
+                }
+                
+                visited_ids.emplace(id, dest_label_id);
+            }
+            else
+            {
+                dest_label_id = visited_ids.at(id);
+            }
+            
+            column[j] = dest_label_id;
+        }
+    }
+    
+    return categorical_status::OK;
+}
+
 util::u32 util::categorical::get_id(const categorical* self, const categorical* other,
                    const std::unordered_set<util::u32>& new_ids)
 {
@@ -3744,6 +3845,430 @@ util::u32 util::get_id(std::function<bool(util::u32)> exists_func)
     }
     
     return id;
+}
+
+//
+//  set membership
+//
+
+namespace {
+    std::vector<std::vector<util::u32>> unique_rows(std::unordered_set<std::string>& visited_rows,
+                                                    const std::vector<std::vector<util::u32>>& ids,
+                                                    const std::vector<util::u64>& category_indices,
+                                                    const std::vector<util::u64>& indices,
+                                                    const bool use_indices,
+                                                    const util::u64 index_offset,
+                                                    util::u32* status)
+    {
+        using util::u32;
+        using util::u64;
+        
+        *status = util::categorical_status::OK;
+        
+        if (ids.empty() || category_indices.empty() || (use_indices && indices.empty()))
+        {
+            return std::vector<std::vector<u32>>();
+        }
+        
+        const u64 max_rows = ids[0].size();
+        const u64 num_rows = use_indices ? indices.size() : max_rows;
+        const u64 num_cols = category_indices.size();
+        
+        std::vector<std::vector<util::u32>> result(num_cols);
+        
+        std::string row_hash = make_label_id_hash_string(num_cols);
+        char* hash_ptr = &row_hash[0];
+        
+        for (u64 i = 0; i < num_rows; i++)
+        {
+            u64 row_index = i;
+            
+            if (use_indices)
+            {
+                row_index = indices[i] - index_offset;
+                
+                if (row_index >= max_rows)
+                {
+                    *status = util::categorical_status::OUT_OF_BOUNDS;
+                    return std::vector<std::vector<u32>>();
+                }
+            }
+            
+            for (u64 j = 0; j < num_cols; j++)
+            {
+                const u32 id = ids[category_indices[j]][row_index];
+                std::memcpy(hash_ptr + j*sizeof(u32), &id, sizeof(u32));
+            }
+            
+            if (visited_rows.count(row_hash) == 0)
+            {
+                visited_rows.insert(row_hash);
+                
+                for (u64 j = 0; j < num_cols; j++)
+                {
+                    result[j].push_back(ids[category_indices[j]][row_index]);
+                }
+            }
+        }
+        
+        return result;
+    }
+    
+    std::vector<std::vector<util::u32>> unique_rows(std::unordered_set<std::string>& visited_rows,
+                                                    const std::vector<std::vector<util::u32>>& ids,
+                                                    const std::vector<util::u64>& category_indices)
+    {
+        util::u32 dummy_status;
+        return unique_rows(visited_rows, ids, category_indices, std::vector<util::u64>(), false, 0, &dummy_status);
+    }
+    
+    void union_unique_rows(std::unordered_set<std::string>& visited_rows_a,
+                           const std::vector<std::vector<util::u32>>& ids_b,
+                           std::vector<std::vector<util::u32>>& out)
+    {
+        using util::u32;
+        using util::u64;
+        
+        const u64 num_cols = ids_b.size();
+        
+        if (num_cols == 0)
+        {
+            return;
+        }
+        
+        const u64 num_rows = ids_b[0].size();
+        
+        std::string row_hash = make_label_id_hash_string(num_cols);
+        char* hash_ptr = &row_hash[0];
+        
+        for (u64 i = 0; i < num_rows; i++)
+        {
+            for (u64 j = 0; j < num_cols; j++)
+            {
+                const u32 id = ids_b[j][i];
+                std::memcpy(hash_ptr + j*sizeof(u32), &id, sizeof(u32));
+            }
+            
+            if (visited_rows_a.count(row_hash) == 0)
+            {
+                visited_rows_a.insert(row_hash);
+                
+                for (u64 j = 0; j < num_cols; j++)
+                {
+                    //  Insert new column if necessary.
+                    if (j >= out.size())
+                    {
+                        out.push_back(std::vector<u32>());
+                    }
+                    
+                    out[j].push_back(ids_b[j][i]);
+                }
+            }
+        }
+    }
+    
+    std::vector<std::string> intersecting_sorted_categories(const std::vector<std::string>& cats_a,
+                                                            const std::vector<std::string>& cats_b)
+    {
+        std::vector<std::string> categories;
+        std::set_intersection(cats_a.begin(), cats_a.end(),
+                              cats_b.begin(), cats_b.end(), std::back_inserter(categories));
+        
+        return categories;
+    }
+    
+    std::vector<std::string> union_sorted_categories(const std::vector<std::string>& cats_a,
+                                                     const std::vector<std::string>& cats_b)
+    {
+        std::vector<std::string> categories;
+        std::set_union(cats_a.begin(), cats_a.end(),
+                       cats_b.begin(), cats_b.end(), std::back_inserter(categories));
+        
+        return categories;
+    }
+    
+    std::vector<std::string> shared_categories(const util::categorical& a, const util::categorical& b)
+    {
+        std::vector<std::string> cats_a = a.get_categories();
+        std::vector<std::string> cats_b = b.get_categories();
+        return intersecting_sorted_categories(cats_a, cats_b);
+    }
+    
+    void keep_categories(util::categorical& a, const std::vector<std::string>& categories, bool* exists)
+    {
+        std::vector<std::string> to_remove = a.get_categories_except(categories);
+        
+        for (const auto& category : to_remove)
+        {
+            a.remove_category(category, exists);
+            
+            if (!*exists)
+            {
+                return;
+            }
+        }
+    }
+}
+
+util::categorical util::categorical::set_union(const util::categorical& a,
+                                               const util::categorical& b,
+                                               util::u32* status)
+{
+    std::vector<u64> no_indices;
+    std::vector<std::string> categories = shared_categories(a, b);
+    return set_union_impl(a, b, status, categories, no_indices, no_indices, 0, false);
+}
+
+util::categorical util::categorical::set_union(const util::categorical& a,
+                                               const util::categorical& b,
+                                               const std::vector<std::string>& categories,
+                                               util::u32* status)
+{
+    std::vector<u64> no_indices;
+    return set_union_impl(a, b, status, categories, no_indices, no_indices, 0, false);
+}
+
+util::categorical util::categorical::set_union(const util::categorical &a,
+                                               const util::categorical &b,
+                                               const std::vector<util::u64> &mask_a,
+                                               const std::vector<util::u64> &mask_b,
+                                               util::u32 *status,
+                                               util::u64 index_offset)
+{
+    std::vector<std::string> categories = shared_categories(a, b);
+    return set_union_impl(a, b, status, categories, mask_a, mask_b, index_offset, true);
+}
+
+util::categorical util::categorical::set_union(const util::categorical& a,
+                                               const util::categorical& b,
+                                               const std::vector<std::string>& categories,
+                                               const std::vector<util::u64>& mask_a,
+                                               const std::vector<util::u64>& mask_b,
+                                               util::u32* status,
+                                               util::u64 index_offset)
+{
+    return set_union_impl(a, b, status, categories, mask_a, mask_b, index_offset, true);
+}
+
+util::categorical util::categorical::set_union_impl(const util::categorical& a,
+                                                    const util::categorical& b,
+                                                    util::u32* status,
+                                                    const std::vector<std::string>& categories,
+                                                    const std::vector<util::u64>& mask_a,
+                                                    const std::vector<util::u64>& mask_b,
+                                                    const util::u64 index_offset,
+                                                    const bool use_indices)
+{
+    /*
+     1) If no categories are specified, categories are the intersection of
+     the categories of a and b.
+     2) If categories are specified, then a and b must have those categories.
+     3) For the categories in the given category set, the output is the union of rows
+     from a and b in those categories.
+     4) For remaining categories of a and b, the output contains either the collapsed
+     expression for the category, if it is non-uniform, or else the single label
+     in that category, if it is the same between a and b.
+     5) If both a and b are empty, then the output is empty.
+     */
+    
+    *status = categorical_status::OK;
+    
+    if (!a.has_categories(categories) || !b.has_categories(categories))
+    {
+        *status = categorical_status::CATEGORY_DOES_NOT_EXIST;
+        return util::categorical();
+    }
+    
+    util::categorical result;
+    
+    const u64 num_cats_in = categories.size();
+    const u64 num_rows_a = use_indices ? mask_a.size() : a.size();
+    const u64 num_rows_b = use_indices ? mask_b.size() : b.size();
+    
+    if (num_cats_in > 0)
+    {
+        std::vector<std::vector<util::u32>> unique_ids_a;
+        std::vector<std::vector<util::u32>> unique_ids_b;
+        bool dummy_exists;
+        
+        const auto cat_indices_a = a.get_category_indices(categories, categories.size(), &dummy_exists);
+        const auto cat_indices_b = b.get_category_indices(categories, categories.size(), &dummy_exists);
+        
+        //  Store the unique label ids of a.
+        std::unordered_set<std::string> visited_rows_a;
+        
+        if (use_indices)
+        {
+            unique_ids_a = unique_rows(visited_rows_a, a.m_labels, cat_indices_a, mask_a, true, index_offset, status);
+            
+            if (*status != categorical_status::OK)
+            {
+                return util::categorical();
+            }
+            
+            std::unordered_set<std::string> visited_rows_b;
+            unique_ids_b = unique_rows(visited_rows_b, b.m_labels, cat_indices_b, mask_b, true, index_offset, status);
+            
+            if (*status != categorical_status::OK)
+            {
+                return util::categorical();
+            }
+        }
+        else
+        {
+            unique_ids_a = unique_rows(visited_rows_a, a.m_labels, cat_indices_a);
+            std::unordered_set<std::string> visited_rows_b;
+            unique_ids_b = unique_rows(visited_rows_b, b.m_labels, cat_indices_b);
+        }
+        
+        //  Start with a as a template, but retain only `categories`.
+        result = empty_copy(a);
+        keep_categories(result, categories, &dummy_exists);
+        
+        //  Now overwrite the label id matrix for a, and update the category
+        //  indices for a.
+        result.m_labels = std::move(unique_ids_a);
+        
+        for (u64 i = 0; i < num_cats_in; i++)
+        {
+            result.m_category_indices[categories[i]] = i;
+            
+            if (result.m_labels.size() <= i)
+            {
+                result.m_labels.push_back(std::vector<u32>());
+            }
+        }
+        
+        result.prune();
+        
+        //  We must now potentially reconcile the different label id matrices
+        //  between a and b.
+        if (!result.progenitors_match(b))
+        {
+            const u32 reconcile_status = reconcile_unique_label_id_matrices(result, b, categories, unique_ids_b);
+            
+            if (reconcile_status != categorical_status::OK)
+            {
+                *status = reconcile_status;
+                return util::categorical();
+            }
+        }
+        
+        //  Now, result has all of the labels in `categories` of a and b associated with
+        //  unique_ids_a and unique_ids_b, and these matrices contain ids that are known to result.
+        //  Add rows of `unique_ids_b` not present in `unique_ids_a` to result.m_labels
+        union_unique_rows(visited_rows_a, unique_ids_b, result.m_labels);
+    }
+    
+    //  Finally, for the remaining categories not specified by `categories`,
+    //  add either the collapsed expression for the category, or the single
+    //  unique label for the category, if it is uniform (and, in the event
+    //  that a and b both have the category, matches between a and b).
+    const std::vector<std::string> remaining_categories_a = a.get_categories_except(categories);
+    const std::vector<std::string> remaining_categories_b = b.get_categories_except(categories);
+    const std::vector<std::string> remaining_categories = union_sorted_categories(remaining_categories_a, remaining_categories_b);
+    
+    const u64 row0_a = num_rows_a == 0 ? 0 : use_indices ? (mask_a[0] - index_offset) : 0;
+    const u64 row0_b = num_rows_b == 0 ? 0 : use_indices ? (mask_b[0] - index_offset) : 0;
+    
+    for (const auto& category : remaining_categories)
+    {
+        const util::u32 require_status = result.require_category(category);
+        
+        if (require_status != categorical_status::OK)
+        {
+            *status = require_status;
+            return util::categorical();
+        }
+        
+        //  If both a and b are empty, result is empty, but with all categories of
+        //  a and b.
+        if (num_rows_a == 0 && num_rows_b == 0)
+        {
+            continue;
+        }
+        
+        //  By default, assume we're assigning the collapsed expression for the category.
+        std::string assign_label = a.get_collapsed_expression(category);
+        bool is_uniform_a = false;
+        bool is_uniform_b = false;
+        const bool has_a = a.has_category(category);
+        const bool has_b = b.has_category(category);
+        
+        if (use_indices)
+        {
+            is_uniform_a = has_a && (mask_a.empty() || a.is_uniform_category(category, mask_a, status, index_offset));
+            if (*status != categorical_status::OK)
+            {
+                return util::categorical();
+            }
+            
+            is_uniform_b = has_b && (mask_b.empty() || b.is_uniform_category(category, mask_b, status, index_offset));
+            if (*status != categorical_status::OK)
+            {
+                return util::categorical();
+            }
+        }
+        else
+        {
+            bool exists;
+            is_uniform_a = has_a && a.is_uniform_category(category, &exists);
+            is_uniform_b = has_b && b.is_uniform_category(category, &exists);
+        }
+        
+        if (has_a && has_b)
+        {
+            const u64 cat_ind_a = a.m_category_indices.at(category);
+            const u64 cat_ind_b = b.m_category_indices.at(category);
+            
+            if (is_uniform_a && is_uniform_b)
+            {
+                //  a is empty, b is not -> use b's label
+                if (num_rows_a == 0)
+                {
+                    assign_label = b.m_label_ids.at(b.m_labels[cat_ind_b][row0_b]);
+                }
+                //  b is empty, a is not -> use a's label
+                else if (num_rows_b == 0)
+                {
+                    assign_label = a.m_label_ids.at(a.m_labels[cat_ind_a][row0_a]);
+                }
+                //  a and b are non-empty, but uniform -> check whether the labels are the same between them.
+                else
+                {
+                    const std::string& label_a = a.m_label_ids.at(a.m_labels[cat_ind_a][row0_a]);
+                    const std::string& label_b = b.m_label_ids.at(b.m_labels[cat_ind_b][row0_b]);
+                    
+                    //  ok -> labels are the same.
+                    if (label_a == label_b)
+                    {
+                        assign_label = label_a;
+                    }
+                }
+            }
+        }
+        //  a has this category, and it's uniform and non-empty -> assign the label.
+        else if (has_a && is_uniform_a && num_rows_a > 0)
+        {
+            const u64 cat_ind_a = a.m_category_indices.at(category);
+            assign_label = a.m_label_ids.at(a.m_labels[cat_ind_a][row0_a]);
+        }
+        //  b has this category, and it's uniform and non-empty -> assign the label.
+        else if (has_b && is_uniform_b && num_rows_b > 0)
+        {
+            const u64 cat_ind_b = b.m_category_indices.at(category);
+            assign_label = b.m_label_ids.at(b.m_labels[cat_ind_b][row0_b]);
+        }
+        
+        const u32 assign_status = result.set_category(category, {assign_label});
+        if (assign_status != categorical_status::OK)
+        {
+            *status = assign_status;
+            return util::categorical();
+        }
+    }
+    
+    return result;
 }
 
 //

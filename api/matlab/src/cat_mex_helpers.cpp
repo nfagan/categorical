@@ -1,4 +1,5 @@
 #include "cat_mex_helpers.hpp"
+#include <cmath>
 
 std::string util::get_error_text_missing_category(const std::string& category)
 {
@@ -163,6 +164,86 @@ std::string util::get_string_with_trap(const mxArray* in_str, const char* id)
     return res;
 }
 
+namespace 
+{
+    std::vector<uint64_t> unchecked_uint64_array_to_vector64(const mxArray* in_arr)
+    {
+        uint64_t n_els = mxGetNumberOfElements(in_arr);
+    
+        if (n_els == 0)
+        {
+            return std::vector<uint64_t>();
+        }
+
+        std::vector<uint64_t> res(n_els);
+        uint64_t* src = (uint64_t*) mxGetData(in_arr);
+        std::memcpy(res.data(), src, n_els * sizeof(uint64_t));
+
+        return res;
+    }
+    
+    std::vector<uint64_t> double_array_to_vector64(const mxArray* in_arr, const char* func_id)
+    {
+        uint64_t n_els = mxGetNumberOfElements(in_arr);
+    
+        if (n_els == 0)
+        {
+            return std::vector<uint64_t>();
+        }
+        
+        const char* const err_msg = "Indices must be positive, finite, and integer-valued.";
+        
+        std::vector<uint64_t> res(n_els);
+        double* src = (double*) mxGetData(in_arr);
+        
+        for (uint64_t i = 0; i < n_els; i++)
+        {            
+            const double ind = src[i];
+            
+            if (ind <= 0 || !std::isfinite(ind))
+            {
+                mexErrMsgIdAndTxt(func_id, err_msg);
+            }
+            
+            const double ind_int = std::fmod(ind, 1.0);
+            
+            if (ind_int != 0.0)
+            {
+                mexErrMsgIdAndTxt(func_id, err_msg);
+            }
+            
+            res[i] = uint64_t(ind);
+        }
+        
+        return res;
+    }
+}
+
+std::vector<uint64_t> util::double_or_uint64_array_to_vector64(const mxArray* in_arr, const char* func_id)
+{
+    mxClassID id = mxGetClassID(in_arr);
+    
+    if (id == mxUINT64_CLASS)
+    {
+        return unchecked_uint64_array_to_vector64(in_arr);
+    }
+    else if (id == mxDOUBLE_CLASS)
+    {        
+        if (mxIsComplex(in_arr))
+        {
+            mexErrMsgIdAndTxt(func_id, "Data must be real.");
+        }
+        
+        return double_array_to_vector64(in_arr, func_id);
+    }
+    else
+    {
+        mexErrMsgIdAndTxt(func_id, "Input must be of class uint64 or double.");
+        //  Unreachable.
+        return std::vector<uint64_t>();
+    }
+}
+
 std::vector<uint64_t> util::numeric_array_to_vector64(const mxArray* in_arr, const char* func_id)
 {
     
@@ -173,20 +254,7 @@ std::vector<uint64_t> util::numeric_array_to_vector64(const mxArray* in_arr, con
         mexErrMsgIdAndTxt(func_id, "Input must be uint64.");
     }
     
-    uint64_t n_els = mxGetNumberOfElements(in_arr);
-    
-    if (n_els == 0)
-    {
-        return std::vector<uint64_t>();
-    }
-    
-    std::vector<uint64_t> res(n_els);
-    
-    uint64_t* src = (uint64_t*) mxGetData(in_arr);
-    
-    std::memcpy(res.data(), src, n_els * sizeof(uint64_t));
-    
-    return res;
+    return unchecked_uint64_array_to_vector64(in_arr);
 }
 
 std::vector<uint32_t> util::numeric_array_to_vector32(const mxArray* in_arr, const char* func_id)
