@@ -42,6 +42,9 @@ public:
     V at(const K& key) const;
     K at(const V& key) const;
     
+    const V& ref_at(const K& key) const;
+    const K& ref_at(const V& key) const;
+    
     size_t erase(K key);
     size_t erase(V key);
     
@@ -111,6 +114,32 @@ template<typename K, typename V>
 K util::multimap<K, V>::at(const V& key) const
 {
     auto it = m_vk.find(key);
+    
+    if (it == m_vk.end())
+    {
+        throw std::runtime_error("key does not exist.");
+    }
+    
+    return it->second;
+}
+
+template<typename K, typename V>
+const V& util::multimap<K, V>::ref_at(const K &key) const
+{
+    const auto it = m_kv.find(key);
+    
+    if (it == m_kv.end())
+    {
+        throw std::runtime_error("key does not exist.");
+    }
+    
+    return it->second;
+}
+
+template<typename K, typename V>
+const K& util::multimap<K, V>::ref_at(const V &key) const
+{
+    const auto it = m_vk.find(key);
     
     if (it == m_vk.end())
     {

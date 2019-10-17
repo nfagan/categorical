@@ -1306,6 +1306,26 @@ classdef fcat < handle
       C = getcats( obj, varargin{:} );
     end
     
+    function C = nthcat(obj, nums, varargin)
+      
+      %   NTHCAT -- Get category name(s) by numeric index.
+      %
+      %     c = nthcat( obj, nums ) returns the set of category names `c`
+      %     identified by the numeric index `nums`. `c` is a cell array of
+      %     strings. The order of categories is consistent with the output 
+      %     of `getcats`.
+      %
+      %     nthcat( obj, nums, 'uniform' ); and 
+      %     nthcat( obj, nums, 'nonuniform' ); return the set of uniform
+      %     and non-uniform category names, respectively, identified by the
+      %     numeric index `nums`.
+      %
+      %     See also fcat/getcats
+      
+      C = getcats( obj, varargin{:} );
+      C = C(nums);
+    end
+    
     function L = getlabs(obj)
       
       %   GETLABS -- Get label names.

@@ -142,8 +142,10 @@ public:
     std::vector<std::string> get_uniform_categories() const;
     std::vector<std::string> get_categories() const;
     std::vector<std::string> get_categories_except(const std::vector<std::string>& others) const;
+    
     std::vector<std::string> get_labels() const;
     util::labels_t get_labels_and_ids() const;
+    
     std::vector<const std::vector<util::u32>*> get_label_mat() const;
     std::vector<const std::vector<util::u32>*> get_label_mat(const std::vector<std::string>& categories,
                                                              bool* exists) const;
@@ -158,9 +160,15 @@ public:
     
     bool is_uniform_category(const std::string& cat, bool* exists) const;
     bool is_uniform_category(const std::string& cat,
-                             std::vector<util::u64> indices,
+                             const std::vector<util::u64>& indices,
                              util::u32* status,
                              util::u64 index_offset = 0) const;
+    
+    std::vector<bool> are_uniform_categories(const std::vector<std::string>& cats, bool* exists) const;
+    std::vector<bool> are_uniform_categories(const std::vector<std::string>& cats,
+                                             const std::vector<util::u64>& indices,
+                                             util::u32* status,
+                                             util::u64 index_offset = 0) const;
     
     std::vector<std::string> in_category(const std::string& category, bool* exists) const;
     std::vector<std::string> in_category(const std::string& category) const;
@@ -275,6 +283,27 @@ private:
                                                    const std::vector<std::string>& categories,
                                                    std::vector<std::vector<util::u32>>& unique_ids_b);
     
+    static util::u32 reconcile_unspecified_category_label_ids(util::categorical& a,
+                                                              const util::categorical& b,
+                                                              const std::vector<std::string>& remaining_categories,
+                                                              std::unordered_map<std::string, std::vector<util::s64>>& ids_b);
+    
+    static util::u32 reconcile_label_id(util::categorical& a,
+                                        const util::categorical& b,
+                                        const std::string& category,
+                                        const util::u32 id,
+                                        std::unordered_map<u32, u32>& visited_ids,
+                                        util::u32* status,
+                                        const bool confirm_not_wrong_collapsed_expression);
+    
+    util::u32 remaining_unique_category_label_id(const util::categorical& other,
+                                                 const std::string& remaining_category,
+                                                 const bool remaining_is_uniform,
+                                                 const u64 source_category_index,
+                                                 const u64 num_rows_other,
+                                                 const u64 row0_ind,
+                                                 util::u32* status);
+    
     bool has_label(util::u32 label_id) const;
     util::u32 add_label_unchecked_has_category(const std::string& category,
                                                const std::string& label,
@@ -349,6 +378,8 @@ private:
     
     std::vector<util::u64> get_category_indices(const std::vector<std::string>& cats,
                                                 const util::u64 n_cats, bool* exist) const;
+    std::vector<util::u64> get_category_indices_skip_non_existing(const std::vector<std::string>& cats) const;
+    std::vector<util::u64> get_category_indices_unchecked_has_category(const std::vector<std::string>& cats) const;
     
     void set_collapsed_expressions(std::vector<util::u32>& labs,
                                    const std::string& category,
