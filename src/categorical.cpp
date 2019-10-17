@@ -4100,54 +4100,6 @@ namespace
                            std::vector<util::u64>(), false, 0, &dummy_status);
     }
     
-#if 0
-    void union_unique_rows(std::unordered_map<std::string, util::VisitedRow>& visited_rows_a,
-                           const std::vector<std::vector<util::u32>>& ids_b,
-                           std::vector<std::vector<util::u32>>& out)
-    {
-        using util::u32;
-        using util::u64;
-        using util::s64;
-        
-        const u64 num_cols = ids_b.size();
-        
-        if (num_cols == 0)
-        {
-            return;
-        }
-        
-        const u64 num_rows = ids_b[0].size();
-        
-        std::string row_hash = make_label_id_hash_string(num_cols);
-        char* hash_ptr = &row_hash[0];
-        
-        for (u64 i = 0; i < num_rows; i++)
-        {
-            for (u64 j = 0; j < num_cols; j++)
-            {
-                const u32 id = ids_b[j][i];
-                std::memcpy(hash_ptr + j*sizeof(u32), &id, sizeof(u32));
-            }
-            
-            if (visited_rows_a.count(row_hash) == 0)
-            {
-                visited_rows_a.emplace(row_hash, std::vector<s64>());
-                
-                for (u64 j = 0; j < num_cols; j++)
-                {
-                    //  Insert new column if necessary.
-                    if (j >= out.size())
-                    {
-                        out.push_back(std::vector<u32>());
-                    }
-                    
-                    out[j].push_back(ids_b[j][i]);
-                }
-            }
-        }
-    }
-#endif
-    
     std::vector<std::string> intersecting_sorted_categories(const std::vector<std::string>& cats_a,
                                                             const std::vector<std::string>& cats_b)
     {
@@ -4175,18 +4127,14 @@ namespace
         return intersecting_sorted_categories(cats_a, cats_b);
     }
     
-    void keep_categories(util::categorical& a, const std::vector<std::string>& categories, bool* exists)
+    void keep_categories_unchecked_has_categories(util::categorical& a, const std::vector<std::string>& categories)
     {
         std::vector<std::string> to_remove = a.get_categories_except(categories);
         
         for (const auto& category : to_remove)
         {
-            a.remove_category(category, exists);
-            
-            if (!*exists)
-            {
-                return;
-            }
+            bool dummy_exists;
+            a.remove_category(category, &dummy_exists);
         }
     }
     
@@ -4366,7 +4314,7 @@ util::categorical util::categorical::set_union_impl(const util::categorical& a,
     
     //  Start with a as a template, but retain only `categories`.
     result = empty_copy(a);
-    keep_categories(result, categories, &dummy_exists);
+    keep_categories_unchecked_has_categories(result, categories);
     
     //  Now overwrite the label id matrix for a, and update the category
     //  indices for a.
