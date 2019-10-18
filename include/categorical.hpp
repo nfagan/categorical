@@ -10,3 +10,4 @@
 #include "../src/types.hpp"
 #include "../src/multimap.hpp"
 #include "../src/categorical.hpp"
+#include "../src/set_membership.hpp"

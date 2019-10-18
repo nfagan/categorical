@@ -140,7 +140,7 @@ void util::init_cat_functions()
     globals::funcs[ops::IS_UNIFORM_CATEGORY] =      &util::is_uniform_category;
     globals::funcs[ops::GET_VERSION] =              &util::get_version;
     globals::funcs[ops::ADD_LABEL] =                &util::add_label;
-    globals::funcs[ops::UNION] =                    &util::set_union;
+    globals::funcs[ops::UNION] =                    &util::make_set_union;
     
     globals::INITIALIZED = true;
     

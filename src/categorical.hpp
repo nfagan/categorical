@@ -19,6 +19,7 @@
 
 namespace util {
     class categorical;
+    class set_union;
     
     struct combinations_t
     {
@@ -60,6 +61,7 @@ namespace util {
 
 class util::categorical
 {
+    friend class util::set_union;
 public:
     categorical() = default;
     ~categorical() = default;
@@ -67,45 +69,34 @@ public:
     bool operator ==(const util::categorical& other) const;
     bool operator !=(const util::categorical& other) const;
     
-    std::vector<util::u64> find(const std::vector<std::string>& labels,
-                                util::u64 index_offset = 0) const;
-    
+    std::vector<util::u64> find(const std::vector<std::string>& labels, util::u64 index_offset = 0) const;
     std::vector<util::u64> find(const std::vector<std::string>& labels,
                                 const std::vector<util::u64>& indices,
                                 util::u32* status,
                                 util::u64 index_offset = 0) const;
     
-    std::vector<util::u64> find_not(const std::vector<std::string>& labels,
-                                    util::u64 index_offset = 0) const;
-    
+    std::vector<util::u64> find_not(const std::vector<std::string>& labels, util::u64 index_offset = 0) const;
     std::vector<util::u64> find_not(const std::vector<std::string>& labels,
                                     const std::vector<util::u64>& indices,
                                     util::u32* status,
                                     util::u64 index_offset = 0) const;
     
-    std::vector<util::u64> find_or(const std::vector<std::string>& labels,
-                                   util::u64 index_offset = 0) const;
-    
+    std::vector<util::u64> find_or(const std::vector<std::string>& labels, util::u64 index_offset = 0) const;
     std::vector<util::u64> find_or(const std::vector<std::string>& labels,
                                    const std::vector<util::u64>& indices,
                                    util::u32* status,
                                    util::u64 index_offset = 0) const;
     
-    std::vector<util::u64> find_none(const std::vector<std::string>& labels,
-                                     util::u64 index_offset = 0) const;
-    
+    std::vector<util::u64> find_none(const std::vector<std::string>& labels, util::u64 index_offset = 0) const;
     std::vector<util::u64> find_none(const std::vector<std::string>& labels,
                                      const std::vector<util::u64>& indices,
                                      util::u32* status,
                                      util::u64 index_offset = 0) const;
     
-    std::vector<std::vector<util::u64>> find_all(const std::vector<std::string>& categories,
-                                    util::u64 index_offset = 0) const;
-    
+    std::vector<std::vector<util::u64>> find_all(const std::vector<std::string>& categories, util::u64 index_offset = 0) const;
     std::vector<std::vector<util::u64>> find_all(const std::vector<std::string>& categories,
                                                  const std::vector<util::u64>& indices,
                                                  util::u64 index_offset = 0) const;
-    
     std::vector<std::vector<util::u64>> find_all(const std::vector<std::string>& categories,
                                                  const std::vector<util::u64>& indices,
                                                  util::u32* status,
@@ -119,8 +110,7 @@ public:
                                    util::u32* status,
                                    util::u64 index_offset = 0) const;
     
-    std::vector<std::vector<util::u64>> keep_each(const std::vector<std::string>& categories,
-                                       util::u64 index_offset = 0);
+    std::vector<std::vector<util::u64>> keep_each(const std::vector<std::string>& categories, util::u64 index_offset = 0);
     
     std::vector<std::vector<util::u64>> keep_each(const std::vector<std::string>& categories,
                                                   const std::vector<util::u64>& indices,
@@ -147,8 +137,7 @@ public:
     util::labels_t get_labels_and_ids() const;
     
     std::vector<const std::vector<util::u32>*> get_label_mat() const;
-    std::vector<const std::vector<util::u32>*> get_label_mat(const std::vector<std::string>& categories,
-                                                             bool* exists) const;
+    std::vector<const std::vector<util::u32>*> get_label_mat(const std::vector<std::string>& categories, bool* exists) const;
     
     std::vector<std::string> full_category(const std::string& category, bool* exists) const;
     std::vector<std::string> full_category(const std::string& category) const;
@@ -247,22 +236,6 @@ public:
                                         util::u32* lab_ids,
                                         util::u64 rows,
                                         util::u64 cols);
-    
-    static util::categorical set_union(const util::categorical& a, const util::categorical& b, util::u32* status);
-    static util::categorical set_union(const util::categorical& a, const util::categorical& b,
-                                       const std::vector<std::string>& categories,
-                                       util::u32* status);
-    static util::categorical set_union(const util::categorical& a, const util::categorical& b,
-                                       const std::vector<util::u64>& mask_a,
-                                       const std::vector<util::u64>& mask_b,
-                                       util::u32* status,
-                                       util::u64 index_offset = 0);
-    static util::categorical set_union(const util::categorical& a, const util::categorical& b,
-                                       const std::vector<std::string>& categories,
-                                       const std::vector<util::u64>& mask_a,
-                                       const std::vector<util::u64>& mask_b,
-                                       util::u32* status,
-                                       util::u64 index_offset = 0);
 private:
     std::vector<std::vector<util::u32>> m_labels;
     std::unordered_map<std::string, util::u64> m_category_indices;
@@ -270,44 +243,9 @@ private:
     std::unordered_map<std::string, std::string> m_in_category;
     std::unordered_set<std::string> m_collapsed_expressions;
     
-private:
-    static util::categorical set_union_impl(const util::categorical& a, const util::categorical& b, util::u32* status,
-                                            const std::vector<std::string>& categories,
-                                            const std::vector<util::u64>& mask_a,
-                                            const std::vector<util::u64>& mask_b,
-                                            const util::u64 index_offset,
-                                            const bool use_indices);
-    
-    static u32 reconcile_unique_label_id_matrices(util::categorical& a,
-                                                   const util::categorical& b,
-                                                   const std::vector<std::string>& categories,
-                                                   std::vector<std::vector<util::u32>>& unique_ids_b);
-    
-    static util::u32 reconcile_unspecified_category_label_ids(util::categorical& a,
-                                                              const util::categorical& b,
-                                                              const std::vector<std::string>& remaining_categories,
-                                                              std::unordered_map<std::string, std::vector<util::s64>>& ids_b);
-    
-    static util::u32 reconcile_label_id(util::categorical& a,
-                                        const util::categorical& b,
-                                        const std::string& category,
-                                        const util::u32 id,
-                                        std::unordered_map<u32, u32>& visited_ids,
-                                        util::u32* status,
-                                        const bool confirm_not_wrong_collapsed_expression);
-    
-    util::u32 remaining_unique_category_label_id(const util::categorical& other,
-                                                 const std::string& remaining_category,
-                                                 const bool remaining_is_uniform,
-                                                 const u64 source_category_index,
-                                                 const u64 num_rows_other,
-                                                 const u64 row0_ind,
-                                                 util::u32* status);
-    
+private:    
     bool has_label(util::u32 label_id) const;
-    util::u32 add_label_unchecked_has_category(const std::string& category,
-                                               const std::string& label,
-                                               const bool confirm_not_wrong_collapsed_expression);
+    util::u32 add_label_unchecked_has_category(const std::string& category, const std::string& label, u32* label_id);
     
     util::u32 get_next_label_id();
     util::u32 get_label_id_or_0(const std::string& lab, bool* exist) const;
@@ -455,8 +393,6 @@ private:
                                   util::u64 n_check,
                                   util::u64 end,
                                   util::u64 index_offset);
-    
-    static util::u64 maximum(const std::vector<util::u64>& indices, util::u64 end);
 
 private:
     struct progenitor_ids

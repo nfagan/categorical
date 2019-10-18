@@ -2,48 +2,10 @@ function cat_testall()
 
 %   CAT_TESTALL -- Run all tests.
 
-cat_test_run( @cat_test_addlab );
-cat_test_run( @cat_test_find_present_labels_empty_object );
-cat_test_run( @cat_test_find_empty_indexed );
-cat_test_run( @cat_test_isuncat );
-cat_test_run( @cat_test_whichcat );
-cat_test_run( @cat_test_sortrows );
-cat_test_run( @cat_test_findnone_indexed );
-cat_test_run( @cat_test_findnone );
-cat_test_run( @cat_test_findnot_indexed );
-cat_test_run( @cat_test_findnot );
-cat_test_run( @cat_test_getuncats );
-cat_test_run( @cat_test_count );
-cat_test_run( @cat_test_setpartcats );
-cat_test_run( @cat_test_indexed );
-cat_test_run( @cat_test_setpartcat );
-cat_test_run( @cat_test_findor_indexed );
-cat_test_run( @cat_test_findor );
-cat_test_run( @cat_test_append1 );
-cat_test_run( @cat_test_append_indexed );
-cat_test_run( @cat_test_assign_scalar );
-cat_test_run( @cat_test_keepeach_indexed );
-cat_test_run( @cat_test_find );
-cat_test_run( @cat_test_find_indexed );
-cat_test_run( @cat_test_findall_indexed );
-cat_test_run( @cat_test_findall );
-cat_test_run( @cat_test_join );
-cat_test_run( @cat_test_rename_cat );
-cat_test_run( @cat_test_remove );
-cat_test_run( @cat_test_append_create );
-cat_test_run( @cat_test_merge );
-cat_test_run( @cat_test_replace );
-cat_test_run( @cat_test_progenitors );
-cat_test_run( @cat_test_assign_rigorous );
-cat_test_run( @cat_test_assign );
-cat_test_run( @cat_test_create_cat );
-cat_test_run( @cat_test_partcat );
-cat_test_run( @cat_test_keepeach );
-cat_test_run( @cat_test_keep );
-cat_test_run( @cat_test_append_resize );
-cat_test_run( @cat_test_append );
-cat_test_run( @cat_test_append_keep );
-cat_test_run( @cat_test_copy );
-cat_test_run( @cat_test_resize );
+funcs = cat_testfuncs();
+
+for i = 1:numel(funcs)
+  cat_test_run( funcs{i} );
+end
 
 end

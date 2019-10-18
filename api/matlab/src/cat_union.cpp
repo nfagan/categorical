@@ -1,6 +1,6 @@
 #include "cat_api.hpp"
 
-void util::set_union(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
+void util::make_set_union(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {
     using namespace util;
     using std::vector;
@@ -21,12 +21,12 @@ void util::set_union(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     
     if (nrhs == 3)
     {
-        tmp = categorical::set_union(*a, *b, &status);
+        tmp = set_union{*a, *b}(&status);
     }
     else if (nrhs == 4)
     {
         const std::vector<std::string> categories = get_strings(prhs[3], func_id);
-        tmp = categorical::set_union(*a, *b, categories, &status);
+        tmp = set_union{*a, *b}(&status);
     }
     else if (nrhs == 5)
     {
@@ -34,7 +34,7 @@ void util::set_union(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         const std::vector<u64> mask_b = double_or_uint64_array_to_vector64(prhs[4], func_id);
         const u64 index_offset = 1;
         
-        tmp = categorical::set_union(*a, *b, mask_a, mask_b, &status, index_offset);
+        tmp = set_union{*a, *b}(mask_a, mask_b, &status, index_offset);
     }
     else if (nrhs == 6)
     {
@@ -43,7 +43,8 @@ void util::set_union(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         const std::vector<u64> mask_b = double_or_uint64_array_to_vector64(prhs[5], func_id);
         const u64 index_offset = 1;
         
-        tmp = categorical::set_union(*a, *b, categories, mask_a, mask_b, &status, index_offset);
+//         tmp = categorical::set_union(*a, *b, categories, mask_a, mask_b, &status, index_offset);
+        tmp = set_union{*a, *b}(mask_a, mask_b, &status, index_offset);
     }
     else
     {
