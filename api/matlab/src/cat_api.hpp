@@ -6,9 +6,7 @@
 #define MEXFUNC(id) \
   void id(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
-namespace util {
-    void init_cat_functions();
-    
+namespace util {    
     MEXFUNC(is_valid);
     MEXFUNC(equals);
     MEXFUNC(progenitors_match);

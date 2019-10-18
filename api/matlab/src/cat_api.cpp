@@ -1,158 +1,76 @@
 #include "cat_api.hpp"
-#include "cat_opcodes.hpp"
 #include <iostream>
 #include <array>
 
 namespace util {
     namespace globals {
-        const std::unordered_map<std::string, util::u32> op_map({
-            {"create",                  util::ops::CREATE},
-            {"destroy",                 util::ops::DESTROY},
-            {"find_allc",               util::ops::FIND_ALLC},
-            {"find_all",                util::ops::FIND_ALL},
-            {"set_cat",                 util::ops::SET_CATEGORY},
-            {"require_cat",             util::ops::REQUIRE_CATEGORY},
-            {"size",                    util::ops::SIZE},
-            {"get_labs",                util::ops::GET_LABELS},
-            {"get_cats",                util::ops::GET_CATEGORIES},
-            {"append",                  util::ops::APPEND},
-            {"find",                    util::ops::FIND},
-            {"full_cat",                util::ops::FULL_CATEGORY},
-            {"in_cat",                  util::ops::IN_CATEGORY},
-            {"keep",                    util::ops::KEEP},
-            {"set_partial_cat",         util::ops::SET_PARTIAL_CATEGORY},
-            {"copy",                    util::ops::COPY},
-            {"resize",                  util::ops::RESIZE},
-            {"has_lab",                 util::ops::HAS_LABEL},
-            {"has_cat",                 util::ops::HAS_CATEGORY},
-            {"is_valid",                util::ops::IS_VALID},
-            {"fill_cat",                util::ops::FILL_CATEGORY},
-            {"repeat",                  util::ops::REPEAT},
-            {"keep_each",               util::ops::KEEP_EACH},
-            {"keep_eachc",              util::ops::KEEP_EACHC},
-            {"collapse_cat",            util::ops::COLLAPSE_CATEGORY},
-            {"one",                     util::ops::ONE},
-            {"equals",                  util::ops::EQUALS},
-            {"partial_cat",             util::ops::PARTIAL_CATEGORY},
-            {"rm_cat",                  util::ops::REMOVE_CATEGORY},
-            {"n_cats",                  util::ops::N_CATEGORIES},
-            {"n_labs",                  util::ops::N_LABELS},
-            {"assign",                  util::ops::ASSIGN},
-            {"set_cats",                util::ops::SET_CATEGORIES},
-            {"set_partial_cats",        util::ops::SET_PARTIAL_CATEGORIES},
-            {"assign_partial",          util::ops::ASSIGN_PARTIAL},
-            {"prune",                   util::ops::PRUNE},
-            {"count",                   util::ops::COUNT},
-            {"to_numeric_mat",          util::ops::TO_NUMERIC_MATRIX},
-            {"get_build_config",        util::ops::GET_BUILD_CONFIG},
-            {"empty",                   util::ops::EMPTY},
-            {"progenitors_match",       util::ops::PROGENITORS_MATCH},
-            {"add_cat",                 util::ops::ADD_CATEGORY},
-            {"in_cats",                 util::ops::IN_CATEGORIES},
-            {"from_categorical",        util::ops::FROM_CATEGORICAL},
-            {"replace",                 util::ops::REPLACE},
-            {"merge",                   util::ops::MERGE},
-            {"remove",                  util::ops::REMOVE_LABELS},
-            {"rename_cat",              util::ops::RENAME_CATEGORY},
-            {"merge_new",               util::ops::MERGE_NEW},
-            {"append_one",              util::ops::APPEND_ONE},
-            {"find_or",                 util::ops::FIND_OR},
-            {"get_uniform_cats",        util::ops::GET_UNIFORM_CATEGORIES},
-            {"find_not",                util::ops::FIND_NOT},
-            {"find_none",               util::ops::FIND_NONE},
-            {"which_cat",               util::ops::WHICH_CATEGORY},
-            {"is_uniform_cat",          util::ops::IS_UNIFORM_CATEGORY},
-            {"version",                 util::ops::GET_VERSION},
-            {"add_label",               util::ops::ADD_LABEL},
-            {"union",                   util::ops::UNION}
+        const std::unordered_map<std::string, util::mex_func_t> op_map({
+            {"create",                  &util::create},
+            {"destroy",                 &util::destroy},
+            {"find_allc",               &util::find_allc},
+            {"find_all",                &util::find_all},
+            {"set_cat",                 &util::set_category},
+            {"require_cat",             &util::require_category},
+            {"size",                    &util::size},
+            {"get_labs",                &util::get_labels},
+            {"get_cats",                &util::get_categories},
+            {"append",                  &util::append},
+            {"find",                    &util::find},
+            {"full_cat",                &util::full_category},
+            {"in_cat",                  &util::in_category},
+            {"keep",                    &util::keep},
+            {"set_partial_cat",         &util::set_partial_category},
+            {"copy",                    &util::copy},
+            {"resize",                  &util::resize},
+            {"has_lab",                 &util::has_label},
+            {"has_cat",                 &util::has_category},
+            {"is_valid",                &util::is_valid},
+            {"fill_cat",                &util::fill_category},
+            {"repeat",                  &util::repeat},
+            {"keep_each",               &util::keep_each},
+            {"keep_eachc",              &util::keep_eachc},
+            {"collapse_cat",            &util::collapse_category},
+            {"one",                     &util::one},
+            {"equals",                  &util::equals},
+            {"partial_cat",             &util::partial_category},
+            {"rm_cat",                  &util::remove_category},
+            {"n_cats",                  &util::n_categories},
+            {"n_labs",                  &util::n_labels},
+            {"assign",                  &util::assign},
+            {"set_cats",                &util::set_categories},
+            {"set_partial_cats",        &util::set_partial_categories},
+            {"assign_partial",          &util::assign_partial},
+            {"prune",                   &util::prune},
+            {"count",                   &util::count},
+            {"to_numeric_mat",          &util::to_numeric_matrix},
+            {"get_build_config",        &util::get_build_config},
+            {"empty",                   &util::empty},
+            {"progenitors_match",       &util::progenitors_match},
+            {"add_cat",                 &util::add_category},
+            {"in_cats",                 &util::in_categories},
+            {"from_categorical",        &util::from_categorical},
+            {"replace",                 &util::replace},
+            {"merge",                   &util::merge},
+            {"remove",                  &util::remove_labels},
+            {"rename_cat",              &util::rename_category},
+            {"merge_new",               &util::merge_new},
+            {"append_one",              &util::append_one},
+            {"find_or",                 &util::find_or},
+            {"get_uniform_cats",        &util::get_uniform_categories},
+            {"find_not",                &util::find_not},
+            {"find_none",               &util::find_none},
+            {"which_cat",               &util::which_category},
+            {"is_uniform_cat",          &util::is_uniform_category},
+            {"version",                 &util::get_version},
+            {"add_label",               &util::add_label},
+            {"union",                   &util::make_set_union}
         });
-        
-        std::array<util::mex_func_t, util::ops::N_OPS> funcs;
-        
-        bool INITIALIZED = false;
     }
-}
-
-void util::init_cat_functions()
-{
-    using namespace util;
-    
-    if (globals::INITIALIZED)
-    {
-        return;
-    }
-    
-    globals::funcs[ops::CREATE] =                   &util::create;
-    globals::funcs[ops::DESTROY] =                  &util::destroy;
-    globals::funcs[ops::SET_CATEGORY] =             &util::set_category;
-    globals::funcs[ops::REQUIRE_CATEGORY] =         &util::require_category;
-    globals::funcs[ops::FIND_ALLC] =                &util::find_allc;
-    globals::funcs[ops::FIND_ALL] =                 &util::find_all;
-    globals::funcs[ops::SIZE] =                     &util::size;
-    globals::funcs[ops::GET_CATEGORIES] =           &util::get_categories;
-    globals::funcs[ops::GET_LABELS] =               &util::get_labels;
-    globals::funcs[ops::APPEND] =                   &util::append;
-    globals::funcs[ops::FIND] =                     &util::find;
-    globals::funcs[ops::FULL_CATEGORY] =            &util::full_category;
-    globals::funcs[ops::IN_CATEGORY] =              &util::in_category;
-    globals::funcs[ops::KEEP] =                     &util::keep;
-    globals::funcs[ops::SET_PARTIAL_CATEGORY] =     &util::set_partial_category;
-    globals::funcs[ops::COPY] =                     &util::copy;
-    globals::funcs[ops::RESIZE] =                   &util::resize;
-    globals::funcs[ops::HAS_LABEL] =                &util::has_label;
-    globals::funcs[ops::HAS_CATEGORY] =             &util::has_category;
-    globals::funcs[ops::IS_VALID] =                 &util::is_valid;
-    globals::funcs[ops::FILL_CATEGORY] =            &util::fill_category;
-    globals::funcs[ops::REPEAT] =                   &util::repeat;
-    globals::funcs[ops::KEEP_EACH] =                &util::keep_each;
-    globals::funcs[ops::KEEP_EACHC] =               &util::keep_eachc;
-    globals::funcs[ops::COLLAPSE_CATEGORY] =        &util::collapse_category;
-    globals::funcs[ops::ONE] =                      &util::one;
-    globals::funcs[ops::EQUALS] =                   &util::equals;
-    globals::funcs[ops::PARTIAL_CATEGORY] =         &util::partial_category;
-    globals::funcs[ops::REMOVE_CATEGORY] =          &util::remove_category;
-    globals::funcs[ops::N_CATEGORIES] =             &util::n_categories;
-    globals::funcs[ops::N_LABELS] =                 &util::n_labels;
-    globals::funcs[ops::ASSIGN] =                   &util::assign;
-    globals::funcs[ops::SET_CATEGORIES] =           &util::set_categories;
-    globals::funcs[ops::SET_PARTIAL_CATEGORIES] =   &util::set_partial_categories;
-    globals::funcs[ops::ASSIGN_PARTIAL] =           &util::assign_partial;
-    globals::funcs[ops::PRUNE] =                    &util::prune;
-    globals::funcs[ops::COUNT] =                    &util::count;
-    globals::funcs[ops::TO_NUMERIC_MATRIX] =        &util::to_numeric_matrix;
-    globals::funcs[ops::GET_BUILD_CONFIG] =         &util::get_build_config;
-    globals::funcs[ops::EMPTY] =                    &util::empty;
-    globals::funcs[ops::PROGENITORS_MATCH] =        &util::progenitors_match;
-    globals::funcs[ops::ADD_CATEGORY] =             &util::add_category;
-    globals::funcs[ops::IN_CATEGORIES] =            &util::in_categories;
-    globals::funcs[ops::FROM_CATEGORICAL] =         &util::from_categorical;
-    globals::funcs[ops::REPLACE] =                  &util::replace;
-    globals::funcs[ops::MERGE] =                    &util::merge;
-    globals::funcs[ops::REMOVE_LABELS] =            &util::remove_labels;
-    globals::funcs[ops::RENAME_CATEGORY] =          &util::rename_category;
-    globals::funcs[ops::MERGE_NEW] =                &util::merge_new;
-    globals::funcs[ops::APPEND_ONE] =               &util::append_one;
-    globals::funcs[ops::FIND_OR] =                  &util::find_or;
-    globals::funcs[ops::GET_UNIFORM_CATEGORIES] =   &util::get_uniform_categories;
-    globals::funcs[ops::FIND_NOT] =                 &util::find_not;
-    globals::funcs[ops::FIND_NONE] =                &util::find_none;
-    globals::funcs[ops::WHICH_CATEGORY] =           &util::which_category;
-    globals::funcs[ops::IS_UNIFORM_CATEGORY] =      &util::is_uniform_category;
-    globals::funcs[ops::GET_VERSION] =              &util::get_version;
-    globals::funcs[ops::ADD_LABEL] =                &util::add_label;
-    globals::funcs[ops::UNION] =                    &util::make_set_union;
-    
-    globals::INITIALIZED = true;
-    
-    std::cout << std::endl;
-    std::cout << "Initialized fcat interface." << std::endl << std::endl;
 }
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {   
     char cmd[64];
-    
-    util::init_cat_functions();
     
     if (nrhs == 0)
     {
@@ -173,5 +91,5 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         mexErrMsgIdAndTxt("categorical:main", "Nonexistent op-code.");
     }
     
-    util::globals::funcs[op_it->second](nlhs, plhs, nrhs, prhs);
+    op_it->second(nlhs, plhs, nrhs, prhs);
 }
