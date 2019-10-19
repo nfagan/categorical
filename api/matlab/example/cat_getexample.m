@@ -9,24 +9,21 @@ function f = cat_getexample(kind)
 %     cat_getexample( 'largedata' ) loads and returns a large data vector.
 %
 %     See also fcat, cat_testall
-%
-%     IN:
-%       - `kind` (char) |OPTIONAL|
-%     OUT:
-%       - `f` (fcat)
 
 if ( nargin < 1 )
   kind = 'small';
 end
 
-root = fullfile( fcat.apiroot(), 'data' );
-
-options = { 'small', 'large', 'smalldata', 'largedata' };
+options = { 'small', 'large', 'smalldata', 'largedata', 'large2', 'largedata2' };
 kind = validatestring( kind, options, mfilename, 'kind' );
+
+root = fullfile( fcat.apiroot(), 'data' );
 
 switch ( kind )
   case 'large'
     f = doload( fullfile(root, 'bigfcat.mat') );
+  case 'large2'
+    f = doload( fullfile(root, 'bigfcat2.mat') );
   case 'small'
     x = cache_load( fullfile(root, 'categorical.mat') );
     f = fcat.from( x.c, x.f );
@@ -34,6 +31,8 @@ switch ( kind )
     f = doload( fullfile(root, 'smalldata.mat') );
   case 'largedata'
     f = doload( fullfile(root, 'largedata.mat') );
+  case 'largedata2'
+    f = doload( fullfile(root, 'bigdata2.mat') );
   otherwise
     error( 'Unrecognized data kind "%s". Options are: \n\n%s' ...
       , kind, strjoin(options, ' | ') );

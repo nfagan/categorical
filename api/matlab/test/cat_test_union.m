@@ -3,6 +3,11 @@ function cat_test_union()
 f1 = fcat.example();
 f2 = fcat.example();
 
+test_fully_included_subset();
+test_combine_categories();
+
+test_bidirectional();
+
 % need to test same vs. diff progenitor.
 test_subsets( f1, f1, false );
 test_subsets( f1, f2, false );
@@ -24,11 +29,60 @@ test_subset_cats( f1, f2 );
 
 end
 
+function test_fully_included_subset()
+
+f = fcat.example();
+% f1 is a strict subset of f2.
+f1 = rmcat( f', setdiff(getcats(f), {'session', 'image'}) );
+f2 = rmcat( f', setdiff(getcats(f), {'session', 'day', 'image'}) );
+
+z1 = fcat.union( f1, f2 );
+z2 = fcat.union( f2, f1 );
+
+assert( isequal(sortrows(categorical(z1)), sortrows(categorical(z2))) ...
+  , 'Strict subsets were not equivalent depending on order of inputs.' );
+
+end
+
+function test_combine_categories()
+
+f01 = fcat.example();
+f02 = fcat.example();
+
+f1 = rmcat( f01', 'image' );
+f2 = rmcat( f02', 'dose' );
+
+y1 = fcat.union( f1, f2 );
+y2 = fcat.union( f2, f1 );
+
+z = fcat.from( intersect(categorical(y1), categorical(y2), 'rows'), getcats(y1) );
+
+c = combs( z );
+
+end
+
+function test_bidirectional()
+
+f1 = fcat.example( 'large2' );
+f2 = fcat.example( 'large2' );
+
+z = rmcat( f1', {'date', 'looks_by', 'roi', 'event_type'} );
+y = rmcat( f2', {'mat_filename', 'task_type', 'channel'} );
+
+c = fcat.union( z, y );
+d = fcat.union( y, z );
+
+assert( prune(sortrows(c)) == prune(sortrows(d)), 'Ordering effects.' );
+
+end
+
 function test_subsets(a, b, allow_diff_categories)
 
 iters = 1e2;
 
 for i = 1:iters
+  fprintf( '\n %d of %d', i, iters );
+  
   cats_a = sample_categories(getcats(a));
   
   if ( allow_diff_categories )
@@ -60,10 +114,7 @@ for i = 1:iters
   
   y = sortrows( categorical(z) );
   y2 = sortrows( categorical(z2) );
-  
-  if ( ~allow_diff_categories )
-    assert( isequal(y, y2), 'Ordering effects.' );
-  end
+  assert( isequal(y, y2), 'Ordering effects.' );
 end
 
 end

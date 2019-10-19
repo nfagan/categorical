@@ -40,6 +40,7 @@ private:
     
     static bool build_union_row_hash(const util::categorical& a,
                                      const util::categorical& b,
+                                     const std::vector<std::vector<u32>>& a_label_matrix,
                                      char* row_hash_ptr,
                                      const util::u64 row,
                                      const std::vector<util::u64>& category_indices);

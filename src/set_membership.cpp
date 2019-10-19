@@ -84,6 +84,8 @@ namespace
             shared_row_hash_ptr = &shared_row_hash[0];
         }
         
+        u64 unique_row_index = 0;
+        
         for (u64 i = 0; i < num_rows; i++)
         {
             u64 row_index = i;
@@ -110,16 +112,19 @@ namespace
                 {
                     result[j].push_back(ids[j][row_index]);
                 }
+                
+                //  This is a new row.
+                unique_row_index++;
             }
-            
-            if (num_unique > 0)
+        
+            auto visited_shared_it = visited_shared_rows.find(shared_row_hash);
+            if (visited_shared_it == visited_shared_rows.end())
             {
-                auto visited_shared_it = visited_shared_rows.find(shared_row_hash);
-                if (visited_shared_it == visited_shared_rows.end())
+                //  Unique row index is one ahead.
+                visited_shared_rows.emplace(shared_row_hash, util::VisitedRow(unique_row_index-1, row_index));
+                
+                if (num_unique > 0)
                 {
-                    const u64 unique_row_index = result.empty() ? 0 : result[0].size();
-                    visited_shared_rows.emplace(shared_row_hash, util::VisitedRow(unique_row_index, row_index));
-                    
                     util::VisitedRow& row = visited_shared_rows.at(shared_row_hash);
                     std::vector<s64>& remaining_category_ids = row.remaining_ids;
                     
@@ -129,19 +134,19 @@ namespace
                         remaining_category_ids.push_back(remaining_id);
                     }
                 }
-                else
+            }
+            else
+            {
+                util::VisitedRow& row = visited_shared_it->second;
+                
+                for (u64 j = 0; j < num_unique; j++)
                 {
-                    util::VisitedRow& row = visited_shared_it->second;
+                    const s64 curr_id = row.remaining_ids[j];
+                    const u32 test_id = ids[unique_category_indices[j]][row_index];
                     
-                    for (u64 j = 0; j < num_unique; j++)
+                    if (curr_id == -1 || curr_id != test_id)
                     {
-                        const u32 test_id = ids[unique_category_indices[j]][row_index];
-                        const s64 curr_id = row.remaining_ids[j];
-                        
-                        if (curr_id == -1 || curr_id != test_id)
-                        {
-                            row.remaining_ids[j] = -1;
-                        }
+                        row.remaining_ids[j] = -1;
                     }
                 }
             }
@@ -158,6 +163,7 @@ util::set_union::set_union(const util::categorical& a, const util::categorical& 
 
 bool util::set_union::build_union_row_hash(const util::categorical& a,
                                            const util::categorical& b,
+                                           const std::vector<std::vector<u32>>& a_label_matrix,
                                            char* row_hash_ptr,
                                            const util::u64 row,
                                            const std::vector<util::u64>& category_indices)
@@ -166,19 +172,20 @@ bool util::set_union::build_union_row_hash(const util::categorical& a,
     
     if (a.progenitors_match(b))
     {
-        build_row_hash(row_hash_ptr, a.m_labels, row, category_indices);
+        build_row_hash(row_hash_ptr, a_label_matrix, row, category_indices);
     }
     else
     {
         const u64 num_cats_shared = category_indices.size();
         for (u64 j = 0; j < num_cats_shared; j++)
         {
-            const std::string& label = a.m_label_ids.ref_at(a.m_labels[category_indices[j]][row]);
+            const std::string& label = a.m_label_ids.ref_at(a_label_matrix[category_indices[j]][row]);
+            const auto& it_b = b.m_label_ids.find(label);
             
             //  Okay - use the b's label id to search.
-            if (b.m_label_ids.contains(label))
+            if (it_b != b.m_label_ids.endk())
             {
-                const u32 id_b = b.m_label_ids.at(label);
+                const u32 id_b = it_b->second;
                 std::memcpy(row_hash_ptr + j * sizeof(u32), &id_b, sizeof(u32));
             }
             //  b doesn't have this label, so it definitely doesn't have this row.
@@ -256,6 +263,19 @@ util::categorical util::set_union::operator()(const std::vector<util::u64>& mask
     return set_union_impl(status, mask_a, mask_b, index_offset, true);
 }
 
+#define CAT_CHECK_STATUS_ASSIGN_STATUS_EARLY_RETURN_CATEGORICAL(identifier) \
+    if ((identifier) != util::categorical_status::OK) \
+    { \
+        *status = (identifier); \
+        return util::categorical(); \
+    }
+
+#define CAT_CHECK_STATUS_PTR_EARLY_RETURN_CATEGORICAL() \
+    if (*status != categorical_status::OK) \
+    { \
+        return util::categorical(); \
+    }
+
 util::categorical util::set_union::set_union_impl(util::u32 *status,
                                                   const std::vector<util::u64> &mask_a,
                                                   const std::vector<util::u64> &mask_b,
@@ -291,17 +311,11 @@ util::categorical util::set_union::set_union_impl(util::u32 *status,
     {
         unique_ids_a = union_unique_rows(visited_rows_a, visited_shared_rows_a, a.m_labels,
                                          cat_inds_shared_a, cat_inds_a_only, mask_a, true, index_offset, status);
-        if (*status != categorical_status::OK)
-        {
-            return util::categorical();
-        }
+        CAT_CHECK_STATUS_PTR_EARLY_RETURN_CATEGORICAL()
         
         unique_ids_b = union_unique_rows(visited_rows_b, visited_shared_rows_b, b.m_labels,
                                          cat_inds_shared_b, cat_inds_b_only, mask_b, true, index_offset, status);
-        if (*status != categorical_status::OK)
-        {
-            return util::categorical();
-        }
+        CAT_CHECK_STATUS_PTR_EARLY_RETURN_CATEGORICAL()
     }
     else
     {
@@ -315,27 +329,17 @@ util::categorical util::set_union::set_union_impl(util::u32 *status,
     for (const auto& cat_b : cats_b_only)
     {
         const u32 require_status = result.require_category(cat_b);
-        if (require_status != categorical_status::OK)
-        {
-            *status = require_status;
-            return util::categorical();
-        }
+        CAT_CHECK_STATUS_ASSIGN_STATUS_EARLY_RETURN_CATEGORICAL(require_status)
     }
     
     const std::vector<u64> cat_inds_b_only_result = result.get_category_indices_unchecked_has_category(cats_b_only);
     
     const std::vector<std::string> uniform_category_labels_a = get_uniform_category_labels(a, cats_a_only, mask_a, use_indices, index_offset, status);
-    if (*status != categorical_status::OK)
-    {
-        return util::categorical();
-    }
-    const std::vector<std::string> uniform_category_labels_b = get_uniform_category_labels(b, cats_b_only, mask_b, use_indices, index_offset, status);
-    if (*status != categorical_status::OK)
-    {
-        return util::categorical();
-    }
+    CAT_CHECK_STATUS_PTR_EARLY_RETURN_CATEGORICAL()
     
-    //  Result now has all categories of a and b.
+    const std::vector<std::string> uniform_category_labels_b = get_uniform_category_labels(b, cats_b_only, mask_b, use_indices, index_offset, status);
+    CAT_CHECK_STATUS_PTR_EARLY_RETURN_CATEGORICAL()
+    
     if (!cats_b_only.empty())
     {
         //  We must re-mark all the rows of result to include the missing categories of b.
@@ -348,7 +352,8 @@ util::categorical util::set_union::set_union_impl(util::u32 *status,
             
             for (u64 i = 0; i < num_unique_a; i++)
             {
-                const bool any_missing = build_union_row_hash(result, b, &row_hash_b[0], i, cat_inds_shared_a);
+                //  Build the search string for the row of shared category ids.
+                const bool any_missing = build_union_row_hash(result, b, result.m_labels, &row_hash_b[0], i, cat_inds_shared_a);
                 
                 const auto it_shared_b = any_missing ? visited_shared_rows_b.end() : visited_shared_rows_b.find(row_hash_b);
                 const auto it_shared_b_end = visited_shared_rows_b.end();
@@ -356,25 +361,33 @@ util::categorical util::set_union::set_union_impl(util::u32 *status,
                 for (u64 j = 0; j < num_cats_b_only; j++)
                 {
                     std::string new_label;
-                    //  b doesn't have this row. Assign either collapsed expression or uniform label for each additional category of b.
+                    //  b doesn't have this row of ids from shared categories.
+                    //  Assign either collapsed expression or uniform label for each additional category of b.
                     if (it_shared_b == it_shared_b_end)
                     {
                         new_label = uniform_category_labels_b[j];
                     }
+                    //  b has this row of ids from shared categories.
                     else
                     {
                         const VisitedRow& row = it_shared_b->second;
-                        const s64 id_b = row.remaining_ids[j];
-                        new_label = id_b == -1 ? uniform_category_labels_b[j] : b.m_label_ids.at(id_b);
+                        
+                        //  This row of a is a strict subset of b, so copy the label from b. It will only be included once.
+                        if (num_cats_a_only == 0)
+                        {
+                            const u32 id_b = unique_ids_b[cat_inds_b_only[j]][row.index_in_unique_matrix];
+                            new_label = b.m_label_ids.at(id_b);
+                        }
+                        else
+                        {
+                            const s64 id_b = row.remaining_ids[j];
+                            new_label = id_b == -1 ? uniform_category_labels_b[j] : b.m_label_ids.at(id_b);
+                        }
                     }
                     
                     u32 assign_id;
                     const u32 add_status = result.add_label_unchecked_has_category(cats_b_only[j], new_label, &assign_id);
-                    if (add_status != categorical_status::OK)
-                    {
-                        *status = add_status;
-                        return util::categorical();
-                    }
+                    CAT_CHECK_STATUS_ASSIGN_STATUS_EARLY_RETURN_CATEGORICAL(add_status)
                     
                     result.m_labels[cat_inds_b_only_result[j]][i] = assign_id;
                 }
@@ -388,11 +401,7 @@ util::categorical util::set_union::set_union_impl(util::u32 *status,
                 const std::string& new_label = uniform_category_labels_b[j];
                 u32 assign_id;
                 const u32 add_status = result.add_label_unchecked_has_category(cats_b_only[j], new_label, &assign_id);
-                if (add_status != categorical_status::OK)
-                {
-                    *status = add_status;
-                    return util::categorical();
-                }
+                CAT_CHECK_STATUS_ASSIGN_STATUS_EARLY_RETURN_CATEGORICAL(add_status)
                 
                 std::vector<u32>& id_column = result.m_labels[cat_inds_b_only_result[j]];
                 std::fill(id_column.begin(), id_column.end(), assign_id);
@@ -412,6 +421,7 @@ util::categorical util::set_union::set_union_impl(util::u32 *status,
     }
     
     const u64 num_unique_b = unique_ids_b.empty() ? 0 : unique_ids_b[0].size();
+    std::vector<bool> mask_unique_ids_b;
     
     if (!cats_a_only.empty())
     {
@@ -426,15 +436,18 @@ util::categorical util::set_union::set_union_impl(util::u32 *status,
         
         if (num_cats_shared > 0)
         {
+            //  In this case, we must indicate whether the row of b is a strict subset of a.
+            mask_unique_ids_b.resize(num_unique_b);
+            std::fill(mask_unique_ids_b.begin(), mask_unique_ids_b.end(), true);
+            
             std::string row_hash_a = make_label_id_hash_string(num_cats_shared);
-            char* row_hash_ptr = &row_hash_a[0];
             
             for (u64 i = 0; i < num_unique_b; i++)
             {
-                const bool any_missing = build_union_row_hash(b, result, row_hash_ptr, i, cat_inds_shared_b);
+                const bool any_missing = build_union_row_hash(b, result, unique_ids_b, &row_hash_a[0], i, cat_inds_shared_b);
                 
-                const auto it_shared_a = any_missing ? visited_shared_rows_a.end() : visited_shared_rows_a.find(row_hash_a);
                 const auto it_shared_a_end = visited_shared_rows_a.end();
+                const auto it_shared_a = any_missing ? it_shared_a_end : visited_shared_rows_a.find(row_hash_a);
                 
                 for (u64 j = 0; j < num_cats_a_only; j++)
                 {
@@ -443,6 +456,12 @@ util::categorical util::set_union::set_union_impl(util::u32 *status,
                     if (it_shared_a == it_shared_a_end)
                     {
                         new_label = uniform_category_labels_a[j];
+                    }
+                    //  a has this row, and this row of b is a strict subset of a because b has no unique categories, so skip it.
+                    else if (num_cats_b_only == 0)
+                    {
+                        mask_unique_ids_b[i] = false;
+                        break;
                     }
                     else
                     {
@@ -453,12 +472,8 @@ util::categorical util::set_union::set_union_impl(util::u32 *status,
                     
                     u32 assign_id;
                     const u32 add_status = result.add_label_unchecked_has_category(cats_a_only[j], new_label, &assign_id);
-                    if (add_status != categorical_status::OK)
-                    {
-                        *status = add_status;
-                        return util::categorical();
-                    }
-                    
+                    CAT_CHECK_STATUS_ASSIGN_STATUS_EARLY_RETURN_CATEGORICAL(add_status)
+
                     unique_ids_b[original_num_cats_b+j][i] = assign_id;
                 }
             }
@@ -471,11 +486,7 @@ util::categorical util::set_union::set_union_impl(util::u32 *status,
                 const std::string& new_label = uniform_category_labels_a[j];
                 u32 assign_id;
                 const u32 add_status = result.add_label_unchecked_has_category(cats_a_only[j], new_label, &assign_id);
-                if (add_status != categorical_status::OK)
-                {
-                    *status = add_status;
-                    return util::categorical();
-                }
+                CAT_CHECK_STATUS_ASSIGN_STATUS_EARLY_RETURN_CATEGORICAL(add_status)
                 
                 std::vector<u32>& id_column = unique_ids_b[original_num_cats_b+j];
                 std::fill(id_column.begin(), id_column.end(), assign_id);
@@ -490,6 +501,12 @@ util::categorical util::set_union::set_union_impl(util::u32 *status,
     //  Now to append values to result as necessary.
     for (u64 i = 0; i < num_unique_b; i++)
     {
+        //  If this row of b is a strict subset of a, skip it.
+        if (!mask_unique_ids_b.empty() && !mask_unique_ids_b[i])
+        {
+            continue;
+        }
+        
         for (u64 j = 0; j < num_cats_shared; j++)
         {
             const u64 src_cat_ind = cat_inds_shared_b[j];
@@ -506,11 +523,7 @@ util::categorical util::set_union::set_union_impl(util::u32 *status,
             {
                 const std::string& label = b.m_label_ids.ref_at(id_b);
                 const u32 add_status = result.add_label_unchecked_has_category(cats_shared[j], label, &id_a);
-                if (add_status != categorical_status::OK)
-                {
-                    *status = add_status;
-                    return util::categorical();
-                }
+                CAT_CHECK_STATUS_ASSIGN_STATUS_EARLY_RETURN_CATEGORICAL(add_status)
             }
             
             std::memcpy(&final_complete_hash[0] + dest_cat_ind * sizeof(u32), &id_a, sizeof(u32));
@@ -531,11 +544,7 @@ util::categorical util::set_union::set_union_impl(util::u32 *status,
             {
                 const std::string& label = b.m_label_ids.ref_at(id_b);
                 const u32 add_status = result.add_label_unchecked_has_category(cats_b_only[j], label, &id_a);
-                if (add_status != categorical_status::OK)
-                {
-                    *status = add_status;
-                    return util::categorical();
-                }
+                CAT_CHECK_STATUS_ASSIGN_STATUS_EARLY_RETURN_CATEGORICAL(add_status)
             }
             
             std::memcpy(&final_complete_hash[0] + dest_cat_ind * sizeof(u32), &id_a, sizeof(u32));
