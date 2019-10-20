@@ -291,6 +291,14 @@ void util::assert_scalar(const mxArray *arr, const char* id, const char* msg)
     }
 }
 
+void util::assert_min_nrhs(int minimum, int actual, const char* id)
+{
+    if (actual < minimum)
+    {
+        mexErrMsgIdAndTxt(id, "Not enough input arguments.");
+    }
+}
+
 void util::assert_nrhs(int actual, int expected, const char* id)
 {
     if (actual != expected)

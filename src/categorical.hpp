@@ -20,6 +20,7 @@
 namespace util {
     class categorical;
     class set_union;
+    class set_unique;
     
     struct combinations_t
     {
@@ -62,6 +63,7 @@ namespace util {
 class util::categorical
 {
     friend class util::set_union;
+    friend class util::set_unique;
 public:
     categorical() = default;
     ~categorical() = default;

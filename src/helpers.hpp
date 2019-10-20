@@ -13,6 +13,29 @@
 
 namespace util
 {
+    struct VisitedRow
+    {
+        VisitedRow() = default;
+        ~VisitedRow() = default;
+        
+        VisitedRow(util::u64 index_in_unique_matrix, util::u64 index_in_source_matrix) :
+        index_in_unique_matrix(index_in_unique_matrix),
+        index_in_source_matrix(index_in_source_matrix)
+        {
+            //
+        }
+        
+        std::vector<util::s64> remaining_ids;
+        util::u64 index_in_unique_matrix;
+        util::u64 index_in_source_matrix;
+    };
+    
+    template <typename T>
+    inline util::u64 num_rows_in_matrix(const std::vector<std::vector<T>>& v)
+    {
+        return v.empty() ? 0 : v[0].size();
+    }
+    
     inline void build_row_hash(char* ptr, const std::vector<std::vector<util::u32>>& id_matrix, const util::u64 row, const util::u64 num_cols)
     {
         for (util::u64 i = 0; i < num_cols; i++)

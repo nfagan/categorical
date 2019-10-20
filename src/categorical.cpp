@@ -1789,13 +1789,9 @@ bool util::categorical::categories_match(const util::categorical &other) const
         return false;
     }
     
-    auto other_end = other.m_category_indices.end();
-    
     for (const auto& it : m_category_indices)
     {
-        auto other_it = other.m_category_indices.find(it.first);
-        
-        if (other_it == other_end)
+        if (other.m_category_indices.count(it.first) == 0)
         {
             return false;
         }

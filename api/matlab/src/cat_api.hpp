@@ -74,7 +74,7 @@ namespace util {
     
     MEXFUNC(to_numeric_matrix);
     MEXFUNC(from_categorical);
-    MEXFUNC(make_set_union);
+    MEXFUNC(set_membership);
     
     MEXFUNC(get_build_config);
     MEXFUNC(get_version);

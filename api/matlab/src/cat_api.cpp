@@ -63,7 +63,7 @@ namespace util {
             {"is_uniform_cat",          &util::is_uniform_category},
             {"version",                 &util::get_version},
             {"add_label",               &util::add_label},
-            {"union",                   &util::make_set_union}
+            {"set_membership",          &util::set_membership}
         });
     }
 }

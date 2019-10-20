@@ -3112,59 +3112,104 @@ classdef fcat < handle
       end
     end
     
-    function out = union(a, b, varargin)
+    function out = combine(a, b, varargin)
       
-      %   UNION -- Set union.
+      %   COMBINE -- Set union of rows and categories.
       %
-      %     out = fcat.union( a, b ); is the set union of fcat objects `a`
-      %     and `b`. `out` is an fcat object with the combined unique 
-      %     categories of `a` and `b`. For categories shared between `a`
-      %     and `b`, `out` contains the union of unique rows of `a` and
-      %     `b`, evaluated in those categories. If `a` and `b` are both 
-      %     empty, then `out` is empty. Otherwise, each category that is
-      %     unique to `a` or `b` is filled with a single value. If the 
-      %     category in `a` or `b` is non-empty and uniform, i.e., has only 
-      %     a single unique label, then it is set to that label. Otherwise, 
-      %     it is set to the collapsed expression for that category.
+      %     out = fcat.combine( a, b ); for fcat objects `a` and `b`, 
+      %     returns a new fcat object `out` with the combined unique rows 
+      %     and categories of `a` and `b`. For each row unique to `b`,
+      %     values in categories unique to `a` are assigned their collapsed 
+      %     expressions, and vice versa.
       %
-      %     out = fcat.union( a, b, categories ); evaluates the union in
-      %     `categories`, such that rows of `categories` in `out` 
-      %     constitute the union of unique rows of `categories` in `a` and 
-      %     `b`. `a` and `b` must each have all of `categories`. For each 
-      %     category of `a` and `b` not specified in `categories`, the 
-      %     value of that category in `out` is determined by the following 
-      %     rules:
+      %     out = fcat.combine( a, b, mask_a, mask_b ); considers only rows
+      %     of `a` and `b` given by `mask_a` and `mask_b` index vectors,
+      %     respectively.
       %
-      %       - Given: both `a` and `b` have the category; there is only a
-      %         single unique entry in `a` and `b` for that category; and 
-      %         this unique entry is the same between `a` and `b`, then the 
-      %         category is set to that value.
-      %       - Given: `a` has the category and `b` does not, and there is 
-      %         only a single unique entry in `a` for that category, then 
-      %         it is set to that value.
-      %       - Given: `b` has the category and `a` does not, and there is 
-      %         only a single unique entry in `b` for that category, then 
-      %         it is set to that value.
-      %       - Otherwise, the value is the collapsed expression for that
-      %         category.
+      %     out = fcat.combine( a, b, category_flag ) and 
+      %     out = fcat.combine( a, b, mask_a, mask_b, category_flag );
+      %     use `category_flag` to specify the handling of categories unique
+      %     to `a` or `b`.
       %
-      %     fcat.union( a, b, mask_a, mask_b ) and 
-      %     fcat.union( a, b, categories, mask_a, and mask_b ); work as
-      %     above, considering only the subsets of rows of `a` and `b`
-      %     given by the index vectors `mask_a` and `mask_b`, respectively.
+      %     The flag is one of:
+      %       - 'preserve': For each row unique to `b`, values in 
+      %       categories unique to `a` are assigned their collapsed
+      %       expressions, and vice versa. This is the default.
+      %       - 'combine': For each row unique to `b`, consider the set of
+      %       values in categories shared between `a` and `b`. If 1) this
+      %       set is non-empty, 2) `a` contains this set, and 3) for a given
+      %       category unique to `a`, its value is same for all occurrences
+      %       of the set, then the category is assigned that value,
+      %       otherwise it is assigned the collapsed expression for the
+      %       category. The same logic is applied to unique rows of `a` for
+      %       unique categories of `b`, and the result `out` then contains 
+      %       the unique elements of these two sets.
       %
-      %     Note that rows of `out` are not in sorted order.
-      %
-      %     See also fcat.intersect, fcat, union, fcat/collapsecat
+      %     See also fcat.union, fcat.intersect, fcat, union, fcat/collapsecat
       
       if ( ~isa(a, 'fcat') || ~isa(b, 'fcat') )
         error( 'Inputs 1 and 2 must be fcat objects.' );
       end
       
-      out = fcat( cat_api('union', a.id, b.id, varargin{:}) );
+      % uint32(0) -> code for make_combined.
+      out = fcat( cat_api('set_membership', uint32(0), a.id, b.id, varargin{:}) );
     end
     
-    function out = distinct(a, categories, mask)
+    function out = union(a, b, varargin)
+        
+      %   UNION -- Set union of rows.
+      %
+      %     out = fcat.union( a, b ), for fcat objects `a` and `b` with the
+      %     same categories, returns a new fcat object `out` with the 
+      %     unique combined rows of `a` and `b`.
+      %
+      %     out = fcat.union( a, b, categories ); is the union of rows of 
+      %     `a` and `b` evaluted in `categories`. In this case, `a` and `b`
+      %     can have different category sets, but each must have all of
+      %     `categories`.
+      %
+      %     out = fcat.union( ..., mask_a, mask_b ); considers only the
+      %     subsets of `a` and `b` given by `mask_a` and `mask_b` index
+      %     vectors, respectively.
+      %
+      %     out = fcat.union( a, b, cats, category_flag ); and
+      %     out = fcat.union( a, b, cats, mask_a, mask_b, category_flag );
+      %     use `category_flag` to specify the handling of remaining
+      %     categories of `a` and `b` not specified in `cats`.
+      %
+      %     The flag is one of:
+      %       - 'strict': `out` contains only `cats` categories. This is 
+      %       the default.
+      %       - 'preserve': `out` contains all categories common to `a`
+      %       and `b`. The value of each additional shared category not 
+      %       specified in `cats` is the collapsed expression for that
+      %       category.
+      %       - 'combine': `out` contains all categories common to `a` and
+      %       `b`, as in the 'preserve' case. However, the value of each 
+      %       additional shared category not specified in `cats` depends on 
+      %       the value of a unique row in `cats` categories. If, for a
+      %       given unique row of `cats`, the value of an additional
+      %       category is unique and the same between `a` and `b`, then it
+      %       is set to this value, otherwise it is the collapsed
+      %       expression for the category.
+      %
+      %     Note that rows of `out` are not sorted. 
+      %
+      %     `a` and `b` must have compatible label sets. If a label in `a`
+      %     is present in `b` but in a different category, the union is
+      %     illdefined (an error occurs).
+      %
+      %     See also fcat.distinct, fcat.intersect, fcat.combine, fcat/fcat
+        
+      if ( ~isa(a, 'fcat') || ~isa(b, 'fcat') )
+        error( 'Inputs 1 and 2 must be fcat objects.' );
+      end
+      
+      % uint32(1) -> code for make_union.
+      out = fcat( cat_api('set_membership', uint32(1), a.id, b.id, varargin{:}) );
+    end
+    
+    function out = distinct(a, varargin)
       
       %   DISTINCT -- Set of distinct rows.
       %
@@ -3188,13 +3233,7 @@ classdef fcat < handle
         error( 'Input 1 must be an fcat object.' )
       end
       
-      if ( nargin == 1 )
-        out = fcat.union( a, a, getcats(a), 1:length(a), [] );
-      elseif ( nargin == 2 )
-        out = fcat.union( a, a, categories, 1:length(a), [] );
-      else
-        out = fcat.union( a, a, categories, mask, [] );
-      end
+      out = fcat( cat_api('set_membership', uint32(2), a.id, varargin{:}) );
     end
     
     function fs = empties(varargin)
