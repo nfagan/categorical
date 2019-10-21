@@ -3,10 +3,12 @@ function cat_test_combine()
 f1 = fcat.example();
 f2 = fcat.example();
 
+test_different_category_order();
+test_bidirectional();
+test_different_categories();
+
 test_fully_included_subset();
 test_combine_categories();
-
-test_bidirectional();
 
 % need to test same vs. diff progenitor.
 test_subsets( f1, f1, false );
@@ -26,6 +28,53 @@ test_fullset( f1, f2 );
 
 test_subset_cats( f1, f1 );
 test_subset_cats( f1, f2 );
+
+end
+
+function test_different_category_order()
+
+f = fcat.example();
+c = getcats( f );
+
+while ( isequal(c, getcats(f)) )
+  c = c(randperm(numel(c)));
+end
+
+f2 = fcat.with( c, rows(f) );
+assign( f2, f, rowmask(f2) );
+
+a = fcat.combine( f2, f );
+b = fcat.combine( f, f2 );
+
+assert( isequal(sortrows(categorical(a)), sortrows(categorical(b))) ...
+  , 'Ordering effects with same categories ordered separately.' );
+
+end
+
+function test_different_categories()
+
+%%
+
+% Completely separate subsets.
+a = fcat.create( 'a', 'a', 'c', 'c' );
+b = fcat.create( 'b', 'b', 'd', 'd' );
+
+u1 = fcat.combine( a, b );
+u2 = fcat.combine( b, a );
+
+assert( prune(copy(u1)) == fcat.create('a', 'a', 'b', 'b', 'c', 'c', 'd', 'd') ...
+  , 'Union was incorrect.' );
+assert( u1 == u2, 'Ordering effects on distinct subsets.' );
+
+% Overlapping subsets.
+f1 = fcat.create( 'year', '2019', 'day', {'sun', 'mon', 'tues'} );
+f2 = fcat.create( 'year', {'2018', '2019'}, 'date', {'Oct-2018', 'Sep-2019'} );
+
+u1 = fcat.combine( f1, f2 );
+u2 = fcat.combine( f2, f1 );
+
+assert( isequal(sortrows(categorical(u1)), sortrows(categorical(u2))) ...
+  , 'Ordering effects on overlapping subsets.' );
 
 end
 
@@ -87,6 +136,18 @@ d = fcat.combine( y, z );
 
 assert( isequal(sortrows(categorical(c)), sortrows(categorical(d))) ...
   , 'ordering effects.' );
+
+c = getcats( z );
+c = c(randperm(numel(c)));
+
+z2 = fcat.with( c, rows(z) );
+assign( z2, z, rowmask(z2) );
+
+c = fcat.combine( z2, y );
+d = fcat.combine( y, z2 );
+
+assert( isequal(sortrows(categorical(c)), sortrows(categorical(d))) ...
+  , 'Ordering effects when categories have different order.' );
 
 end
 

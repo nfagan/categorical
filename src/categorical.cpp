@@ -728,9 +728,9 @@ std::vector<util::u64> util::categorical::find_impl(const std::vector<std::strin
             }
         }
         
-        u32 lab_id = search_it->second;
+        const u32 lab_id = search_it->second;
         const std::string& cat = m_in_category.at(lab);
-        u64 cat_idx = m_category_indices.at(cat);
+        const u64 cat_idx = m_category_indices.at(cat);
         
         bit_array index;
         

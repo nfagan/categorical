@@ -2,6 +2,36 @@
 
 namespace
 {
+    const char* error_text_wrong_collapsed_expression()
+    {
+        return "A collapsed expression for one category already exists in another category.";
+    }
+    
+    void print_error_from_status(util::u32 status, const char* func_id)
+    {
+        switch (status)
+        {
+            case util::categorical_status::OUT_OF_BOUNDS:
+                mexErrMsgIdAndTxt(func_id, "Index exceeds categorical dimensions.");
+                break;
+            case util::categorical_status::COLLAPSED_EXPRESSION_IN_WRONG_CATEGORY:
+                mexErrMsgIdAndTxt(func_id, error_text_wrong_collapsed_expression());
+                break;
+            case util::categorical_status::LABEL_EXISTS_IN_OTHER_CATEGORY:
+                mexErrMsgIdAndTxt(func_id, util::get_error_text_label_exists().c_str());
+                break;
+            case util::categorical_status::CATEGORIES_DO_NOT_MATCH:
+                mexErrMsgIdAndTxt(func_id, "Categories do not match.");
+                break;
+            case util::categorical_status::CATEGORY_DOES_NOT_EXIST:
+                mexErrMsgIdAndTxt(func_id, "At least one category does not exist.");
+                break;
+            default:
+                mexErrMsgIdAndTxt(func_id, "An unspecified error occurred.");
+                break;
+        }
+    }
+  
     void make_unique(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     {
         using namespace util;
@@ -25,7 +55,7 @@ namespace
 
         if (status != categorical_status::OK)
         {
-            mexErrMsgIdAndTxt(func_id, "An error occurred.");
+            print_error_from_status(status, func_id);
         }
 
         categorical* cat = new categorical(std::move(tmp));
@@ -45,22 +75,24 @@ namespace
         categorical tmp;
         u32 status = categorical_status::OK;
         
+        util::set_membership::options options;
+        options.index_offset = 1;
+        
         if (nrhs == 4)
         {
-            tmp = set_union{*a, *b}.make_union(&status);
+            tmp = set_union{*a, *b, options}.make_union(&status);
         }
         else if (nrhs == 5)
         {
             const std::vector<std::string> categories = get_strings(prhs[4], func_id);
-            tmp = set_union{*a, *b}.make_union(categories, &status);
+            tmp = set_union{*a, *b, options}.make_union(categories, &status);
         }
         else if (nrhs == 6)
         {
             const std::vector<u64> mask_a = double_or_uint64_array_to_vector64(prhs[4], func_id);
             const std::vector<u64> mask_b = double_or_uint64_array_to_vector64(prhs[5], func_id);
-            const u64 index_offset = 1;
 
-            tmp = set_union{*a, *b}.make_union(mask_a, mask_b, &status, index_offset);
+            tmp = set_union{*a, *b, options}.make_union(mask_a, mask_b, &status);
         }
         else if (nrhs == 7)
         {
@@ -69,7 +101,7 @@ namespace
             const std::vector<u64> mask_b = double_or_uint64_array_to_vector64(prhs[6], func_id);
             const u64 index_offset = 1;
             
-            tmp = set_union{*a, *b}.make_union(categories, mask_a, mask_b, &status, index_offset);
+            tmp = set_union{*a, *b, options}.make_union(categories, mask_a, mask_b, &status);
         }
         else
         {
@@ -78,7 +110,7 @@ namespace
 
         if (status != categorical_status::OK)
         {
-            mexErrMsgIdAndTxt(func_id, "An error occurred.");
+            print_error_from_status(status, func_id);
         }
 
         categorical* cat = new categorical(std::move(tmp));
@@ -98,17 +130,19 @@ namespace
         categorical tmp;
         u32 status = categorical_status::OK;
         
+        util::set_membership::options options;
+        options.index_offset = 1;
+        
         if (nrhs == 4)
         {
-            tmp = set_union{*a, *b}.make_combined(&status);
+            tmp = set_union{*a, *b, options}.make_combined(&status);
         }
         else if (nrhs == 6)
         {
             const std::vector<u64> mask_a = double_or_uint64_array_to_vector64(prhs[4], func_id);
             const std::vector<u64> mask_b = double_or_uint64_array_to_vector64(prhs[5], func_id);
-            const u64 index_offset = 1;
 
-            tmp = set_union{*a, *b}.make_combined(mask_a, mask_b, &status, index_offset);
+            tmp = set_union{*a, *b, options}.make_combined(mask_a, mask_b, &status);
         }
         else
         {
@@ -117,7 +151,7 @@ namespace
 
         if (status != categorical_status::OK)
         {
-            mexErrMsgIdAndTxt(func_id, "An error occurred.");
+            print_error_from_status(status, func_id);
         }
 
         categorical* cat = new categorical(std::move(tmp));
@@ -125,7 +159,7 @@ namespace
     }
 }
 
-void util::set_membership(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
+void util::set_membership_handler(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {
     using namespace util;
     using std::vector;

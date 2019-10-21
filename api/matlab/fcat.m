@@ -3118,32 +3118,25 @@ classdef fcat < handle
       %
       %     out = fcat.combine( a, b ); for fcat objects `a` and `b`, 
       %     returns a new fcat object `out` with the combined unique rows 
-      %     and categories of `a` and `b`. For each row unique to `b`,
-      %     values in categories unique to `a` are assigned their collapsed 
-      %     expressions, and vice versa.
+      %     and categories of `a` and `b`. 
+      %
+      %     For each row unique to `a`, values in categories unique to `b` 
+      %     depend on the set of values in categories shared between `a` 
+      %     and `b`, and vice versa. If, for a given unique row of `a` and 
+      %     unique category of `b`, the set of values in categories shared 
+      %     between `a` and `b` would match one (and only one) value in the 
+      %     category of `b`, then the category is assigned this value, 
+      %     otherwise it is assigned the collapsed expression for the 
+      %     category.
       %
       %     out = fcat.combine( a, b, mask_a, mask_b ); considers only rows
       %     of `a` and `b` given by `mask_a` and `mask_b` index vectors,
       %     respectively.
       %
-      %     out = fcat.combine( a, b, category_flag ) and 
-      %     out = fcat.combine( a, b, mask_a, mask_b, category_flag );
-      %     use `category_flag` to specify the handling of categories unique
-      %     to `a` or `b`.
-      %
-      %     The flag is one of:
-      %       - 'preserve': For each row unique to `b`, values in 
-      %       categories unique to `a` are assigned their collapsed
-      %       expressions, and vice versa. This is the default.
-      %       - 'combine': For each row unique to `b`, consider the set of
-      %       values in categories shared between `a` and `b`. If 1) this
-      %       set is non-empty, 2) `a` contains this set, and 3) for a given
-      %       category unique to `a`, its value is same for all occurrences
-      %       of the set, then the category is assigned that value,
-      %       otherwise it is assigned the collapsed expression for the
-      %       category. The same logic is applied to unique rows of `a` for
-      %       unique categories of `b`, and the result `out` then contains 
-      %       the unique elements of these two sets.
+      %     EX //
+      %     f1 = fcat.create( 'year', '2019', 'day', {'sun', 'mon', 'tues'} );
+      %     f2 = fcat.create( 'year', {'2018', '2019'}, 'date', {'Oct-2018', 'Sep-2019'} );
+      %     c = fcat.combine( f1, f2 );
       %
       %     See also fcat.union, fcat.intersect, fcat, union, fcat/collapsecat
       
@@ -3172,6 +3165,7 @@ classdef fcat < handle
       %     subsets of `a` and `b` given by `mask_a` and `mask_b` index
       %     vectors, respectively.
       %
+      %     (TODO)
       %     out = fcat.union( a, b, cats, category_flag ); and
       %     out = fcat.union( a, b, cats, mask_a, mask_b, category_flag );
       %     use `category_flag` to specify the handling of remaining
@@ -3192,6 +3186,7 @@ classdef fcat < handle
       %       category is unique and the same between `a` and `b`, then it
       %       is set to this value, otherwise it is the collapsed
       %       expression for the category.
+      %     (ENDTODO)
       %
       %     Note that rows of `out` are not sorted. 
       %

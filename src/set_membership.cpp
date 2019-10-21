@@ -11,15 +11,40 @@
 
 namespace
 {
-    std::vector<util::u64> make_range(const util::u64 num)
+    std::vector<util::u64> linear_category_search(const std::vector<std::string>& subset,
+                                                  const std::vector<std::string>& full_set)
     {
-        std::vector<util::u64> result;
-        for (util::u64 i = 0; i < num; i++)
+        const util::u64 num_subset = subset.size();
+        const util::u64 num_full_set = full_set.size();
+        std::vector<util::u64> result(num_subset);
+        
+        for (util::u64 i = 0; i < num_subset; i++)
         {
-            result.push_back(i);
+            const std::string& cat = subset[i];
+            result[i] = 0;
+            
+            for (util::u64 j = 0; j < num_full_set; j++)
+            {
+                if (full_set[j] == cat)
+                {
+                    break;
+                }
+                
+                result[i]++;
+            }
         }
         
         return result;
+    }
+    
+    std::vector<std::string> union_sorted_categories(const std::vector<std::string>& cats_a,
+                                                     const std::vector<std::string>& cats_b)
+    {
+        std::vector<std::string> categories;
+        std::set_union(cats_a.begin(), cats_a.end(),
+                       cats_b.begin(), cats_b.end(), std::back_inserter(categories));
+        
+        return categories;
     }
     
     std::vector<std::string> intersecting_sorted_categories(const std::vector<std::string>& cats_a,
@@ -93,124 +118,9 @@ namespace
         *status = util::categorical_status::OK;
         return result;
     }
-    
-    std::vector<std::vector<util::u32>> unique_rows_to_combine(std::unordered_set<std::string>& visited_complete_rows,
-                                                               std::unordered_map<std::string, util::VisitedRow>& visited_shared_rows,
-                                                               const std::vector<std::vector<util::u32>>& ids,
-                                                               const std::vector<util::u64>& category_indices,
-                                                               const std::vector<util::u64>& shared_category_indices,
-                                                               const std::vector<util::u64>& unique_category_indices,
-                                                               const std::vector<util::u64>& indices,
-                                                               const bool use_indices,
-                                                               const util::u64 index_offset,
-                                                               util::u32* status)
-    {
-        using util::u32;
-        using util::u64;
-        using util::s64;
-        
-        *status = util::categorical_status::OK;
-        
-        std::vector<std::vector<util::u32>> result;
-        
-        const u64 num_categories = category_indices.size();
-        const u64 num_shared = shared_category_indices.size();
-        const u64 num_unique = unique_category_indices.size();
-        const u64 max_rows = ids.empty() ? 0 : ids[0].size();
-        const u64 num_rows = use_indices ? indices.size() : max_rows;
-        
-        std::string complete_row_hash;
-        std::string shared_row_hash;
-        
-        char* complete_row_hash_ptr = nullptr;
-        char* shared_row_hash_ptr = nullptr;
-        
-        if (num_categories > 0)
-        {
-            complete_row_hash = util::make_label_id_hash_string(num_categories);
-            complete_row_hash_ptr = &complete_row_hash[0];
-            result.resize(num_categories);
-        }
-        
-        if (num_shared > 0)
-        {
-            shared_row_hash = util::make_label_id_hash_string(num_shared);
-            shared_row_hash_ptr = &shared_row_hash[0];
-        }
-        
-        u64 unique_row_index = 0;
-        
-        for (u64 i = 0; i < num_rows; i++)
-        {
-            u64 row_index = i;
-            
-            if (use_indices)
-            {
-                row_index = indices[i] - index_offset;
-                if (row_index >= max_rows)
-                {
-                    *status = util::categorical_status::OUT_OF_BOUNDS;
-                    return std::vector<std::vector<u32>>();
-                }
-            }
-            
-            util::build_row_hash(complete_row_hash_ptr, ids, row_index, category_indices);
-            util::build_row_hash(shared_row_hash_ptr, ids, row_index, shared_category_indices);
-            
-            //  Add it to the set.
-            if (visited_complete_rows.count(complete_row_hash) == 0)
-            {
-                visited_complete_rows.emplace(complete_row_hash);
-                
-                for (u64 j = 0; j < num_categories; j++)
-                {
-                    result[j].push_back(ids[category_indices[j]][row_index]);
-                }
-                
-                //  This is a new row.
-                unique_row_index++;
-            }
-        
-            auto visited_shared_it = visited_shared_rows.find(shared_row_hash);
-            if (visited_shared_it == visited_shared_rows.end())
-            {
-                //  Unique row index is one ahead.
-                visited_shared_rows.emplace(shared_row_hash, util::VisitedRow(unique_row_index-1, row_index));
-                
-                if (num_unique > 0)
-                {
-                    util::VisitedRow& row = visited_shared_rows.at(shared_row_hash);
-                    std::vector<s64>& remaining_category_ids = row.remaining_ids;
-                    
-                    for (u64 j = 0; j < num_unique; j++)
-                    {
-                        const u32 remaining_id = ids[unique_category_indices[j]][row_index];
-                        remaining_category_ids.push_back(remaining_id);
-                    }
-                }
-            }
-            else
-            {
-                util::VisitedRow& row = visited_shared_it->second;
-                
-                for (u64 j = 0; j < num_unique; j++)
-                {
-                    const s64 curr_id = row.remaining_ids[j];
-                    const u32 test_id = ids[unique_category_indices[j]][row_index];
-                    
-                    if (curr_id == -1 || curr_id != test_id)
-                    {
-                        row.remaining_ids[j] = -1;
-                    }
-                }
-            }
-        }
-        
-        return result;
-    }
 }
 
-util::set_unique::set_unique(const util::categorical& a) : a(a)
+util::set_unique::set_unique(const util::categorical& a) : base(), a(a)
 {
     //
 }
@@ -241,9 +151,121 @@ util::categorical util::set_unique::unique_impl(const std::vector<util::u64>& in
     return result;
 }
 
-util::set_union::set_union(const util::categorical& a, const util::categorical& b) : a(a), b(b)
+util::set_union::set_union(const util::categorical& a, const util::categorical& b, const set_membership::options& opts) :
+base(opts), a(a), b(b)
 {
     //
+}
+
+std::vector<std::vector<util::u32>> util::set_union::unique_rows_to_combine(std::unordered_set<std::string>& visited_complete_rows,
+                                                                            std::unordered_map<std::string, util::VisitedRow>& visited_shared_rows,
+                                                                            const std::vector<std::vector<util::u32>>& ids,
+                                                                            const std::vector<util::u64>& category_indices,
+                                                                            const std::vector<util::u64>& shared_category_indices,
+                                                                            const std::vector<util::u64>& unique_category_indices,
+                                                                            const std::vector<util::u64>& indices,
+                                                                            const bool use_indices,
+                                                                            util::u32* status) const
+{
+    *status = util::categorical_status::OK;
+    
+    std::vector<std::vector<util::u32>> result;
+    
+    const u64 num_categories = category_indices.size();
+    const u64 num_shared = shared_category_indices.size();
+    const u64 num_unique = unique_category_indices.size();
+    const u64 max_rows = ids.empty() ? 0 : ids[0].size();
+    const u64 num_rows = use_indices ? indices.size() : max_rows;
+    const u64 index_offset = options.index_offset;
+    
+    std::string complete_row_hash;
+    std::string shared_row_hash;
+    
+    char* complete_row_hash_ptr = nullptr;
+    char* shared_row_hash_ptr = nullptr;
+    
+    if (num_categories > 0)
+    {
+        complete_row_hash = util::make_label_id_hash_string(num_categories);
+        complete_row_hash_ptr = &complete_row_hash[0];
+        result.resize(num_categories);
+    }
+    
+    if (num_shared > 0)
+    {
+        shared_row_hash = util::make_label_id_hash_string(num_shared);
+        shared_row_hash_ptr = &shared_row_hash[0];
+    }
+    
+    u64 unique_row_index = 0;
+    
+    for (u64 i = 0; i < num_rows; i++)
+    {
+        u64 row_index = i;
+        
+        if (use_indices)
+        {
+            row_index = indices[i] - index_offset;
+            if (row_index >= max_rows)
+            {
+                *status = util::categorical_status::OUT_OF_BOUNDS;
+                return std::vector<std::vector<u32>>();
+            }
+        }
+        
+        util::build_row_hash(complete_row_hash_ptr, ids, row_index, category_indices);
+        util::build_row_hash(shared_row_hash_ptr, ids, row_index, shared_category_indices);
+        
+        //  Add it to the set.
+        if (visited_complete_rows.count(complete_row_hash) == 0)
+        {
+            visited_complete_rows.emplace(complete_row_hash);
+            
+            for (u64 j = 0; j < num_categories; j++)
+            {
+                result[j].push_back(ids[category_indices[j]][row_index]);
+            }
+            
+            //  This is a new row.
+            unique_row_index++;
+        }
+        
+        auto visited_shared_it = visited_shared_rows.find(shared_row_hash);
+        if (visited_shared_it == visited_shared_rows.end())
+        {
+            //  Unique row index is one ahead.
+            visited_shared_rows.emplace(shared_row_hash, util::VisitedRow(unique_row_index-1, row_index));
+            
+            if (num_unique > 0)
+            {
+                util::VisitedRow& row = visited_shared_rows.at(shared_row_hash);
+                std::vector<s64>& remaining_category_ids = row.remaining_ids;
+                
+                for (u64 j = 0; j < num_unique; j++)
+                {
+                    const u32 remaining_id = ids[unique_category_indices[j]][row_index];
+                    remaining_category_ids.push_back(remaining_id);
+                }
+            }
+        }
+        else
+        {
+            util::VisitedRow& row = visited_shared_it->second;
+            
+            for (u64 j = 0; j < num_unique; j++)
+            {
+                const s64 curr_id = row.remaining_ids[j];
+                const u32 test_id = ids[unique_category_indices[j]][row_index];
+                
+                if (curr_id == -1 || curr_id != test_id)
+                {
+                    row.remaining_ids[j] = -1;
+                }
+            }
+        }
+    }
+    
+    return result;
 }
 
 void util::set_union::append_unique_rows_progenitors_match(std::vector<std::vector<util::u32>>& ids_a,
@@ -409,6 +431,7 @@ std::vector<std::string> util::set_union::get_uniform_category_labels(const util
                                                                       util::u32* status)
 {
     std::vector<std::string> result;
+    
     const u64 sz = use_indices ? indices.size() : a.size();
     const u64 row0 = !use_indices ? 0 : indices.size() > 0 ? (indices[0] - index_offset) : 0;
     
@@ -453,15 +476,16 @@ std::vector<std::string> util::set_union::get_uniform_category_labels(const util
 
 util::categorical util::set_union::make_combined(util::u32* status) const
 {
-    return set_combination_impl(status, {}, {}, 0, false);
+    const std::vector<std::string> categories = union_sorted_categories(a.get_categories(), b.get_categories());
+    return set_combination_impl(status, categories, categories, {}, {}, false);
 }
 
 util::categorical util::set_union::make_combined(const std::vector<util::u64>& mask_a,
                                                  const std::vector<util::u64>& mask_b,
-                                                 util::u32* status,
-                                                 const util::u64 index_offset) const
+                                                 util::u32* status) const
 {
-    return set_combination_impl(status, mask_a, mask_b, index_offset, true);
+    const std::vector<std::string> categories = union_sorted_categories(a.get_categories(), b.get_categories());
+    return set_combination_impl(status, categories, categories, mask_a, mask_b, true);
 }
 
 util::categorical util::set_union::make_union(util::u32* status) const
@@ -472,13 +496,12 @@ util::categorical util::set_union::make_union(util::u32* status) const
         return util::categorical();
     }
     
-    return set_union_impl(status, a.get_categories(), {}, {}, 0, false);
+    return set_union_impl(status, a.get_categories(), {}, {}, false);
 }
 
 util::categorical util::set_union::make_union(const std::vector<util::u64>& mask_a,
                                               const std::vector<util::u64>& mask_b,
-                                              util::u32* status,
-                                              const util::u64 index_offset) const
+                                              util::u32* status) const
 {
     if (!a.categories_match(b))
     {
@@ -486,21 +509,20 @@ util::categorical util::set_union::make_union(const std::vector<util::u64>& mask
         return util::categorical();
     }
     
-    return set_union_impl(status, a.get_categories(), mask_a, mask_b, index_offset, true);
+    return set_union_impl(status, a.get_categories(), mask_a, mask_b, true);
 }
 
 util::categorical util::set_union::make_union(const std::vector<std::string>& categories, util::u32* status) const
 {
-    return set_union_impl(status, categories, {}, {}, 0, false);
+    return set_union_impl(status, categories, {}, {}, false);
 }
 
 util::categorical util::set_union::make_union(const std::vector<std::string>& categories,
                                               const std::vector<util::u64>& mask_a,
                                               const std::vector<util::u64>& mask_b,
-                                              util::u32* status,
-                                              const util::u64 index_offset) const
+                                              util::u32* status) const
 {
-    return set_union_impl(status, categories, mask_a, mask_b, index_offset, true);
+    return set_union_impl(status, categories, mask_a, mask_b, true);
 }
 
 #define CAT_CHECK_STATUS_ASSIGN_STATUS_EARLY_RETURN_CATEGORICAL(identifier) \
@@ -520,11 +542,11 @@ util::categorical util::set_union::set_union_impl_matching_categories(util::u32*
                                                                       const std::vector<std::string>& categories,
                                                                       const std::vector<util::u64>& mask_a,
                                                                       const std::vector<util::u64>& mask_b,
-                                                                      const util::u64 index_offset,
                                                                       const bool use_indices) const
 {
     const std::vector<u64> cat_inds_a = a.get_category_indices_unchecked_has_category(categories);
     const std::vector<u64> cat_inds_b = b.get_category_indices_unchecked_has_category(categories);
+    const u64 index_offset = options.index_offset;
     
     util::categorical result = categorical::empty_copy(a);
     
@@ -550,7 +572,6 @@ util::categorical util::set_union::set_union_impl(util::u32 *status,
                                                   const std::vector<std::string>& in_categories,
                                                   const std::vector<util::u64>& mask_a,
                                                   const std::vector<util::u64>& mask_b,
-                                                  const util::u64 index_offset,
                                                   const bool use_indices) const
 {
     *status = categorical_status::OK;
@@ -562,78 +583,53 @@ util::categorical util::set_union::set_union_impl(util::u32 *status,
     }
     
     const std::vector<std::string> categories = unique_categories(in_categories);
-    const std::vector<std::string> cats_shared = intersecting_sorted_categories(a.get_categories(), b.get_categories());
-    //  Remaining categories to fill in.
-    const std::vector<std::string> cats_remaining = set_difference_sorted_categories(cats_shared, categories);
-    
     //  Fast path when categories are the same between a and b, and all categories are specified in categories.
-    if (cats_shared.size() == a.n_categories() && cats_shared.size() == b.n_categories())
+    if (categories.size() == a.n_categories() && categories.size() == b.n_categories())
     {
-        return set_union_impl_matching_categories(status, categories, mask_a, mask_b, index_offset, use_indices);
+        return set_union_impl_matching_categories(status, categories, mask_a, mask_b, use_indices);
     }
     
-    const std::vector<u64> cat_inds_a = a.get_category_indices_unchecked_has_category(categories);
-    const std::vector<u64> cat_inds_b = b.get_category_indices_unchecked_has_category(categories);
-    
-    const std::vector<u64> cat_inds_remaining_a = a.get_category_indices_unchecked_has_category(cats_remaining);
-    const std::vector<u64> cat_inds_remaining_b = b.get_category_indices_unchecked_has_category(cats_remaining);
-    const std::vector<u64> cat_inds_shared_a = a.get_category_indices_unchecked_has_category(cats_shared);
-    const std::vector<u64> cat_inds_shared_b = b.get_category_indices_unchecked_has_category(cats_shared);
-    
-    std::vector<std::vector<u32>> unique_ids_a;
-    std::vector<std::vector<u32>> unique_ids_b;
-    
-    std::unordered_map<std::string, VisitedRow> visited_shared_rows_a;
-    std::unordered_map<std::string, VisitedRow> visited_shared_rows_b;
-    
-    std::unordered_set<std::string> visited_rows_a;
-    std::unordered_set<std::string> visited_rows_b;
-    
-    if (use_indices)
-    {
-        unique_ids_a = unique_rows_to_combine(visited_rows_a, visited_shared_rows_a, a.m_labels,
-                                              cat_inds_a, cat_inds_a, cat_inds_remaining_a, mask_a, true, index_offset, status);
-        CAT_CHECK_STATUS_PTR_EARLY_RETURN_CATEGORICAL()
-        
-        unique_ids_b = unique_rows_to_combine(visited_rows_b, visited_shared_rows_b, b.m_labels,
-                                              cat_inds_b, cat_inds_b, cat_inds_remaining_b, mask_b, true, index_offset, status);
-        CAT_CHECK_STATUS_PTR_EARLY_RETURN_CATEGORICAL()
-    }
-    else
-    {
-        unique_ids_a = unique_rows_to_combine(visited_rows_a, visited_shared_rows_a, a.m_labels,
-                                              cat_inds_a, cat_inds_a, cat_inds_remaining_a, {}, false, 0, status);
-        unique_ids_b = unique_rows_to_combine(visited_rows_b, visited_shared_rows_b, b.m_labels,
-                                              cat_inds_b, cat_inds_b, cat_inds_remaining_b, {}, false, 0, status);
-    }
-    
-    return util::categorical();
+    return set_combination_impl(status, categories, categories, mask_a, mask_b, use_indices);
 }
 
 util::categorical util::set_union::set_combination_impl(util::u32* status,
+                                                        const std::vector<std::string>& cats_final,
+                                                        const std::vector<std::string>& cats_compute_union,
                                                         const std::vector<util::u64>& mask_a,
                                                         const std::vector<util::u64>& mask_b,
-                                                        const util::u64 index_offset,
                                                         const bool use_indices) const
 {
     *status = categorical_status::OK;
     
-    const std::vector<std::string> cats_shared = intersecting_sorted_categories(a.get_categories(), b.get_categories());
-    const std::vector<std::string> cats_a_only = a.get_categories_except(cats_shared);
-    const std::vector<std::string> cats_b_only = b.get_categories_except(cats_shared);
+    const std::vector<std::string> all_cats_a = a.get_categories();
+    const std::vector<std::string> all_cats_b = b.get_categories();
+    
+    const std::vector<std::string> union_cats_a = intersecting_sorted_categories(cats_compute_union, all_cats_a);
+    const std::vector<std::string> union_cats_b = intersecting_sorted_categories(cats_compute_union, all_cats_b);
+    
+    const std::vector<std::string> final_cats_a = intersecting_sorted_categories(cats_final, all_cats_a);
+    const std::vector<std::string> final_cats_b = intersecting_sorted_categories(cats_final, all_cats_b);
+    
+    const std::vector<std::string> cats_shared = intersecting_sorted_categories(union_cats_a, union_cats_b);
+    const std::vector<std::string> cats_a_only = set_difference_sorted_categories(final_cats_a, cats_shared);
+    const std::vector<std::string> cats_b_only = set_difference_sorted_categories(final_cats_b, cats_shared);
+    
+    const std::vector<std::string> cats_a_to_remove = set_difference_sorted_categories(all_cats_a, final_cats_a);
     
     const u64 num_cats_shared = cats_shared.size();
     const u64 num_cats_b_only = cats_b_only.size();
     const u64 num_cats_a_only = cats_a_only.size();
     const u64 num_cats_total = num_cats_shared + num_cats_a_only + num_cats_b_only;
     
-    const std::vector<u64> cat_inds_shared_a = a.get_category_indices_unchecked_has_category(cats_shared);
-    const std::vector<u64> cat_inds_shared_b = b.get_category_indices_unchecked_has_category(cats_shared);
-    const std::vector<u64> cat_inds_a_only = a.get_category_indices_unchecked_has_category(cats_a_only);
-    const std::vector<u64> cat_inds_b_only = b.get_category_indices_unchecked_has_category(cats_b_only);
+    std::vector<u64> cat_inds_shared_a = a.get_category_indices_unchecked_has_category(cats_shared);
+    std::vector<u64> cat_inds_a_only = a.get_category_indices_unchecked_has_category(cats_a_only);
     
-    const std::vector<u64> cat_inds_range_a = make_range(a.n_categories());
-    const std::vector<u64> cat_inds_range_b = make_range(b.n_categories());
+    std::vector<u64> cat_inds_shared_b = b.get_category_indices_unchecked_has_category(cats_shared);
+    std::vector<u64> cat_inds_b_only = b.get_category_indices_unchecked_has_category(cats_b_only);
+    
+    //  Indices of categories over which the union will be computed.
+    const std::vector<u64> cat_inds_union_a = a.get_category_indices_unchecked_has_category(union_cats_a);
+    const std::vector<u64> cat_inds_union_b = b.get_category_indices_unchecked_has_category(union_cats_b);
     
     std::vector<std::vector<util::u32>> unique_ids_a;
     std::vector<std::vector<util::u32>> unique_ids_b;
@@ -646,25 +642,60 @@ util::categorical util::set_union::set_combination_impl(util::u32* status,
     
     if (use_indices)
     {
-        unique_ids_a = unique_rows_to_combine(visited_rows_a, visited_shared_rows_a, a.m_labels, cat_inds_range_a,
-                                              cat_inds_shared_a, cat_inds_a_only, mask_a, true, index_offset, status);
+        unique_ids_a = unique_rows_to_combine(visited_rows_a, visited_shared_rows_a, a.m_labels, cat_inds_union_a,
+                                              cat_inds_shared_a, cat_inds_a_only, mask_a, true, status);
         CAT_CHECK_STATUS_PTR_EARLY_RETURN_CATEGORICAL()
         
-        unique_ids_b = unique_rows_to_combine(visited_rows_b, visited_shared_rows_b, b.m_labels, cat_inds_range_b,
-                                              cat_inds_shared_b, cat_inds_b_only, mask_b, true, index_offset, status);
+        unique_ids_b = unique_rows_to_combine(visited_rows_b, visited_shared_rows_b, b.m_labels, cat_inds_union_b,
+                                              cat_inds_shared_b, cat_inds_b_only, mask_b, true, status);
         CAT_CHECK_STATUS_PTR_EARLY_RETURN_CATEGORICAL()
     }
     else
     {
         unique_ids_a = unique_rows_to_combine(visited_rows_a, visited_shared_rows_a, a.m_labels,
-                                              cat_inds_range_a, cat_inds_shared_a, cat_inds_a_only, {}, false, 0, status);
+                                              cat_inds_union_a, cat_inds_shared_a, cat_inds_a_only, {}, false, status);
         unique_ids_b = unique_rows_to_combine(visited_rows_b, visited_shared_rows_b, b.m_labels,
-                                              cat_inds_range_b, cat_inds_shared_b, cat_inds_b_only, {}, false, 0, status);
+                                              cat_inds_union_b, cat_inds_shared_b, cat_inds_b_only, {}, false, status);
     }
     
     util::categorical result = util::categorical::empty_copy(a);
+    
+    //  Delete categories in a that are not in cats_final.
+    if (!cats_a_to_remove.empty())
+    {
+        for (const auto& cat : cats_a_to_remove)
+        {
+            bool ignore_exists;
+            result.remove_category(cat, &ignore_exists);
+        }
+        
+        //  Remap category indices to first N.
+        u64 i = 0;
+        
+        for (const auto& cat : final_cats_a)
+        {
+            if (i >= result.m_labels.size())
+            {
+                const u64 num_rows_a = num_rows_in_matrix(unique_ids_a);
+                std::vector<u32> empty_col(num_rows_a);
+                unique_ids_a.emplace_back(std::move(empty_col));
+            }
+            
+            result.m_category_indices[cat] = i++;
+        }
+    }
+    
+    //  Now add the unique label matrix to result.
     result.m_labels = std::move(unique_ids_a);
     
+    //  Re-map column indices into the result.m_labels and unique_ids_b matrices.
+    cat_inds_shared_a = result.get_category_indices_unchecked_has_category(cats_shared);
+    cat_inds_a_only = result.get_category_indices_unchecked_has_category(cats_a_only);
+
+    cat_inds_b_only = linear_category_search(cats_b_only, union_cats_b);
+    cat_inds_shared_b = linear_category_search(cats_shared, union_cats_b);
+    
+    //  Add categories in b that are not in a.
     for (const auto& cat_b : cats_b_only)
     {
         const u32 require_status = result.require_category(cat_b);
@@ -675,11 +706,11 @@ util::categorical util::set_union::set_combination_impl(util::u32* status,
     const std::vector<u64> cat_inds_b_only_result = result.get_category_indices_unchecked_has_category(cats_b_only);
     
     const std::vector<std::string> uniform_category_labels_a = get_uniform_category_labels(a, cats_a_only, mask_a,
-                                                                                           use_indices, index_offset, status);
+                                                                                           use_indices, options.index_offset, status);
     CAT_CHECK_STATUS_PTR_EARLY_RETURN_CATEGORICAL()
     
     const std::vector<std::string> uniform_category_labels_b = get_uniform_category_labels(b, cats_b_only, mask_b,
-                                                                                           use_indices, index_offset, status);
+                                                                                           use_indices, options.index_offset, status);
     CAT_CHECK_STATUS_PTR_EARLY_RETURN_CATEGORICAL()
     
     if (!cats_b_only.empty())
@@ -1046,16 +1077,6 @@ namespace
                            std::vector<util::u64>(), false, 0, &dummy_status);
     }
     
-    std::vector<std::string> union_sorted_categories(const std::vector<std::string>& cats_a,
-                                                     const std::vector<std::string>& cats_b)
-    {
-        std::vector<std::string> categories;
-        std::set_union(cats_a.begin(), cats_a.end(),
-                       cats_b.begin(), cats_b.end(), std::back_inserter(categories));
-        
-        return categories;
-    }
-    
     std::vector<std::string> shared_categories(const util::categorical& a, const util::categorical& b)
     {
         std::vector<std::string> cats_a = a.get_categories();
@@ -1072,32 +1093,6 @@ namespace
             bool dummy_exists;
             a.remove_category(category, &dummy_exists);
         }
-    }
-    
-    std::vector<util::u64> linear_category_search(const std::vector<std::string>& subset,
-                                                  const std::vector<std::string>& full_set)
-    {
-        const util::u64 num_subset = subset.size();
-        const util::u64 num_full_set = full_set.size();
-        std::vector<util::u64> result(num_subset);
-        
-        for (util::u64 i = 0; i < num_subset; i++)
-        {
-            const std::string& cat = subset[i];
-            result[i] = 0;
-            
-            for (util::u64 j = 0; j < num_full_set; j++)
-            {
-                if (full_set[j] == cat)
-                {
-                    break;
-                }
-                
-                result[i]++;
-            }
-        }
-        
-        return result;
     }
 }
 
