@@ -631,32 +631,23 @@ util::categorical util::set_union::set_combination_impl(util::u32* status,
     const std::vector<u64> cat_inds_union_a = a.get_category_indices_unchecked_has_category(union_cats_a);
     const std::vector<u64> cat_inds_union_b = b.get_category_indices_unchecked_has_category(union_cats_b);
     
-    std::vector<std::vector<util::u32>> unique_ids_a;
-    std::vector<std::vector<util::u32>> unique_ids_b;
-    
     std::unordered_map<std::string, VisitedRow> visited_shared_rows_a;
     std::unordered_map<std::string, VisitedRow> visited_shared_rows_b;
     
     std::unordered_set<std::string> visited_rows_a;
     std::unordered_set<std::string> visited_rows_b;
     
-    if (use_indices)
-    {
-        unique_ids_a = unique_rows_to_combine(visited_rows_a, visited_shared_rows_a, a.m_labels, cat_inds_union_a,
-                                              cat_inds_shared_a, cat_inds_a_only, mask_a, true, status);
-        CAT_CHECK_STATUS_PTR_EARLY_RETURN_CATEGORICAL()
-        
-        unique_ids_b = unique_rows_to_combine(visited_rows_b, visited_shared_rows_b, b.m_labels, cat_inds_union_b,
-                                              cat_inds_shared_b, cat_inds_b_only, mask_b, true, status);
-        CAT_CHECK_STATUS_PTR_EARLY_RETURN_CATEGORICAL()
-    }
-    else
-    {
-        unique_ids_a = unique_rows_to_combine(visited_rows_a, visited_shared_rows_a, a.m_labels,
-                                              cat_inds_union_a, cat_inds_shared_a, cat_inds_a_only, {}, false, status);
-        unique_ids_b = unique_rows_to_combine(visited_rows_b, visited_shared_rows_b, b.m_labels,
-                                              cat_inds_union_b, cat_inds_shared_b, cat_inds_b_only, {}, false, status);
-    }
+    std::vector<std::vector<util::u32>> unique_ids_a = unique_rows_to_combine(visited_rows_a, visited_shared_rows_a,
+                                                                              a.m_labels, cat_inds_union_a,
+                                                                              cat_inds_shared_a, cat_inds_a_only,
+                                                                              mask_a, use_indices, status);
+    CAT_CHECK_STATUS_PTR_EARLY_RETURN_CATEGORICAL()
+    
+    std::vector<std::vector<util::u32>> unique_ids_b = unique_rows_to_combine(visited_rows_b, visited_shared_rows_b,
+                                                                              b.m_labels, cat_inds_union_b,
+                                                                              cat_inds_shared_b, cat_inds_b_only,
+                                                                              mask_b, use_indices, status);
+    CAT_CHECK_STATUS_PTR_EARLY_RETURN_CATEGORICAL()
     
     util::categorical result = util::categorical::empty_copy(a);
     
@@ -951,8 +942,10 @@ util::categorical util::set_union::set_combination_impl(util::u32* status,
             }
             for (u64 j = 0; j < num_cats_a_only; j++)
             {
-                const u64 src_cat_ind = j + num_cats_b_only + num_cats_shared;
-                result.m_labels[cat_inds_a_only[j]].push_back(unique_ids_b[src_cat_ind][i]);
+                const u64 dest_cat_ind = cat_inds_a_only[j];
+                u32 id_a;
+                std::memcpy(&id_a, &final_complete_hash[0] + dest_cat_ind * sizeof(u32), sizeof(u32));
+                result.m_labels[dest_cat_ind].push_back(id_a);
             }
             
             visited_rows_a.emplace(final_complete_hash);
