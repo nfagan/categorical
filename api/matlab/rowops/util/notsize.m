@@ -9,12 +9,6 @@ function sz = notsize(X, dim)
 %     and second dimensions.
 %
 %     See also rows, colons
-%
-%     IN:
-%       - `X` (/any/)
-%       - `dim` (double)
-%     OUT:
-%       - `sz` (double)
 
 sz = size( X );
 sz(dim) = [];

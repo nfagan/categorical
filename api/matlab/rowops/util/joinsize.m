@@ -7,12 +7,6 @@ function s = joinsize(A, B)
 %     the size of `B` beyond the first dimension.
 %
 %     See also notsize, rows
-%
-%     IN:
-%       - `A` (/any/)
-%       - `B` (/any/)
-%     OUT:
-%       - `s` (double)
 
 s = [ rows(A), notsize(B, 1) ];
 

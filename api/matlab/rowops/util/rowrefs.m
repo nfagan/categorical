@@ -12,12 +12,6 @@ function d = rowrefs(data, I, un)
 %     array. Default is false.
 %
 %     See also rowref
-%
-%     IN:
-%       - `data` (/T/)
-%       - `I` (cell array of index vectors)
-%     OUT:
-%       - `d` (cell array of /T/)
 
 if ( nargin < 3 ), un = false; end
 d = rowop( data, I, @(x) x, un );

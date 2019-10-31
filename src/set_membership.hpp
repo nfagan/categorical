@@ -119,12 +119,13 @@ private:
                                      const std::vector<util::u64>& mask_b,
                                      const bool use_indices) const;
     
-    static bool build_union_row_hash(const util::categorical& a,
+    static bool build_row_hash(const util::categorical& a,
                                      const util::categorical& b,
                                      const std::vector<std::vector<u32>>& a_label_matrix,
                                      char* row_hash_ptr,
                                      const util::u64 row,
-                                     const std::vector<util::u64>& category_indices);
+                                     const std::vector<util::u64>& src_category_indices,
+                                     const std::vector<util::u64>& dest_category_indices);
     
     std::vector<std::vector<util::u32>> unique_rows_to_combine(std::unordered_set<std::string>& visited_complete_rows,
                                                                std::unordered_map<std::string, util::VisitedRow>& visited_shared_rows,

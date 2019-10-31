@@ -33,7 +33,7 @@ rmcat( f2, whichcat(f2, shared_labs) );
 shared_cats = intersect( getcats(f1), getcats(f2) );
 rmcat( f2, shared_cats );
 
-iters = 10;
+iters = 20;
 max_cats = min( ncats(f1), ncats(f2) );
 
 cats1 = getcats( f1 );
@@ -64,12 +64,13 @@ for i = 1:iters
   test_a = categorical( f1, use_cats );
   test_b = categorical( f2p, use_cats );
   u_test = union( test_a, test_b, 'rows' );
+  u_test = sortrows( reordercats(u_test) );
   
-  c_a = sortrows( categorical(a) );
-  c_b = sortrows( categorical(b) );
+  c_a = sortrows( reordercats(categorical(a, use_cats)) );
+  c_b = sortrows( reordercats(categorical(b, use_cats)) );
   
-  assert( isequal(c_a, c_b), 'Ordering effects on subset union.' );
   assert( isequal(u_test, c_a), 'Incorrect subset union.' );
+  assert( isequal(c_a, c_b), 'Ordering effects on subset union.' );
 end
 
 end

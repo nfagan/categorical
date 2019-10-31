@@ -36,6 +36,14 @@ namespace util
         return v.empty() ? 0 : v[0].size();
     }
     
+    template <typename T>
+    inline void add_column(std::vector<std::vector<T>>& v)
+    {
+        const u64 num_rows = num_rows_in_matrix(v);
+        std::vector<T> empty_col(num_rows);
+        v.emplace_back(std::move(empty_col));
+    }
+    
     inline void build_row_hash(char* ptr, const std::vector<std::vector<util::u32>>& id_matrix, const util::u64 row, const util::u64 num_cols)
     {
         for (util::u64 i = 0; i < num_cols; i++)
@@ -53,6 +61,19 @@ namespace util
         for (util::u64 i = 0; i < num_cols; i++)
         {
             std::memcpy(ptr + i*sizeof(util::u32), &id_matrix[col_indices[i]][row], sizeof(util::u32));
+        }
+    }
+    
+    inline void build_row_hash(char* ptr,
+                               const std::vector<std::vector<util::u32>>& id_matrix,
+                               const util::u64 row,
+                               const std::vector<util::u64>& src_col_indices,
+                               const std::vector<util::u64>& dest_col_indices)
+    {
+        const util::u64 num_cols = src_col_indices.size();
+        for (util::u64 i = 0; i < num_cols; i++)
+        {
+            std::memcpy(ptr + dest_col_indices[i]*sizeof(util::u32), &id_matrix[src_col_indices[i]][row], sizeof(util::u32));
         }
     }
     

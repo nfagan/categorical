@@ -207,7 +207,8 @@ public:
     util::u64 n_labels() const;
     
     util::u32 set_category(const std::string& category, const std::vector<std::string>& full_category);
-    util::u32 set_category(const std::string& category, const std::vector<std::string>& part_category,
+    util::u32 set_category(const std::string& category,
+                           const std::vector<std::string>& part_category,
                            const std::vector<util::u64>& at_indices,
                            util::u64 index_offset = 0);
     
@@ -245,7 +246,8 @@ private:
     std::unordered_map<std::string, std::string> m_in_category;
     std::unordered_set<std::string> m_collapsed_expressions;
     
-private:    
+private:
+    bool is_collapsed_expression_in_wrong_category(const std::string& category, const std::string& label) const;
     bool has_label(util::u32 label_id) const;
     util::u32 add_label_unchecked_has_category(const std::string& category, const std::string& label, u32* label_id);
     
