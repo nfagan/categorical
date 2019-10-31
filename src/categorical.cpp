@@ -288,9 +288,6 @@ util::u64 util::categorical::count(const std::string& lab,
                                    util::u32* status,
                                    util::u64 index_offset) const
 {
-    using util::u32;
-    using util::u64;
-    
     *status = util::categorical_status::OK;
     
     bool exists;
@@ -356,7 +353,8 @@ util::u32 util::categorical::add_category(const std::string& category)
 //      An error code is returned if the label is already present
 //      in another category.
 
-util::u32 util::categorical::add_label(const std::string& category, const std::string& label) {
+util::u32 util::categorical::add_label(const std::string& category, const std::string& label)
+{
     if (!has_category(category))
     {
         return util::categorical_status::CATEGORY_DOES_NOT_EXIST;
@@ -3371,7 +3369,7 @@ std::vector<std::string> util::categorical::in_categories(const std::vector<std:
     return result;
 }
 
-void util::categorical::unchecked_in_category(std::vector<std::string> &out, const std::string &category) const
+void util::categorical::unchecked_in_category(std::vector<std::string>& out, const std::string& category) const
 {
     std::vector<std::string> labs = m_label_ids.keys();
     util::u64 n_labs = labs.size();
@@ -3389,7 +3387,7 @@ void util::categorical::unchecked_in_category(std::vector<std::string> &out, con
 
 //  remove_category: Remove category and all labels therein.
 
-void util::categorical::remove_category(const std::string &category, bool *exists)
+void util::categorical::remove_category(const std::string& category, bool* exists)
 {
     std::vector<std::string> labs = in_category(category, exists);
     
