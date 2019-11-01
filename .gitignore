@@ -3,3 +3,4 @@ build/
 *.m~
 *.asv
 *.cpp~
+api/matlab/benchmark/data

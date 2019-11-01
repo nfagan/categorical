@@ -1091,8 +1091,7 @@ std::vector<std::vector<util::u64>> util::categorical::find_all(const std::vecto
         return result;
     }
     
-    size_t size_int = sizeof(u32);
-    std::string hash_code(n_cats_in * size_int, 'a');
+    std::string hash_code = make_label_id_hash_string(n_cats_in);
     char* hash_code_ptr = &hash_code[0];
     
     const u64 rows = indices.size();
@@ -1219,7 +1218,7 @@ util::combinations_t util::categorical::find_allc_impl(const std::vector<std::st
             for (u64 j = 0; j < n_cats_in; j++)
             {
                 const std::vector<u32>& full_cat = m_labels[category_inds[j]];
-                result.combinations.push_back(m_label_ids.at(full_cat[internal_idx]));
+                result.combinations.push_back(m_label_ids.ref_at(full_cat[internal_idx]));
             }
             
             combination_exists[hash_code] = next_id;
@@ -2910,8 +2909,6 @@ util::u32 util::categorical::bounds_check(const util::u64* data,
                                           util::u64 end,
                                           util::u64 index_offset)
 {
-    using util::u64;
-    
     for (u64 i = 0; i < n_check; i++)
     {
         if (data[i] - index_offset >= end)
@@ -2927,8 +2924,6 @@ util::u32 util::categorical::bounds_check(const util::u64* data,
 
 std::vector<std::string> util::categorical::get_uniform_categories() const
 {
-    using util::u64;
-    
     std::vector<std::string> cats;
     
     for (const auto& cat_it : m_category_indices)
