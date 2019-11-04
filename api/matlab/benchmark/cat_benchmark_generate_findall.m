@@ -10,7 +10,7 @@ for i = 1:numel(kinds)
 
   params = cat_benchmark_config( 'iter', 1e3, 'tag', kinds{i} );
   
-  results{i} = cat_benchmark_find( f, c, cats, params );
+  results{i} = cat_benchmark_findall( f, c, cats, params );
 end
 
 results = vertcat( results{:} );
