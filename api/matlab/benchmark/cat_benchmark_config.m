@@ -12,11 +12,10 @@ if ( nargin == 1 )
 end
 
 validator = @(x, classes, attrs, name) validateattributes( x, classes, attrs, mfilename, name );
-scalar_validator = @(x, classes, name) validator(x, classes, {'scalar'}, name );
 cellstr_validator = @(x, name) validator( x, {'char', 'cell'}, {}, name );
 
 parser = inputParser();
-parser.addParameter( 'iters', 1e3, @(x) iters_validator(x, mfilename) );
+parser.addParameter( 'iters', 1e3, @(x) iters_validator(x) );
 parser.addParameter( 'tags', {}, @(x) cellstr_validator(x, 'tags') );
 
 parse( parser, varargin{:} );
@@ -29,7 +28,7 @@ end
 
 end
 
-function iters_validator(iters, filename)
+function iters_validator(iters)
 
 validateattributes( iters, {'double'}, {'scalar'}, mfilename, 'iters' );
 

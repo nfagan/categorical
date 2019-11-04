@@ -1,5 +1,34 @@
 function cat_benchmark_save(results, varargin)
 
+%   CAT_BENCHMARK_SAVE -- Save benchmark results.
+%
+%     cat_benchmark_save( results ); saves `results` of an fcat
+%     benchmarking function to disk in a directory called 'data' located
+%     alongside this function, i.e., 
+%     `fullfile( fcat.apiroot(), 'benchmark', 'data' )`. 
+%
+%     A separate file will be created for each unique group in `results`,
+%     containing the subset of `results` for each group, named after the 
+%     group.
+%
+%     If a file already exists, it will be appended-to rather than 
+%     overwritten.
+%
+%     cat_benchmark_save( results, 'name', value ); species additional
+%     name-value paired inputs. These include:
+%
+%       'filename' (char) -- Custom filename to use, instead of the
+%       group-name. In this case, results are not separated by group, but
+%       instead are all saved into `filename`.
+%       'directory' (char) -- Directory in which to save, instead of the
+%       default data directory. Will attempt to create it if it doesn't
+%       exist.
+%       'append' (logical) -- If true, an existing file will be appended-to
+%       rather than overwritten.
+%
+%     See also cat_benchmark_load, cat_benchmark_plot, cat_benchmark_run,
+%       fcat
+
 if ( isempty(results) )
   return
 end

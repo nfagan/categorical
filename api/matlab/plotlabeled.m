@@ -1414,7 +1414,7 @@ classdef plotlabeled < handle
               h = errorbar( ones(size(repeated)), repeated, repeated_errs );
             else
               if ( obj.errorbar_connect_non_nan )
-                h = plotlabeled.errorbar_connecting_non_nan( summary_mat, errors_mat );
+                h = plotlabeled.errorbar_connecting_non_nan( summary_mat(keep_ind, :), errors_mat(keep_ind, :) );
               else
                 h = errorbar( summary_mat, errors_mat );
               end

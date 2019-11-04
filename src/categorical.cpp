@@ -6,7 +6,6 @@
 //
 
 #include "categorical.hpp"
-#include "set_membership.hpp"
 #include "helpers.hpp"
 #include <random>
 #include <iostream>
