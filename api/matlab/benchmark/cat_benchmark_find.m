@@ -63,23 +63,6 @@ t = toc();
 
 end
 
-function t = mat_eq_or_many(c, selectors, i)
-
-tic;
-ind = cellfun( @(x) c == x, selectors{i}, 'un', 0 );
-ind = or_many( ind{:} );
-t = toc();
-
-end
-
-function t = mat_ismember(c, selectors, i)
-
-tic;
-ind = all( ismember(c, selectors{i}), 2 );
-t = toc();
-
-end
-
 function t = fcat_find(f, selectors, i)
 
 tic;

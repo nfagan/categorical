@@ -3273,6 +3273,15 @@ classdef fcat < handle
       end
     end
     
+    function f = random(varargin)
+      
+      %   RANDOM -- Make random fcat object.
+      %
+      %     See also cat_random, fcat.example, fcat/fcat
+      
+      f = cat_random( varargin{:} );
+    end
+    
     function test()
       
       %   TEST -- Run all tests.
