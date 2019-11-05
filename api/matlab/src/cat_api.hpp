@@ -16,19 +16,15 @@ namespace util {
     MEXFUNC(copy);
     
     MEXFUNC(merge);
-    MEXFUNC(merge_new);
     MEXFUNC(append);
     MEXFUNC(append_one);
     MEXFUNC(assign);
-    MEXFUNC(assign_partial);
     MEXFUNC(prune);
     
     MEXFUNC(replace);
     MEXFUNC(fill_category);
     MEXFUNC(set_category);
-    MEXFUNC(set_partial_category);
     MEXFUNC(set_categories);
-    MEXFUNC(set_partial_categories);
     MEXFUNC(require_category);
     MEXFUNC(add_category);
     MEXFUNC(add_label);
@@ -37,7 +33,6 @@ namespace util {
     MEXFUNC(rename_category);
     
     MEXFUNC(full_category);
-    MEXFUNC(partial_category);
     MEXFUNC(in_category);
     MEXFUNC(in_categories);
     MEXFUNC(which_category);

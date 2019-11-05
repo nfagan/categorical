@@ -5,16 +5,26 @@ void util::assign(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {
     const char* func_id = "categorical:assign";
     
-    util::assert_nrhs(nrhs, 4, func_id);
+    util::assert_nrhs(4, 5, nrhs, func_id);
     util::assert_nlhs(nlhs, 0, func_id);
     
     util::categorical* cat_a = util::detail::mat_to_ptr<util::categorical>(prhs[1]);
-    util::categorical* cat_b = util::detail::mat_to_ptr<util::categorical>(prhs[2]);
+    const util::categorical* cat_b = util::detail::mat_to_ptr<util::categorical>(prhs[2]);
     
-    std::vector<util::u64> at_indices = util::numeric_array_to_vector64(prhs[3], func_id);
-    util::u64 index_offset = 1;
+    const std::vector<util::u64> at_indices = util::numeric_array_to_vector64(prhs[3], func_id);
+    const util::u64 index_offset = 1;
     
-    util::u32 status = cat_a->assign(*cat_b, at_indices, index_offset);
+    util::u32 status;
+    
+    if (nrhs == 4)
+    {
+        status = cat_a->assign(*cat_b, at_indices, index_offset);
+    } 
+    else
+    {
+        const std::vector<util::u64> from_indices = util::numeric_array_to_vector64(prhs[4], func_id);
+        status = cat_a->assign(*cat_b, at_indices, from_indices, index_offset);
+    }
     
     if (status == util::categorical_status::OK)
     {

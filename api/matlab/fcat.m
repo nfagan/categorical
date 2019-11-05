@@ -582,7 +582,7 @@ classdef fcat < handle
                     varargout{1} = fullcat( obj, index_or_colon );
                     return;
                   else
-                    varargout{1} = partcat( obj, index_or_colon, category_or_inds );
+                    varargout{1} = fullcat( obj, index_or_colon, category_or_inds );
                     return;
                   end
                 end
@@ -600,7 +600,7 @@ classdef fcat < handle
                 if ( all_rows )
                   out = fullcat( obj, cats );
                 else
-                  out = partcat( obj, cats, category_or_inds );
+                  out = fullcat( obj, cats, category_or_inds );
                 end
                 
                 varargout{1} = out;
@@ -1147,9 +1147,9 @@ classdef fcat < handle
       %     See also fcat/findall, fcat/findor, fcat/findnot, fcat/getlabs
       
       if ( nargin < 3 )
-        I = cat_api( 'find', obj.id, labels );
+        I = cat_api( 'find', uint32(0), obj.id, labels );
       else
-        I = cat_api( 'find', obj.id, labels, uint64(inds) );
+        I = cat_api( 'find', uint32(0), obj.id, labels, uint64(inds) );
       end
     end
     
@@ -1180,9 +1180,9 @@ classdef fcat < handle
       %     See also fcat/find, fcat/findnone, fcat/findall
       
       if ( nargin < 3 )
-        I = cat_api( 'find_or', obj.id, labels );
+        I = cat_api( 'find', uint32(2), obj.id, labels );
       else
-        I = cat_api( 'find_or', obj.id, labels, uint64(inds) );
+        I = cat_api( 'find', uint32(2), obj.id, labels, uint64(inds) );
       end
     end
     
@@ -1229,9 +1229,9 @@ classdef fcat < handle
       %     See also fcat/find, fcat/findnone, fcat/getlabs, fcat/getcats
       
       if ( nargin < 3 )
-        I = cat_api( 'find_not', obj.id, labels );
+        I = cat_api( 'find', uint32(1), obj.id, labels );
       else
-        I = cat_api( 'find_not', obj.id, labels, uint64(inds) );
+        I = cat_api( 'find', uint32(1), obj.id, labels, uint64(inds) );
       end
     end
     
@@ -1262,9 +1262,9 @@ classdef fcat < handle
       %     See also fcat/findor, fcat/findnot
       
       if ( nargin < 3 )
-        I = cat_api( 'find_none', obj.id, labels );
+        I = cat_api( 'find', uint32(3), obj.id, labels );
       else
-        I = cat_api( 'find_none', obj.id, labels, uint64(inds) );
+        I = cat_api( 'find', uint32(3), obj.id, labels, uint64(inds) );
       end
     end
     
@@ -1384,30 +1384,30 @@ classdef fcat < handle
       end
     end
     
-    function C = fullcat(obj, categories)
+    function C = fullcat(obj, categories, indices)
       
       %   FULLCAT -- Get complete category or categories.
       %
       %     See also fcat/setcat
       
-      C = cat_api( 'full_cat', obj.id, categories );
+      if ( nargin == 2 )
+        C = cat_api( 'full_cat', obj.id, categories );
+      else
+        C = cat_api( 'full_cat', obj.id, categories, uint64(indices) );
+      end
       
       if ( ~ischar(categories) && numel(categories) > 1 )
         C = reshape( C, numel(C) / numel(categories), numel(categories) );
       end
     end
     
-    function C = partcat(obj, categories, indices)
+    function C = partcat(obj, varargin)
       
       %   PARTCAT -- Get part of a category or categories.
       %
       %     See also fcat/fullcat, fcat/fcat
       
-      C = cat_api( 'partial_cat', obj.id, categories, uint64(indices) );
-      
-      if ( ~ischar(categories) && numel(categories) > 1 )
-        C = reshape( C, numel(C) / numel(categories), numel(categories) );
-      end
+      C = fullcat( obj, varargin{:} );
     end
     
     function C = incat(obj, category)
@@ -1678,9 +1678,9 @@ classdef fcat < handle
         end
       else
         if ( ischar(category) )
-          cat_api( 'set_partial_cat', obj.id, category, to, uint64(at_indices) );
+          cat_api( 'set_cat', obj.id, category, to, uint64(at_indices) );
         else
-          cat_api( 'set_partial_cats', obj.id, category, to, uint64(at_indices) );
+          cat_api( 'set_cats', obj.id, category, to, uint64(at_indices) );
         end
       end
     end
@@ -1694,7 +1694,7 @@ classdef fcat < handle
       if ( nargin == 3 )
         cat_api( 'set_cats', obj.id, categories, to );
       else
-        cat_api( 'set_partial_cats', obj.id, categories, to, uint64(at_indices) );
+        cat_api( 'set_cats', obj.id, categories, to, uint64(at_indices) );
       end  
     end
     
@@ -1907,7 +1907,7 @@ classdef fcat < handle
           error( 'Cannot merge objects of class "%s".', class(b_obj) );
         end
         
-        cat_api( 'merge', obj.id, varargin{i}.id );
+        cat_api( 'merge', uint32(0), obj.id, varargin{i}.id );
       end
     end
     
@@ -1949,7 +1949,7 @@ classdef fcat < handle
           error( 'Cannot join objects of class "%s".', class(b_obj) );
         end
         
-        cat_api( 'merge_new', obj.id, b_obj.id );
+        cat_api( 'merge', uint32(1), obj.id, b_obj.id );
       end
     end
     
@@ -2036,8 +2036,7 @@ classdef fcat < handle
       if ( nargin == 3 )
         cat_api( 'assign', obj.id, B.id, uint64(to_indices) );
       else
-        cat_api( 'assign_partial', obj.id, B.id ...
-          , uint64(to_indices), uint64(from_indices) );
+        cat_api( 'assign', obj.id, B.id, uint64(to_indices), uint64(from_indices) );
       end
     end
     
@@ -2312,7 +2311,7 @@ classdef fcat < handle
     %   CONVERSION
     %
     
-    function [C, cats] = cellstr(obj, cats, inds)
+    function [C, cats] = cellstr(obj, cats, varargin)
       
       %   CELLSTR -- Convert to cell array of strings.
       %
@@ -2343,11 +2342,7 @@ classdef fcat < handle
         cats = c(cats);
       end
       
-      if ( nargin < 3 )
-        C = fullcat( obj, cats );
-      else
-        C = partcat( obj, cats, inds );
-      end
+      C = fullcat( obj, cats, varargin{:} );
     end
     
     function [C, cats] = categorical(obj, cats, inds)
