@@ -59,11 +59,7 @@ namespace util {
     MEXFUNC(n_labels);
     
     MEXFUNC(count);
-    
     MEXFUNC(find);
-    MEXFUNC(find_or);
-    MEXFUNC(find_not);
-    MEXFUNC(find_none);
     MEXFUNC(find_all);
     MEXFUNC(find_allc);
     
