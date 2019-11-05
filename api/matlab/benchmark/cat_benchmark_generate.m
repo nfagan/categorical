@@ -1,19 +1,9 @@
 function results = cat_benchmark_generate(func, varargin)
 
-base_params = cat_benchmark_config( varargin{:} );
+results = {};
 
-kinds = { 'small', 'large', 'large2' };
-results = cell( numel(kinds), 1 );
-
-for i = 1:numel(kinds)
-  f = fcat.example( kinds{i} );
-  [c, cats] = categorical( f );
-
-  params = base_params;
-  params.tags = [ base_params.tags, kinds(i) ];
-  
-  results{i} = func( f, c, cats, params );
-end
+results{end+1} = cat_benchmark_generate_examples( func, varargin{:} );
+results{end+1} = cat_benchmark_generate_randomized( func, varargin{:} );
 
 results = vertcat( results{:} );
 

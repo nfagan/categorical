@@ -54,7 +54,7 @@ if ( label_size == 0 )
   return
 end
 
-for i = 1:num_cats
+for i = 1:num_cats  
   if ( numel(num) > 1 )
     use_num = num( i );
   else
@@ -65,8 +65,10 @@ for i = 1:num_cats
   perm_vec = randperm( length(f) );
   stp = 1;
   
-  for j = 1:use_num    
-    lab = rand_char( label_size );
+  labs = rand_char( use_num, label_size );
+  
+  for j = 1:use_num
+    lab = labs(j, :);
     
     iter = 1;
     while ( haslab(f, lab) )
@@ -89,10 +91,10 @@ end
 
 end
 
-function c = rand_char(num)
+function c = rand_char(num_rows, num_cols)
 
 alphabet = [ 'A':'Z', 'a':'z', '0':'9' ];
-inds = randi( numel(alphabet), num, 1 );
+inds = randi( numel(alphabet), num_rows, num_cols );
 c = alphabet(inds);
 
 end

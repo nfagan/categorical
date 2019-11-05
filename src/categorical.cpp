@@ -10,6 +10,7 @@
 #include <random>
 #include <iostream>
 #include <algorithm>
+#include <cstring>
 
 //  !=: Check for inequality.
 
@@ -26,15 +27,13 @@ bool util::categorical::unchecked_eq_progenitors_match(const util::categorical& 
     
     for (u64 i = 0; i < n_cats; i++)
     {
-        const std::vector<u32>& own_labs = m_labels[i];
-        const std::vector<u32>& other_labs = other.m_labels[i];
+        const u32* own_ptr = m_labels[i].data();
+        const u32* other_ptr = other.m_labels[i].data();
+        const std::size_t num_compare = sz * sizeof(u32);
         
-        for (u64 j = 0; j < sz; j++)
+        if (std::memcmp(own_ptr, other_ptr, num_compare) != 0)
         {
-            if (own_labs[j] != other_labs[j])
-            {
-                return false;
-            }
+            return false;
         }
     }
     
@@ -423,10 +422,10 @@ util::u32 util::categorical::require_category(const std::string& category)
 void util::categorical::unchecked_add_category(const std::string& category,
                                                const std::string& collapsed_expression)
 {
-    util::u64 sz = size();
-    util::u64 ncats = n_categories();
+    u64 sz = size();
+    u64 ncats = n_categories();
     
-    std::vector<util::u32> new_labs(sz);
+    std::vector<u32> new_labs(sz);
     m_category_indices[category] = ncats;
     m_labels.push_back(new_labs);
     m_collapsed_expressions.insert(collapsed_expression);
@@ -901,7 +900,7 @@ util::u32 util::categorical::assign_bit_array(util::bit_array& mask,
 
 util::bit_array util::categorical::assign_bit_array(const std::vector<util::u32>& labels, util::u32 lab)
 {
-    util::u64 sz = labels.size();
+    u64 sz = labels.size();
     
     util::bit_array out(sz, false);
     
@@ -947,8 +946,6 @@ util::bit_array util::categorical::assign_bit_array(const std::vector<util::u32>
     return out;
 }
 
-//  find_all_check_categories_exist: Check whether all categories exist
-
 std::vector<util::u64> util::categorical::get_category_indices(const std::vector<std::string>& cats,
                                                                const util::u64 n_cats,
                                                                bool* exist) const
@@ -971,22 +968,6 @@ std::vector<util::u64> util::categorical::get_category_indices(const std::vector
     }
     
     return category_inds;
-}
-
-std::vector<util::u64> util::categorical::get_category_indices_skip_non_existing(const std::vector<std::string>& cats) const
-{
-    const u64 num_cats = cats.size();
-    std::vector<util::u64> result(num_cats);
-    
-    for (u64 i = 0; i < num_cats; i++)
-    {
-        if (has_category(cats[i]))
-        {
-            result[i] = m_category_indices.at(cats[i]);
-        }
-    }
-    
-    return result;
 }
 
 std::vector<util::u64> util::categorical::get_category_indices_unchecked_has_category(const std::vector<std::string>& cats) const

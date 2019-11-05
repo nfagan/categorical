@@ -320,7 +320,6 @@ private:
     
     std::vector<util::u64> get_category_indices(const std::vector<std::string>& cats,
                                                 const util::u64 n_cats, bool* exist) const;
-    std::vector<util::u64> get_category_indices_skip_non_existing(const std::vector<std::string>& cats) const;
     std::vector<util::u64> get_category_indices_unchecked_has_category(const std::vector<std::string>& cats) const;
     
     void set_collapsed_expressions(std::vector<util::u32>& labs,
