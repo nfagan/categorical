@@ -14,12 +14,14 @@ defaults.summary_type = 'mean';
 defaults.xcats = { 'date' };
 defaults.gcats = { 'name' };
 defaults.pcats = { 'tag' };
+defaults.mask_func = [];
 
 params = parse_inputs( defaults, varargin );
 
 time_factor = time_unit_factor( params.units );
 plot_func_name = params.plot_func;
 summary_type = params.summary_type;
+mask_func = params.mask_func;
 
 fig = clf( get_figure(params) );
 set( 0, 'currentfigure', fig );
@@ -32,6 +34,8 @@ pl.per_panel_labels = true;
 pl.summary_func = @summarize;
 pl.match_y_lims = false;
 pl.errorbar_connect_non_nan = true;
+pl.x_tick_rotation = 30;
+pl.fig = fig;
 
 if ( strcmp(plot_func_name, 'errorbar') )
   plot_func = @errorbar;
@@ -39,7 +43,16 @@ else
   plot_func = @bar;
 end
 
-axs = plot_func( pl, result_summary, result_labels, params.xcats, params.gcats, params.pcats );
+if ( isempty(mask_func) )
+  plt_summary = result_summary;
+  plt_labels = result_labels;
+else
+  mask = mask_func( result_labels );
+  plt_summary = result_summary(mask);
+  plt_labels = prune( result_labels(mask) );
+end
+
+axs = plot_func( pl, plt_summary, plt_labels, params.xcats, params.gcats, params.pcats );
 ylabel( axs(1), sprintf('Time (%s)', params.units) );
 
 end

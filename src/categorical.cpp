@@ -987,6 +987,7 @@ std::vector<util::u64> util::categorical::get_category_indices_unchecked_has_cat
 //
 //      find_all does not return the combinations.
 
+#if 1
 std::vector<std::vector<util::u64>> util::categorical::find_all(const std::vector<std::string>& categories,
                                                                 util::u64 index_offset) const
 {
@@ -1035,6 +1036,94 @@ std::vector<std::vector<util::u64>> util::categorical::find_all(const std::vecto
     
     return result;
 }
+#else
+
+std::vector<std::vector<util::u64>> util::categorical::find_all(const std::vector<std::string>& categories,
+                                                                util::u64 index_offset) const
+{
+    //  @Robustness: Restrict num categories to s64 range.
+    const u64 rows = size();
+    const u64 num_cats_in = categories.size();
+    bool cats_exist;
+    const std::vector<u64> category_inds = get_category_indices(categories, num_cats_in, &cats_exist);
+    
+    if (num_cats_in == 0 || !cats_exist || rows == 0)
+    {
+        return {};
+    }
+    
+    std::vector<u64> sorted_indices(rows);
+    std::iota(sorted_indices.begin(), sorted_indices.end(), 0);
+    
+    if (num_cats_in > 1)
+    {
+        //  Sort rows of matrix.
+        std::vector<u64> row_indices(rows);
+        std::vector<u64> sorted_indices_tmp(rows);
+        
+        for (s64 i = num_cats_in-1; i >= 0; i--)
+        {
+            std::iota(row_indices.begin(), row_indices.end(), 0);
+            const std::vector<u32>& column = m_labels[category_inds[i]];
+            std::stable_sort(row_indices.begin(), row_indices.end(), [&column, &sorted_indices](u64 i0, u64 i1) -> bool
+            {
+                return column[sorted_indices[i0]] < column[sorted_indices[i1]];
+            });
+            
+            for (u64 j = 0; j < rows; j++)
+            {
+                sorted_indices_tmp[j] = sorted_indices[row_indices[j]];
+            }
+            
+            std::swap(sorted_indices_tmp, sorted_indices);
+        }
+    }
+    else
+    {
+        //  Just sort the column.
+        const std::vector<u32>& column = m_labels[category_inds[0]];
+        std::sort(sorted_indices.begin(), sorted_indices.end(), [&column](u64 i0, u64 i1) -> bool
+        {
+            return column[i0] < column[i1];
+        });
+    }
+    
+    std::vector<std::vector<u64>> result;
+    u64 reference = 0;
+    
+    for (u64 i = 0; i < rows; i++)
+    {
+        bool new_combination = i == reference || false;
+        const u64 ref_row = sorted_indices[reference];
+        const u64 test_row = sorted_indices[i];
+        
+        for (u64 j = 0; j < num_cats_in; j++)
+        {
+            const u64 col = category_inds[j];
+            const u32 ref_id = m_labels[col][ref_row];
+            const u32 test_id = m_labels[col][test_row];
+            
+            if (ref_id != test_id)
+            {
+                new_combination = true;
+                break;
+            }
+        }
+        
+        if (new_combination)
+        {
+            reference = i;
+            result.push_back(std::vector<u64>());
+        }
+        
+        std::vector<u64>& end = result[result.size()-1];
+        end.push_back(test_row + index_offset);
+    }
+    
+    return result;
+}
+
+#endif
 
 //  find_all: Get indices of all possible unique combinations of labels, from subset,
 //      without bounds check

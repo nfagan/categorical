@@ -9,7 +9,7 @@ params = cat_benchmark_config( varargin{:} );
 
 iters = params.iters;
 
-[category_sets, row_inds] = make_category_sets( f, iters );
+category_sets = make_category_sets( f, iters );
 
 common_inputs = { ...
     'iters' params.iters ...
@@ -21,12 +21,12 @@ common_inputs = { ...
 
 results = {};
 
-results{end+1} = cat_benchmark_run( @(i) fcat_findall(f, category_sets, row_inds, i) ...
+results{end+1} = cat_benchmark_run( @(i) fcat_findall(f, category_sets, i) ...
   , 'name', 'fcat-findall' ...
   , common_inputs{:} ...
 );
 
-results{end+1} = cat_benchmark_run( @(i) mat_findall(c, cats, category_sets, row_inds, i) ...
+results{end+1} = cat_benchmark_run( @(i) mat_findall(c, cats, category_sets, i) ...
   , 'name', 'mat-findall' ...
   , common_inputs{:} ...
 );
@@ -35,37 +35,33 @@ results = vertcat( results{:} );
 
 end
 
-function t = mat_findall(c, cats, category_sets, row_inds, i)
+function t = mat_findall(c, cats, category_sets, i)
 
 cat_set = category_sets{i};
-row_ind = row_inds{i};
 [~, cat_inds] = ismember( cat_set, cats );
 
 tic;
-[~, ~, ind] = unique( c(row_ind, cat_inds), 'rows' );
-ind = row_ind(ind);
+[~, ~, ind] = unique( c(:, cat_inds), 'rows' );
 t = toc;
 
 end
 
-function t = fcat_findall(f, cats, row_inds, i)
+function t = fcat_findall(f, cats, i)
 
 tic();
-inds = findall( f, cats{i}, row_inds{i} );
+inds = findall( f, cats{i} );
 t = toc;
 
 end
 
-function [category_sets, row_inds] = make_category_sets(f, iters)
+function category_sets = make_category_sets(f, iters)
 
 category_sets = cell( iters, 1 );
-row_inds = cell( size(category_sets) );
 
 cats = getcats( f );
 
 for i = 1:iters  
   category_sets{i} = cats(randperm(numel(cats), randi(numel(cats))));
-  row_inds{i} = sort( randperm(rows(f), randi(rows(f))) );
 end
 
 end
