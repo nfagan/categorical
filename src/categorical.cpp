@@ -10,6 +10,7 @@
 #include <random>
 #include <iostream>
 #include <algorithm>
+#include <numeric>
 #include <cstring>
 
 //  !=: Check for inequality.
