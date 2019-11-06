@@ -62,8 +62,15 @@ namespace util {
 
 class util::categorical
 {
+    
     friend class util::set_union;
     friend class util::set_unique;
+public:
+    enum class find_all_method
+    {
+        hash,
+        sort
+    };
 public:
     categorical() = default;
     ~categorical() = default;
@@ -98,8 +105,14 @@ public:
     std::vector<std::vector<util::u64>> find_all(const std::vector<std::string>& categories, util::u64 index_offset = 0) const;
     std::vector<std::vector<util::u64>> find_all(const std::vector<std::string>& categories,
                                                  const std::vector<util::u64>& indices,
+                                                 util::u32* status,
                                                  util::u64 index_offset = 0) const;
-    std::vector<std::vector<util::u64>> find_all(const std::vector<std::string>& categories,
+    
+    std::vector<std::vector<util::u64>> find_all(find_all_method method,
+                                                 const std::vector<std::string>& categories,
+                                                 util::u64 index_offset = 0) const;
+    std::vector<std::vector<util::u64>> find_all(find_all_method method,
+                                                 const std::vector<std::string>& categories,
                                                  const std::vector<util::u64>& indices,
                                                  util::u32* status,
                                                  util::u64 index_offset = 0) const;
@@ -311,6 +324,25 @@ private:
                                         const std::vector<util::u64>& indices,
                                         util::u32* status,
                                         util::u64 index_offset) const;
+    
+    std::vector<std::vector<util::u64>> find_all_method_dispatch(const find_all_method method,
+                                                                 const std::vector<std::string>& categories,
+                                                                 const bool use_indices,
+                                                                 const std::vector<util::u64>& indices,
+                                                                 util::u32* status,
+                                                                 util::u64 index_offset) const;
+    
+    std::vector<std::vector<util::u64>> find_all_hash_impl(const std::vector<std::string>& categories,
+                                                           const bool use_indices,
+                                                           const std::vector<util::u64>& indices,
+                                                           util::u32* status,
+                                                           util::u64 index_offset) const;
+    
+    std::vector<std::vector<util::u64>> find_all_sort_impl(const std::vector<std::string>& categories,
+                                                           const bool use_indices,
+                                                           const std::vector<util::u64>& indices,
+                                                           util::u32* status,
+                                                           util::u64 index_offset) const;
     
     util::combinations_t find_allc_impl(const std::vector<std::string>& categories,
                                         const bool use_indices,

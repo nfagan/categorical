@@ -995,7 +995,7 @@ classdef fcat < handle
       end
     end
     
-    function [I, C] = findall(obj, categories, inds)
+    function [I, C] = findall(obj, categories, varargin)
       
       %   FINDALL -- Find indices of combinations of labels in categories.
       %
@@ -1036,7 +1036,7 @@ classdef fcat < handle
       
       if ( nargout > 1 )
         if ( nargin == 3 )
-          [I, C] = cat_api( 'find_allc', obj.id, categories, uint64(inds) );
+          [I, C] = cat_api( 'find_allc', obj.id, categories, uint64(varargin{1}) );
         else
           [I, C] = cat_api( 'find_allc', obj.id, categories );
         end
@@ -1047,11 +1047,7 @@ classdef fcat < handle
           C = C(:)';
         end
       else
-        if ( nargin == 3 )
-          I = cat_api( 'find_all', obj.id, categories, uint64(inds) );
-        else
-          I = cat_api( 'find_all', obj.id, categories );
-        end
+        I = cat_api( 'find_all', obj.id, categories, varargin{:} );
       end
     end
     
