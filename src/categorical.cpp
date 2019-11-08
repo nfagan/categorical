@@ -1015,8 +1015,8 @@ std::vector<std::vector<util::u64>> util::categorical::find_all_hash_impl(const 
     
     for (u64 i = 0; i < rows; i++)
     {
-        util::u64 internal_index;
-        util::u64 input_index;
+        u64 internal_index;
+        u64 input_index;
         
         if (use_indices)
         {
