@@ -3308,26 +3308,22 @@ classdef fcat < handle
       %     version of the library underlying the cat_api mex function.
       %
       %     `ver_info` is a struct. Fields 'major', 'minor', and 'patch' 
-      %     give the version of the library. The field 'latest_id' is a 
-      %     char vector identifier associated with that version. The field
-      %     'build_id' is the char vector identifier associated with the
-      %     version of the library that is currently built. The field
-      %     'up_to_date' indicates whether these version identifiers match.
-      %     If they do not match, you may wish to run `fcat.build` to build
-      %     the latest version.
+      %     give the version of the library as built. The field 'build_id' 
+      %     is a char vector identifier associated with that version. The 
+      %     field 'latest_id' is the char vector identifier associated with 
+      %     the latest version of the library. The field 'up_to_date' 
+      %     indicates whether these version identifiers match. If they do 
+      %     not match, you may wish to run `fcat.build` to build the latest 
+      %     version.
       %
       %     See also fcat.build, fcat.buildconfig, fcat
       
-      version_info = cat_versioninfo();
-      built_id = cat_api( 'version' );
+      latest_version_info = cat_versioninfo();
+      built_version_info = cat_api( 'version' );
       
-      ver_info = struct();
-      ver_info.major = version_info.version.major;
-      ver_info.minor = version_info.version.minor;
-      ver_info.patch = version_info.version.patch;
-      ver_info.latest_id = version_info.build_id;
-      ver_info.build_id = built_id;
-      ver_info.up_to_date = strcmp( version_info.build_id, built_id );
+      ver_info = built_version_info;
+      ver_info.latest_id = latest_version_info.build_id;
+      ver_info.up_to_date = strcmp( built_version_info.build_id, ver_info.build_id );
     end
     
     function addpath()

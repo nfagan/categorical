@@ -31,6 +31,7 @@ end
 
 src_dir = fullfile( api_dir, 'src' );
 ver_dir = fullfile( api_dir, 'version' );
+lib_src_dir = get_lib_src_dir( api_dir );
 
 version_info = get_current_version_info( ver_dir );
 
@@ -56,11 +57,18 @@ api_dir_index = strfind( api_dir, api_dir_search );
 repo_dir = api_dir(1:api_dir_index-1);
 platform_dir = get_platform_directory();
 
+sources_by_name = containers.Map();
 mex_func_paths = cellfun( @(x) fullfile(src_dir, x), mex_func_sources, 'un', false );
+% Load cat_*.cpp sources
+make_file_sources( sources_by_name, mex_func_sources, mex_func_paths );
+% Load library sources
+make_lib_file_sources( sources_by_name, lib_src_dir );
 
-sources_by_func = make_file_sources( mex_func_sources, mex_func_paths );
-version_info = conditionally_make_new_build_id_file( src_dir, sources_by_func, version_info );
-save_current_version_info( ver_dir, version_info, sources_by_func );
+[version_info, was_updated] = conditionally_make_new_build_id_file( src_dir, sources_by_name, version_info );
+
+if ( was_updated )
+  save_current_version_info( ver_dir, version_info, sources_by_name );
+end
 
 cat_lib_dir = fullfile( repo_dir, 'lib', platform_dir );
 cat_include_dir = fullfile( repo_dir, 'include' );
@@ -87,7 +95,7 @@ save( fullfile(ver_dir, version_info_filename()), 'version_info' );
 
 end
 
-function version_info = conditionally_make_new_build_id_file(src_dir, sources_by_func, version_info)
+function [version_info, need_update_file] = conditionally_make_new_build_id_file(src_dir, sources_by_func, version_info)
 
 counts_match = sources_by_func.Count == version_info.sources.Count;
 keys_match = counts_match && ...
@@ -114,7 +122,11 @@ src_filepath = fullfile( src_dir, 'cat_version.hpp' );
 
 if ( need_update_file || exist(src_filepath, 'file') == 0 )
   build_id = make_build_id();
-  new_file_contents = make_build_id_source( build_id );
+  
+  build_id_source = make_build_id_source( build_id );
+  version_source = make_version_source( version_info.version );
+  
+  new_file_contents = [ build_id_source, version_source ];
   
   fid = fopen( src_filepath, 'wt' );
   fprintf( fid, new_file_contents );
@@ -125,10 +137,26 @@ end
 
 end
 
+function p = get_lib_src_dir(api_dir)
+
+p = fullfile( fileparts(fileparts(api_dir)), 'src' );
+
+end
+
 function source = make_build_id_source(id)
 
 source = ...
   sprintf( 'namespace util { const char* const CATEGORICAL_VERSION_ID = "%s"; }', id );
+
+end
+
+function source = make_version_source(version)
+
+make_member = @(name, num) sprintf( 'static constexpr int %s = %d;', name, num );
+ver_fields = fieldnames( version );
+members = strjoin( cellfun(@(x) make_member(x, version.(x)), ver_fields, 'un', 0), '\n' );
+struct_def = sprintf( 'struct Version { %s };', members );
+source = sprintf( 'namespace util { namespace version { %s } }', struct_def );
 
 end
 
@@ -183,12 +211,44 @@ end
 
 end
 
-function sources_by_name = make_file_sources(func_names, func_paths)
+function make_lib_file_sources(sources_by_name, lib_src_dir)
 
-sources = cellfun( @fileread, func_paths, 'un', 0 );
-sources = cellfun( @(x) x(~isspace(x)), sources, 'un', 0 );
+files = dir( lib_src_dir );
+names = cellfun( @fliplr, {files.name}, 'un', 0 );
+is_src = cellfun( @(x) matches_flipped_ext(x, {'pph.', 'ppc.'}), names );
+src_names = cellfun( @fliplr, names(is_src), 'un', 0 );
+sources = cellfun( @(x) load_whitespace_stripped_source(fullfile(lib_src_dir, x)) ...
+  , src_names, 'un', 0 );
 
-sources_by_name = containers.Map();
+for i = 1:numel(src_names)
+  sources_by_name(src_names{i}) = sources{i};
+end
+
+end
+
+function tf = matches_flipped_ext(x, exts)
+
+for i = 1:numel(exts)
+  if ( strncmpi(x, exts{i}, numel(exts{i})) )
+    tf = true;
+    return
+  end
+end
+
+tf = false;
+
+end
+
+function src = load_whitespace_stripped_source(file)
+
+src = fileread( file );
+src = src(~isspace(src));
+
+end
+
+function make_file_sources(sources_by_name, func_names, func_paths)
+
+sources = cellfun( @load_whitespace_stripped_source, func_paths, 'un', 0 );
 
 for i = 1:numel(func_names)
   sources_by_name(func_names{i}) = sources{i};
