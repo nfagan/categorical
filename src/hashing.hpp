@@ -13,8 +13,8 @@
 #include <cstring>
 #include <cassert>
 
-#define _TEMPLATE_HEADER template <typename K, typename V, typename Hash>
-#define _TEMPLATE_PREFIX util::IntegralTypeRowMap<K, V, Hash>
+#define TEMPLATE_HEADER template <typename K, typename V, typename Hash>
+#define TEMPLATE_PREFIX util::IntegralTypeRowMap<K, V, Hash>
 
 namespace util
 {
@@ -22,7 +22,7 @@ namespace util
     class IntegralTypeRowMap;
 }
 
-_TEMPLATE_HEADER
+TEMPLATE_HEADER
 class util::IntegralTypeRowMap
 {
 public:
@@ -63,8 +63,8 @@ private:
     std::vector<value_bucket_t> values;
 };
 
-_TEMPLATE_HEADER
-_TEMPLATE_PREFIX::IntegralTypeRowMap(const std::size_t num_buckets, const std::size_t num_columns) :
+TEMPLATE_HEADER
+TEMPLATE_PREFIX::IntegralTypeRowMap(const std::size_t num_buckets, const std::size_t num_columns) :
 num_buckets(num_buckets), num_columns(num_columns)
 {
     static_assert(std::is_trivially_copyable<K>::value, "Key type must be trivially copyable.");
@@ -74,8 +74,8 @@ num_buckets(num_buckets), num_columns(num_columns)
     values.resize(num_buckets);
 }
 
-_TEMPLATE_HEADER
-const typename _TEMPLATE_PREFIX::find_result _TEMPLATE_PREFIX::find(const K* key_row) const
+TEMPLATE_HEADER
+const typename TEMPLATE_PREFIX::find_result TEMPLATE_PREFIX::find(const K* key_row) const
 {
     const std::size_t bucket_index = Hash{}(key_row, num_columns) % num_buckets;
     assert(bucket_index < keys.size());
@@ -98,8 +98,8 @@ const typename _TEMPLATE_PREFIX::find_result _TEMPLATE_PREFIX::find(const K* key
     return find_result(bucket_index, nullptr);
 }
 
-_TEMPLATE_HEADER
-void _TEMPLATE_PREFIX::insert(const _TEMPLATE_PREFIX::find_result& result, const K* key_row, V value)
+TEMPLATE_HEADER
+void TEMPLATE_PREFIX::insert(const typename TEMPLATE_PREFIX::find_result& result, const K* key_row, V value)
 {
     assert(result.bucket_index < keys.size());
     
@@ -116,8 +116,8 @@ void _TEMPLATE_PREFIX::insert(const _TEMPLATE_PREFIX::find_result& result, const
     value_bucket.push_back(value);
 }
 
-_TEMPLATE_HEADER
-std::size_t _TEMPLATE_PREFIX::max_bucket_size() const
+TEMPLATE_HEADER
+std::size_t TEMPLATE_PREFIX::max_bucket_size() const
 {
     std::size_t max = 0;
     
@@ -132,6 +132,6 @@ std::size_t _TEMPLATE_PREFIX::max_bucket_size() const
     return max;
 }
 
-#undef _TEMPLATE_PREFIX
-#undef _TEMPLATE_HEADER
+#undef TEMPLATE_PREFIX
+#undef TEMPLATE_HEADER
 
