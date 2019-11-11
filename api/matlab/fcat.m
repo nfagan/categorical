@@ -16,8 +16,8 @@ classdef fcat < handle
       
       %   FCAT -- Create empty fcat object.
       %
-      %     FCAT objects are meant to group and identify subsets of data, 
-      %     in the vein of categorical arrays.
+      %     FCAT objects group and identify subsets of data, like 
+      %     categorical arrays.
       %
       %     FCAT objects are essentially categorical matrices whose
       %     elements are unique across columns. In this way, each column of 
@@ -57,7 +57,7 @@ classdef fcat < handle
         try
           fcat.validate_constructor_signature( dbstack() );
         catch err
-          throwAsCaller( err );
+          throw( err );
         end
         obj.id = id;
       end

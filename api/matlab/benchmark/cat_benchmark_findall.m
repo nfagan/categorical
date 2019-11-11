@@ -49,7 +49,7 @@ end
 function t = fcat_findall(f, cats, i)
 
 tic();
-inds = findall( f, cats{i}, 'cust' );
+inds = findall( f, cats{i} );
 t = toc;
 
 end
