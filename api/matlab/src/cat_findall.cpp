@@ -25,6 +25,10 @@ namespace
         {
             return util::categorical::find_all_method::hash;
         }
+        else if (std::strcmp("cust", method_str) == 0)
+        {
+            return util::categorical::find_all_method::custom_hash;
+        }
         else
         {
             mexErrMsgIdAndTxt(func_id, "Unrecognized method specifier.");

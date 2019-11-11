@@ -69,7 +69,8 @@ public:
     enum class find_all_method
     {
         hash,
-        sort
+        sort,
+        custom_hash
     };
 public:
     categorical() = default;
@@ -337,6 +338,12 @@ private:
                                                            const std::vector<util::u64>& indices,
                                                            util::u32* status,
                                                            util::u64 index_offset) const;
+    
+    std::vector<std::vector<util::u64>> find_all_custom_hash_impl(const std::vector<std::string>& categories,
+                                                                  const bool use_indices,
+                                                                  const std::vector<util::u64>& indices,
+                                                                  util::u32* status,
+                                                                  util::u64 index_offset) const;
     
     std::vector<std::vector<util::u64>> find_all_sort_impl(const std::vector<std::string>& categories,
                                                            const bool use_indices,

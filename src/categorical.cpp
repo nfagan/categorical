@@ -7,6 +7,7 @@
 
 #include "categorical.hpp"
 #include "helpers.hpp"
+#include "hashing.hpp"
 #include <random>
 #include <iostream>
 #include <algorithm>
@@ -986,11 +987,12 @@ std::vector<util::u64> util::categorical::get_category_indices_unchecked_has_cat
 
 //  find_all_hash_impl: Get indices of all possible unique combinations of labels, hashing rows.
 
-std::vector<std::vector<util::u64>> util::categorical::find_all_hash_impl(const std::vector<std::string>& categories,
-                                                                          const bool use_indices,
-                                                                          const std::vector<util::u64>& indices,
-                                                                          util::u32* status,
-                                                                          util::u64 index_offset) const
+std::vector<std::vector<util::u64>>
+util::categorical::find_all_hash_impl(const std::vector<std::string>& categories,
+                                      const bool use_indices,
+                                      const std::vector<util::u64>& indices,
+                                      util::u32* status,
+                                      util::u64 index_offset) const
 {
     *status = util::categorical_status::OK;
     std::vector<std::vector<u64>> result;
@@ -1060,14 +1062,115 @@ std::vector<std::vector<util::u64>> util::categorical::find_all_hash_impl(const 
     
     return result;
 }
+    
+std::vector<std::vector<util::u64>>
+util::categorical::find_all_custom_hash_impl(const std::vector<std::string>& categories,
+                                             const bool use_indices,
+                                             const std::vector<util::u64>& indices,
+                                             util::u32* status,
+                                             util::u64 index_offset) const
+{
+    struct HashUnsignedInt {
+        //  https://www.partow.net/programming/hashfunctions/
+        //  SDBM Hash Function
+        const u32 operator()(const u32* row, const std::size_t num_columns) const
+        {
+            u32 hash = 0;
+            
+            for (std::size_t i = 0; i < num_columns; i++)
+            {
+                hash = row[i] + (hash << 6) + (hash << 16) - hash;
+            }
+            
+            return hash;
+        }
+    };
+    
+    *status = util::categorical_status::OK;
+    std::vector<std::vector<u64>> result;
+    
+    const u64 num_cats = categories.size();
+    bool cats_exist;
+    std::vector<u64> category_inds = get_category_indices(categories, num_cats, &cats_exist);
+    
+    if (num_cats == 0 || !cats_exist)
+    {
+        return result;
+    }
+    
+    const u64 rows = use_indices ? indices.size() : size();
+    const u64 max_rows = use_indices ? size() : rows;
+    
+    std::vector<u32> ids(num_cats);
+    u32* id_data = &ids[0];
+    u64 next_id = 0;
+    
+    u64 row_map_size = 2 * u64(std::sqrt(double(rows)));
+    if (row_map_size < 10)
+    {
+        row_map_size = 10;
+    }
+    
+    util::IntegralTypeRowMap<u32, u64, HashUnsignedInt> row_map(row_map_size, num_cats);
+    
+    for (u64 i = 0; i < rows; i++)
+    {
+        u64 internal_index;
+        u64 input_index;
+        
+        if (use_indices)
+        {
+            input_index = indices[i];
+            internal_index = input_index - index_offset;
+            
+            if (internal_index >= max_rows)
+            {
+                *status = util::categorical_status::OUT_OF_BOUNDS;
+                return result;
+            }
+        }
+        else
+        {
+            internal_index = i;
+            input_index = i + index_offset;
+        }
+        
+        for (u64 j = 0; j < num_cats; j++)
+        {
+            id_data[j] = m_labels[category_inds[j]][internal_index];
+        }
+        
+        const auto c_it = row_map.find(id_data);
+        u64 comb_idx;
+
+        //  Doesn't exist, add a new set of indices.
+        if (c_it.value == nullptr)
+        {
+            row_map.insert(c_it, id_data, next_id);
+            comb_idx = next_id++;
+            result.emplace_back();
+        }
+        //  Does exist, get the index into `result`.
+        else
+        {
+            comb_idx = *c_it.value;
+        }
+
+        std::vector<u64>& inds_ptr = result[comb_idx];
+        inds_ptr.push_back(input_index);
+    }
+    
+    return result;
+}
 
 //  find_all_sort_impl: Get indices of all possible unique combinations of labels, sorting rows.
 
-std::vector<std::vector<util::u64>> util::categorical::find_all_sort_impl(const std::vector<std::string>& categories,
-                                                                          const bool use_indices,
-                                                                          const std::vector<util::u64>& indices,
-                                                                          util::u32* status,
-                                                                          util::u64 index_offset) const
+std::vector<std::vector<util::u64>>
+util::categorical::find_all_sort_impl(const std::vector<std::string>& categories,
+                                      const bool use_indices,
+                                      const std::vector<util::u64>& indices,
+                                      util::u32* status,
+                                      util::u64 index_offset) const
 {
     *status = util::categorical_status::OK;
     
@@ -1212,6 +1315,8 @@ std::vector<std::vector<util::u64>> util::categorical::find_all_method_dispatch(
             return find_all_hash_impl(categories, use_indices, indices, status, index_offset);
         case find_all_method::sort:
             return find_all_sort_impl(categories, use_indices, indices, status, index_offset);
+        case find_all_method::custom_hash:
+            return find_all_custom_hash_impl(categories, use_indices, indices, status, index_offset);
         default:
             return find_all_hash_impl(categories, use_indices, indices, status, index_offset);
     }
