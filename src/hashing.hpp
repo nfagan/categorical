@@ -8,6 +8,7 @@
 #pragma once
 
 #include "types.hpp"
+#include "platform.hpp"
 #include <vector>
 #include <type_traits>
 #include <cstring>
@@ -67,8 +68,10 @@ TEMPLATE_HEADER
 TEMPLATE_PREFIX::IntegralTypeRowMap(const std::size_t num_buckets, const std::size_t num_columns) :
 num_buckets(num_buckets), num_columns(num_columns)
 {
+#ifdef CAT_HAS_TRIVIALLY_COPYABLE
     static_assert(std::is_trivially_copyable<K>::value, "Key type must be trivially copyable.");
     static_assert(std::is_trivially_copyable<V>::value, "Value type must be trivially copyable.");
+#endif
     
     keys.resize(num_buckets);
     values.resize(num_buckets);

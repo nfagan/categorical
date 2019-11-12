@@ -3321,9 +3321,14 @@ classdef fcat < handle
       latest_version_info = cat_versioninfo();
       built_version_info = cat_api( 'version' );
       
+      latest_build_id = latest_version_info.build_id;
+      built_build_id = built_version_info.build_id;
+      
+      up_to_date = strcmp( built_build_id, latest_build_id );
+      
       ver_info = built_version_info;
-      ver_info.latest_id = latest_version_info.build_id;
-      ver_info.up_to_date = strcmp( built_version_info.build_id, ver_info.build_id );
+      ver_info.latest_id = latest_build_id;
+      ver_info.up_to_date = up_to_date;
     end
     
     function addpath()
