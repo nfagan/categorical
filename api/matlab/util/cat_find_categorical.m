@@ -1,6 +1,6 @@
 function ind = cat_find_categorical(c, cats, selectors, f)
 
-%   CAT_FIND_CATEGORICAL -- fcat find equivalent for categorical.
+%   CAT_FIND_CATEGORICAL -- fcat find equivalent for categorical arrays.
 %
 %     ind = cat_find_categorical( c, cats, selectors, f ); produces a
 %     logical vector `ind` such that `isequal( find(ind), find(f,

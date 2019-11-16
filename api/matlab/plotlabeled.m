@@ -1440,8 +1440,9 @@ classdef plotlabeled < handle
           conditional_add_legend( obj, h, g_labs, i == 1 );
         end
         
-        n_ticks = sum( keep_ind );
+        assign_colors( h );
         
+        n_ticks = sum( keep_ind );        
         set( ax, 'xtick', 1:n_ticks );
         
         if ( obj.add_x_tick_labels )
@@ -1465,6 +1466,23 @@ classdef plotlabeled < handle
       end
       
       set_lims( obj, axs, 'ylim', get_ylims(obj, axs) );
+      
+      function assign_colors(hs)
+        
+        if ( strcmp(func_name, 'bar') )  
+          use_colors = obj.color_func( numel(hs) );
+          
+          for i_ = 1:numel(hs)
+            set( hs(i_), 'FaceColor', use_colors(i_, :) );
+          end
+        elseif ( strcmp(func_name, 'errorbar') )
+          use_colors = obj.color_func( numel(hs) );
+          
+          for i_ = 1:numel(hs)
+            set( hs(i_), 'Color', use_colors(i_, :) );
+          end
+        end
+      end
       
       function add_per_panel_labels(h, g_labs)
         if ( ~obj.add_legend )
