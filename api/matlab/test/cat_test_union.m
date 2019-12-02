@@ -52,10 +52,7 @@ for i = 1:iters
     end
     use_cats = cats1p;
   else
-    for j = 1:num_rename
-      renamecat( f1p, cats1p{j}, cats2p{j} );
-    end
-    use_cats = cats2p;
+    error( 'Expected more categories for f2 than f1.' );
   end
   
   a = fcat.union( f1, f2p, use_cats );
