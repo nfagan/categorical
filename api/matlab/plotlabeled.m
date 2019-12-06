@@ -339,11 +339,7 @@ classdef plotlabeled < handle
       %
       %     See also plotlabeled/lines, plotlabeled/errorbar
       
-      try
-        axs = groupplot( obj, 'bar', varargin{:} );
-      catch err
-        rethrow( err );
-      end
+      axs = groupplot( obj, 'bar', varargin{:} );
     end
     
     function axs = stackedbar(obj, varargin)
@@ -1630,13 +1626,32 @@ classdef plotlabeled < handle
           for j = 1:size(point_handles, 2)
             group_point_handles = point_handles(:, j);
             
-            x_coords = cellfun( @(x) x.XData(:), group_point_handles, 'un', 0 );
-            y_coords = cellfun( @(x) x.YData(:), group_point_handles, 'un', 0 );
+            x_coords = cell( numel(group_point_handles, 1) );
+            y_coords = cell( size(x_coords) );
+            valid_handle = 0;
+            
+            for k = 1:numel(group_point_handles)
+              point_handle = group_point_handles{k};
+              
+              if ( isempty(point_handle) )
+                x_coords{k} = nan;
+                y_coords{k} = nan;
+              else
+                x_coords{k} = point_handle.XData(:);
+                y_coords{k} = point_handle.YData(:);
+                valid_handle = point_handle;
+              end
+            end
+            
             x_coords = vertcat( x_coords{:} );
             y_coords = vertcat( y_coords{:} );
             
             h_line = plot( x_coords, y_coords );
-            set( h_line, 'color', get(group_point_handles{1}, 'color') );
+            
+            if ( ~isa(valid_handle, 'double') && isvalid(valid_handle) )
+              set( h_line, 'color', get(valid_handle, 'color') );
+            end
+            
             set( h_line, 'linewidth', obj.main_line_width );
           end
         end
