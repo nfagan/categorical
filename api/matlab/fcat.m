@@ -14,17 +14,16 @@ classdef fcat < handle
     
     function obj = fcat(id)
       
-      %   FCAT -- Create empty fcat object.
+      %   FCAT -- Arrays for labeling observations of data.
       %
       %     FCAT objects group and identify subsets of data, like 
       %     categorical arrays.
       %
-      %     FCAT objects are essentially categorical matrices whose
-      %     elements are unique across columns. In this way, each column of 
-      %     an FCAT object constitutes a category (or dimension) with an 
-      %     arbitrary number of levels (or labels). Rows of observations 
-      %     can then be identified by combinations of labels across 
-      %     categories.
+      %     FCAT objects are categorical matrices whose elements are unique 
+      %     across columns. In this way, each column of an FCAT object 
+      %     constitutes a category (or dimension) with an arbitrary number 
+      %     of levels (or labels). Rows of observations can then be 
+      %     identified by combinations of labels across categories.
       %
       %     The FCAT constructor generates an empty object into which
       %     categories and labels can be inserted. To directly construct an
@@ -2886,7 +2885,7 @@ classdef fcat < handle
             , 'Labels must either match in number, or be scalar, and cannot be empty.' );
         end
         
-        non_scalar_ind = ns > 1;
+        non_scalar_ind = ns ~= 1;
         
         ns_cats = cats( non_scalar_ind );
         ns_labs = labs( non_scalar_ind );

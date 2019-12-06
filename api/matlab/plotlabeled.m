@@ -20,6 +20,7 @@ classdef plotlabeled < handle
     add_errors = true;
     add_smoothing = false;
     add_points = false;
+    connect_points = false;
     add_x_tick_labels = true;
     per_panel_labels = false;
     plot_empties = true;
@@ -341,7 +342,7 @@ classdef plotlabeled < handle
       try
         axs = groupplot( obj, 'bar', varargin{:} );
       catch err
-        throw( err );
+        rethrow( err );
       end
     end
     
@@ -1564,28 +1565,29 @@ classdef plotlabeled < handle
           end
           
           ind = I{match_ind};
+          pt_stp = 0;
           
           for k = 1:numel(pt_i)
             
             full_ind = intersect( ind, pt_i{k} );
             
             if ( isempty(full_ind) ), continue; end
+            pt_stp = pt_stp + 1;
             
             key = pt_c{k};
             
+            if ( isKey(already_displayed, key) )
+              add_display_name = false;
+            else
+              add_display_name = true;
+              already_displayed(key) = {};
+            end
+            
             if ( isKey(colors, key) )
               color = colors(key);
-              if ( isKey(already_displayed, key) )
-                add_display_name = false;
-              else
-                add_display_name = true;
-                already_displayed(key) = 0;
-              end
             else
               color = auto_colors(k, :);
               colors(key) = color;
-              add_display_name = true;
-              already_displayed(key) = 0;
             end
             
             plot_cmds = { obj.marker_type, 'markersize', obj.marker_size };
@@ -1605,12 +1607,37 @@ classdef plotlabeled < handle
             end
             
             h_p = plot( ax, x_points, subset_values, plot_cmds{:} );
-            set( h_p, 'color', color );  
+            set( h_p, 'color', color );
+            
+            current_stored_data = already_displayed(key);
+            current_stored_data{i, j} = h_p;
+            already_displayed(key) = current_stored_data;
             
             if ( verLessThan('matlab', '9.2') && add_display_name )
               legend( 'off' );
               legend( 'show' );
             end
+          end
+        end
+      end
+      
+      if ( obj.connect_points )
+        pt_strs = keys( already_displayed );
+
+        for i = 1:numel(pt_strs)
+          point_handles = already_displayed(pt_strs{i});
+          
+          for j = 1:size(point_handles, 2)
+            group_point_handles = point_handles(:, j);
+            
+            x_coords = cellfun( @(x) x.XData(:), group_point_handles, 'un', 0 );
+            y_coords = cellfun( @(x) x.YData(:), group_point_handles, 'un', 0 );
+            x_coords = vertcat( x_coords{:} );
+            y_coords = vertcat( y_coords{:} );
+            
+            h_line = plot( x_coords, y_coords );
+            set( h_line, 'color', get(group_point_handles{1}, 'color') );
+            set( h_line, 'linewidth', obj.main_line_width );
           end
         end
       end
@@ -2376,8 +2403,13 @@ classdef plotlabeled < handle
         mat = repmat( varargin{:}, 2, 1 );
         handles.bar = bar( mat );
         for i = 1:numel(handles.bar)
-          handles.bar(i).XData = 1;
-          handles.bar(i).YData = handles.bar(i).YData(1);
+          if ( ~isempty(handles.bar(i).YData) )
+            handles.bar(i).XData = 1;
+            handles.bar(i).YData = handles.bar(i).YData(1);
+          else
+            handles.bar(i).XData = [];
+            handles.bar(i).YData = [];
+          end
         end
       end
       hold on
@@ -2414,8 +2446,10 @@ classdef plotlabeled < handle
             % Use the mean x values to call the standard errorbar fn; the
             % errorbars will now be centred on each bar; these are in ascending
             % order so use xOrder to ensure y values and errors are too:
-            hErrorbar(col) = errorbar(x(col), values(xOrder,col), lowerErrors(xOrder,col), upperErrors(xOrder, col), '.k');
-            set(hErrorbar(col), 'marker', 'none')
+            if ( ~isempty(x) )
+              hErrorbar(col) = errorbar(x(col), values(xOrder,col), lowerErrors(xOrder,col), upperErrors(xOrder, col), '.k');
+              set(hErrorbar(col), 'marker', 'none')
+            end
         end
       end
       hold off
