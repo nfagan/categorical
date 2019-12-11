@@ -28,12 +28,12 @@ void util::set_categories(int nlhs, mxArray *plhs[], int nrhs, const mxArray *pr
     const u64 n_cats = cats.size();
     const u64 n_values = values.size();
     
-    if (n_values < n_cats || n_values % n_cats != 0)
+    if (n_values < n_cats || (n_cats > 0 && n_values % n_cats != 0))
     {
         mexErrMsgIdAndTxt(func_id, "Values exceed categorical dimensions.");
     }
     
-    const u64 num_per_col = n_values / n_cats;
+    const u64 num_per_col = n_cats == 0 ? 0 : (n_values / n_cats);
     std::vector<std::string> part_cat(num_per_col);
     
     for (u64 i = 0; i < n_cats; i++)

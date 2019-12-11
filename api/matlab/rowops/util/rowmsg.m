@@ -6,12 +6,6 @@ function s = rowmsg(a, b, A, B)
 %     matching rows.
 %
 %     See also rows, rowsmatch
-%
-%     IN:
-%       - `a` (/any/)
-%       - `b` (/any/)
-%     OUT:
-%       - `s` (char)
 
 if ( nargin < 4 ), B = 'B'; end
 if ( nargin < 3 ), A = 'A'; end
