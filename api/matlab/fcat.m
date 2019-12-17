@@ -1350,7 +1350,7 @@ classdef fcat < handle
     
     function tf = hascat(obj, categories)
       
-      %   HASLAB -- True if category(ies) exists.
+      %   HASCAT -- True if category(ies) exists.
       %
       %     See also fcat/haslab, fcat/fcat
       
@@ -1739,10 +1739,10 @@ classdef fcat < handle
       %   LOWER -- Convert labels to lowercase.
       %
       %     Because labels are case sensitive, this function will fail
-      %     if two labels differ only with regard to one being all-caps, 
-      %     and the other all lower-case.
+      %     if two labels differ only with regard to case, unless they are
+      %     present in the same category.
       %
-      %     See also fcat/replace, fcat/upper.
+      %     See also fcat/replace, fcat/upper
       
       cellfun( @(x) replace(obj, x, lower(x)), getlabs(obj), 'un', 0 );
     end
@@ -1752,8 +1752,7 @@ classdef fcat < handle
       %   UPPERCAT -- Convert categories to uppercase.
       %
       %     Because categories are case sensitive, this function will fail
-      %     if two categories differ only with regard to one being
-      %     all-caps, and the other all lower-case.
+      %     if two categories differ only with regard to case.
       %
       %     See also fcat/replace, fcat/lowercat, fcat/upper
       
@@ -2832,7 +2831,10 @@ classdef fcat < handle
         obj = fcat();
         try
           requirecat( obj, cats );
-          setcats( obj, cats, arr );
+          
+          if ( ~isempty(arr) )
+            setcats( obj, cats, arr );
+          end
         catch err
           delete( obj );
           fprintf( ['\n The following error occurred when\n attempting to create' ...
@@ -2919,27 +2921,24 @@ classdef fcat < handle
     
     function mask = mask(obj, varargin)
 
-      %   MASK -- Create mask by successively applying find-like functions.
+      %   MASK -- Create mask via successive function application.
       %
-      %     mask = fcat.mask( obj, func, labels ), where `obj` is an fcat
-      %     object, calls function `func` with inputs `obj` and `labels`. 
-      %     `func` is a handle to a function that accepts up to three 
-      %     inputs -- the fcat object `obj`, a char or cell array of string 
-      %     `labels`, and a uint64 mask vector -- and returns an index 
-      %     vector. Usually, the function will be one of `find`, `findnot`, 
-      %     `findor`, or `findnone`, but it need not be.
+      %     mask = fcat.mask( obj, func, arg1 ); for the fcat object
+      %     `obj`, function handle `func`, and function argument `arg1`
+      %     calls `func(obj, arg1)` to produce the uint64 index vector 
+      %     `mask`.
       %
-      %     mask = fcat.mask( obj, func1, labels1, func2, labels2, ... ) 
-      %     calls func1 with inputs `obj` and `labels`, as above. However, 
-      %     `func2` is then called with inputs `obj`, `labels2`, and, 
-      %     additionally, the output of the call to `func1`. In this way,
-      %     each function N will be called with the output of function N-1
-      %     as its third argument.
+      %     mask = fcat.mask( obj, func1, arg1, func2, arg2 ); calls
+      %     `func1` as above, but passes its output as an additional input
+      %     to `func2`, such that 
+      %     `mask = func2( obj, arg2, func1(obj, arg1) );`
       %
-      %     mask = fcat.mask( obj, initial_mask, ... ) works as above, but 
-      %     calls `func1` with the additional input `initial_mask`. In this 
-      %     way, the output `mask` will contain only elements already 
-      %     present in `initial_mask`.
+      %     mask = fcat.mask( obj, func1, arg1, ... funcN, argN ); works by
+      %     extension of the above, such that each function N receives the 
+      %     output of the function N-1 as its third input.
+      %
+      %     mask = fcat.mask( obj, initial_mask, ... ); passes 
+      %     `initial_mask` as a third argument to `func1`.
       %
       %     EX 1 //
       %
