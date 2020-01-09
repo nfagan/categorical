@@ -1321,6 +1321,21 @@ classdef fcat < handle
       C = C(nums);
     end
     
+    function l = nthlab(obj, nums)
+      
+      %   NTHLAB -- Get label(s) by numeric index.
+      %
+      %     l = nthlab( obj, nums ) returns the set of labels `l` 
+      %     identified by the numeric index `nums`. `l` is a cell array of
+      %     strings. The order of labels is consistent with the output 
+      %     of `getlabs`.
+      %
+      %     See also fcat/getlabs, fcat/nthcat
+      
+      l = getlabs( obj );
+      l = l(nums);
+    end
+    
     function L = getlabs(obj)
       
       %   GETLABS -- Get label names.
@@ -2134,8 +2149,10 @@ classdef fcat < handle
         sz_str = sprintf( '%s empty', sz_str );
       end
       
+      max_cats_display_short = 10;
+      
       if ( strcmp(obj.displaymode, 'short') )
-        dispshort( obj, desktop_exists, link_str, sz_str );
+        dispshort( obj, desktop_exists, link_str, sz_str, max_cats_display_short );
         return;
       end
       
@@ -2146,7 +2163,7 @@ classdef fcat < handle
       
       if ( strcmp(obj.displaymode, 'auto') )
         if ( size(obj, 1) > fcat.MAX_ROWS_DISPLAY_FULL )
-          dispshort( obj, desktop_exists, link_str, sz_str );
+          dispshort( obj, desktop_exists, link_str, sz_str, max_cats_display_short );
         else
           dispfull( obj, desktop_exists, link_str, sz_str );
         end
@@ -2486,20 +2503,18 @@ classdef fcat < handle
       end
     end
     
-    function dispshort(obj, desktop_exists, link_str, sz_str)
+    function dispshort(obj, desktop_exists, link_str, sz_str, max_cats)
       
       %   DISPSHORT -- Display a summarized version of contents.
       
       cats = getcats( obj );
+      max_labs = 5;
       
       if ( numel(cats) == 0 )
         addtl_str = 'with 0 categories';
       else
         addtl_str = 'with categories:';
       end
-      
-      max_labs = 5;
-      max_cats = 10;
       
       fprintf( '  %s %s %s', sz_str, link_str, addtl_str );
       
