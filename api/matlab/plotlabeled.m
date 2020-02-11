@@ -610,7 +610,7 @@ classdef plotlabeled < handle
       set_lims( obj, axs, 'ylim', get_ylims(obj, axs) );
     end
     
-    function axs = boxplot(obj, data, labs, groups, panels, add_means)
+    function [axs, all_components] = boxplot(obj, data, labs, groups, panels, add_means)
       
       %   BOXPLOT -- Create box plots for subsets of data.
       %
@@ -651,6 +651,7 @@ classdef plotlabeled < handle
       g_cats = opts.g_cats;
       
       axs = gobjects( 1, n_subplots );
+      all_components = cell( size(axs) );
       
       for i = 1:n_subplots
         ax = subplot( c_shape(1), c_shape(2), i );
@@ -666,8 +667,15 @@ classdef plotlabeled < handle
           boxplot( ax, plt_dat, plt_labs );
         end
         
+        components = make_components( ax, plt_labs, I );
+        all_components{i} = components;
+        
         if ( add_means )
           plot_means( ax, data, labs, g_cats, I );       
+        end
+        
+        if ( obj.add_points )
+          plot_points( ax, components, data, labs, I );
         end
         
         title( ax, opts.p_labs(i, :) );
@@ -675,6 +683,75 @@ classdef plotlabeled < handle
       end
       
       set_lims( obj, axs, 'ylim', get_ylims(obj, axs) );
+      
+      function plot_points(ax, components, data, labels, mask)
+        [point_I, point_C] = findall( labels, obj.points_are, mask );
+        point_categorical = categorical( fcat.strjoin(point_C, ' | ') );
+        
+        x_dat = [];
+        y_dat = [];
+        g = categorical( [] );
+        colors = obj.color_func( numel(point_I) );
+        
+        for ii = 1:numel(point_I)
+          for j = 1:numel(components)
+            ind = intersect( point_I{ii}, components(j).index );
+            y_data = data(ind);
+            x_data = repmat( components(j).x, size(y_data) );
+            
+            y_dat = [ y_dat; y_data ];
+            x_dat = [ x_dat; x_data ];
+            g = [ g; repmat(point_categorical(ii), size(x_data)) ];
+          end
+        end
+        
+        hold( ax, 'on' );
+        gscatter( x_dat, y_dat, g, colors, obj.marker_type, obj.marker_size );
+      end
+      
+      function components = make_components(ax, labels, ind)
+        [selectors, ~, ic] = unique( labels, 'rows' );
+        
+        boxplot_h = findobj( ax, 'tag', 'boxplot' );
+        assert( numel(boxplot_h) == 1, 'Expected 1 boxplot element; found %d' ...
+          , numel(boxplot_h) );
+        box_hs = findobj( boxplot_h, 'tag', 'Box' );
+        
+        assert( numel(box_hs) == rows(selectors), 'Expected %d box handles; found %d' ...
+          , rows(selectors), numel(box_hs) );
+        
+        xs = arrayfun( @(x) [min(x.XData), max(x.XData)], box_hs, 'un', 0 );
+        ys = arrayfun( @(x) [min(x.YData), max(x.YData)], box_hs, 'un', 0 );
+        
+        min_xs = cellfun( @min, xs );
+        [~, box_order] = sort( min_xs );
+        box_hs = box_hs(box_order);
+        xs = xs(box_order);
+        ys = ys(box_order);
+        
+        assert( rows(selectors) == numel(xs), 'Expected %d selector rows; found %d' ...
+          , numel(xs), rows(selectors) );
+        
+        components = [];
+        
+        for ii = 1:numel(xs)
+          sel_ind = ic == ii;
+          curr_ind = ind(sel_ind);
+          
+          component = struct();
+          component.box_handle = box_hs(ii);
+          component.x = mean( xs{ii} );
+          component.y = mean( ys{ii} );
+          component.index = curr_ind;
+          component.selectors = cellstr( selectors(ii, :) );
+          
+          if ( isempty(components) )
+            components = component;
+          else
+            components(end+1) = component;
+          end
+        end
+      end
       
       function plot_means(ax, dat, labs, g_cats, current_ind)
         
