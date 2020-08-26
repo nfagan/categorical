@@ -1,5 +1,4 @@
 classdef fcat < handle
-  
   properties (Access = private, Constant = true)
     DISPLAY_MODES = { 'auto', 'short', 'full' };
     MAX_ROWS_DISPLAY_FULL = 1000;

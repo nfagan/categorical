@@ -4,10 +4,7 @@ function B = columnize(A)
 %
 %     B = columnize(A) is the same as A(:).
 %
-%     IN:
-%       - `A` (/T/)
-%     OUT:
-%       - `B` (/T/)
+%     See also reshape, rowop
 
 B = reshape( A, [], 1 );
 end

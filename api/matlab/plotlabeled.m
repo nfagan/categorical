@@ -778,7 +778,7 @@ classdef plotlabeled < handle
       end
     end
     
-    function axs = violinalt(obj, data, labs, groups, panels, varargin)
+    function [axs, store_inds] = violinalt(obj, data, labs, groups, panels, varargin)
       
       %   VIOLINALT -- Create violin plots for subsets of data (alternative
       %     method).
@@ -828,6 +828,7 @@ classdef plotlabeled < handle
       g_cats = opts.g_cats;
       
       axs = gobjects( 1, n_subplots );
+      store_inds = cell( n_subplots, 1 );
       
       for i = 1:n_subplots
         ax = subplot( c_shape(1), c_shape(2), i );
@@ -852,6 +853,7 @@ classdef plotlabeled < handle
         
         title( ax, opts.p_labs(i, :) );
         axs(i) = ax;
+        store_inds{i} = g_I;
       end
       
       set_lims( obj, axs, 'ylim', get_ylims(obj, axs) );
@@ -2488,6 +2490,7 @@ classdef plotlabeled < handle
           error('The values and errors have to be the same length')
       end
 
+      handles = struct();
       [nRows nCols] = size(values);
       if ( nRows > 1 )
         handles.bar = bar(varargin{:}); % standard implementation of bar fn
