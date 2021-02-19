@@ -52,7 +52,10 @@ classdef plotlabeled < handle
     prefer_multiple_xs = false;
     errorbar_connect_non_nan = false;
     pie_include_percentages = false;
+    pie_percentage_format = '%s (%0.3f%%)';
     hist_add_summary_line = false;
+    bar_add_summary_values_as_text = false;
+    bar_summary_text_format = '%0.2f';
   end
   
   methods
@@ -319,7 +322,7 @@ classdef plotlabeled < handle
       set_lims( obj, axs, 'ylim', get_ylims(obj, axs) );
     end
     
-    function axs = bar(obj, varargin)
+    function [axs, inds] = bar(obj, varargin)
       
       %   BAR -- Plot bars for subsets of data.
       %
@@ -339,12 +342,12 @@ classdef plotlabeled < handle
       %
       %     See also plotlabeled/lines, plotlabeled/errorbar
       
-      axs = groupplot( obj, 'bar', varargin{:} );
+      [axs, inds] = groupplot( obj, 'bar', varargin{:} );
     end
     
-    function axs = stackedbar(obj, varargin)
+    function [axs, inds] = stackedbar(obj, varargin)
       try
-        axs = groupplot( obj, 'stacked_bar', varargin{:} );
+        [axs, inds] = groupplot( obj, 'stacked_bar', varargin{:} );
       catch err
         throw( err );
       end
@@ -486,7 +489,7 @@ classdef plotlabeled < handle
         g_labs = opts.g_labs;
         
         if ( obj.pie_include_percentages )
-          g_labs = arrayfun( @(x, y) sprintf('%s (%0.3f%%)', x{1}, y) ...
+          g_labs = arrayfun( @(x, y) sprintf(obj.pie_percentage_format, x{1}, y) ...
             , g_labs, pie_dat, 'un', 0 );
         end
         
@@ -834,15 +837,24 @@ classdef plotlabeled < handle
         ax = subplot( c_shape(1), c_shape(2), i );
         
         I = find( labs, opts.p_combs(i, :), M );
-        
         [g_I, g_C] = findall( labs, g_cats, I );
+        
+        if ( ~isempty(obj.group_order) )
+          order_ind = plotlabeled.orderby( g_C', obj.group_order );
+          g_I = g_I(order_ind);
+          g_C = g_C(:, order_ind);
+        end
+        
         g_dat = cellfun( @(x) data(x), g_I, 'un', 0 );
         colors = obj.color_func( numel(g_I) );
         
         g_labs = fcat.strjoin( g_C, obj.join_pattern );
         g_labs = cellfun( @(x) strrep(x, '_', ' '), g_labs, 'un', 0 );
         
+        tl = get( ax, 'TickLength' );
         h = violin_alt( g_dat(:)' );
+        set( ax, 'TickLength', tl );
+        
         set( ax, 'xtick', 1:numel(g_I) );
         set( ax, 'xticklabel', g_labs );
         
@@ -1397,7 +1409,7 @@ classdef plotlabeled < handle
       
     end
     
-    function axs = groupplot(obj, func_name, varargin)
+    function [axs, I_mats] = groupplot(obj, func_name, varargin)
       
       %   GROUPPLOT -- Internal utility to plot grouped, row-vector data.
       
@@ -1439,6 +1451,7 @@ classdef plotlabeled < handle
       summary_mat = nan( size(x_combs, 1), size(g_combs, 1) );
       errors_mat = nan( size(summary_mat) );
       inds_mat = nan( size(summary_mat) );
+      I_mats = cell( n_subplots, 1 );
       
       color_map = get_points_color_map( obj );
       
@@ -1448,6 +1461,7 @@ classdef plotlabeled < handle
         
         %   which rows of `summary` are associated with the current panel?
         panel_ind = find( p_c, p_combs(i, :) );
+        I_mat = cell( size(summary_mat) );
         
         for j = 1:numel(panel_ind)
           full_row_ind = panel_ind(j);
@@ -1456,6 +1470,7 @@ classdef plotlabeled < handle
           
           summary_mat(row, col) = summary_data(full_row_ind);
           inds_mat(row, col) = full_row_ind;
+          I_mat(row, col) = opts.I(full_row_ind);
           
           if ( obj.add_errors )
             errors_mat(row, col) = errors_data(full_row_ind);
@@ -1467,6 +1482,8 @@ classdef plotlabeled < handle
         else
           keep_ind = true( size(summary_mat, 1), 1 );
         end
+        
+        I_mats{i} = I_mat(keep_ind, :);
         
         switch ( func_name )
           case 'bar'
@@ -1505,6 +1522,10 @@ classdef plotlabeled < handle
           catch err
             warning( err.message );
           end
+        end
+        
+        if ( strcmp(func_name, 'stacked_bar') && obj.bar_add_summary_values_as_text ) 
+          stacked_bar_add_summary_values_as_text( obj, ax, h, summary_mat );
         end
         
         summary_mat(:) = NaN;
@@ -1596,6 +1617,21 @@ classdef plotlabeled < handle
         end
         
         set( ax, 'nextplot', np );
+      end
+      
+      function stacked_bar_add_summary_values_as_text(obj, ax, hs, summary_mat)        
+        for idx = 1:size(summary_mat, 1)
+          prev = 0;
+          
+          for i2 = 1:size(summary_mat, 2)
+            val = summary_mat(idx, i2);
+            next = prev + val;
+            half = prev + (next - prev) * 0.5;
+            prev = next;
+            
+            h_text = text( ax, idx, half, sprintf(obj.bar_summary_text_format, val) );
+          end
+        end
       end
     end
     

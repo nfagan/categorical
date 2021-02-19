@@ -3410,7 +3410,7 @@ classdef fcat < handle
         if ( ischar(rowc) || isa(rowc, 'fcat') ), rowc = cellstr( rowc )'; end
         if ( ischar(colc) || isa(colc, 'fcat') ), colc = cellstr( colc )'; end
         
-        validate( T, rowc, colc );
+        [rowc, colc] = validate( T, rowc, colc );
         
         pattern = ' | ';
         
@@ -3449,9 +3449,20 @@ classdef fcat < handle
         row = cellfun( @(x) [x, repmat(' ', 1, N-numel(x))], row, 'un', 0 );
       end
       
-      function validate(T, rowc, colc)
-        n1 = size( rowc, 2 );
-        n2 = size( colc, 2 );
+      function [rowc, colc] = validate(T, rowc, colc)
+        if ( isvector(rowc) )
+          rowc = rowc(:)';
+          n1 = numel( rowc );
+        else
+          n1 = size( rowc, 2 );
+        end
+        
+        if ( isvector(colc) )
+          colc = colc(:)';
+          n2 = numel( colc );
+        else
+          n2 = size( colc, 2 );
+        end
         
         tmsg = '%s labels must be fcat or cellstr; was "%s".';
         szmsg = '%s combinations must have %d elements; %d were present.';

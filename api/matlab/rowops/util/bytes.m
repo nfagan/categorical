@@ -11,6 +11,8 @@ function b = bytes(var, unit)
 %
 %     See also whos, zeros, rowop
 
+narginchk( 1, 2 );
+
 if ( nargin < 2 )
   unit = 'b';
 else
