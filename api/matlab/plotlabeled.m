@@ -11,6 +11,7 @@ classdef plotlabeled < handle
     error_func = @plotlabeled.std;
     smooth_func = @plotlabeled.noop;
     color_func = @jet;
+    get_axes_func = [];
     fit_func = @(x, y) x;
     fig = [];
     shape = [];
@@ -56,6 +57,7 @@ classdef plotlabeled < handle
     hist_add_summary_line = false;
     bar_add_summary_values_as_text = false;
     bar_summary_text_format = '%0.2f';
+    clear_figure = true;
   end
   
   methods
@@ -262,7 +264,7 @@ classdef plotlabeled < handle
       
       for i = 1:n_subplots
         
-        ax = subplot( c_shape(1), c_shape(2), i );
+        ax = get_axes( obj, c_shape(1), c_shape(2), i );
         inds{i} = {};
         
         %   which rows of `summary` are associated with the current panel?
@@ -424,7 +426,7 @@ classdef plotlabeled < handle
       indices = cell( size(axs) );
 
       for i = 1:n_subplots        
-        ax = subplot( c_shape(1), c_shape(2), i );
+        ax = get_axes( obj, c_shape(1), c_shape(2), i );
         pax = polaraxes( 'units', ax.Units, 'position', ax.Position );
         delete( ax );
 
@@ -476,7 +478,7 @@ classdef plotlabeled < handle
       axs = gobjects( size(hs) );
       
       for i = 1:num_panels
-        ax = subplot( opts.c_shape(1), opts.c_shape(2), i );
+        ax = get_axes( obj, opts.c_shape(1), opts.c_shape(2), i );
         
         p_ind = find( opts.p_c, opts.p_combs(i, :) );
         pie_dat = nan( num_groups, 1 );
@@ -571,7 +573,7 @@ classdef plotlabeled < handle
       stp = 1;
       
       for i = 1:n_subplots
-        ax = subplot( c_shape(1), c_shape(2), i );
+        ax = get_axes( obj, c_shape(1), c_shape(2), i );
         set( ax, 'nextplot', 'add' );
         
         p_ind = find( labels, p_combs(i, :) );
@@ -657,7 +659,7 @@ classdef plotlabeled < handle
       all_components = cell( size(axs) );
       
       for i = 1:n_subplots
-        ax = subplot( c_shape(1), c_shape(2), i );
+        ax = get_axes( obj, c_shape(1), c_shape(2), i );
         
         I = find( labs, opts.p_combs(i, :), M );
         
@@ -834,7 +836,7 @@ classdef plotlabeled < handle
       store_inds = cell( n_subplots, 1 );
       
       for i = 1:n_subplots
-        ax = subplot( c_shape(1), c_shape(2), i );
+        ax = get_axes( obj, c_shape(1), c_shape(2), i );
         
         I = find( labs, opts.p_combs(i, :), M );
         [g_I, g_C] = findall( labs, g_cats, I );
@@ -926,7 +928,7 @@ classdef plotlabeled < handle
       axs = gobjects( 1, n_subplots );
       
       for i = 1:n_subplots
-        ax = subplot( c_shape(1), c_shape(2), i );
+        ax = get_axes( obj, c_shape(1), c_shape(2), i );
         
         I = find( labs, opts.p_combs(i, :), M );
         
@@ -1011,7 +1013,7 @@ classdef plotlabeled < handle
       colormap( obj.color_func() );
       
       for i = 1:n_subplots
-        ax = subplot( c_shape(1), c_shape(2), i );
+        ax = get_axes( obj, c_shape(1), c_shape(2), i );
         
         panel_ind = find( opts.p_c, opts.p_combs(i, :) );
         
@@ -1097,7 +1099,7 @@ classdef plotlabeled < handle
       summary_stats = cell( size(axs) );
       
       for i = 1:n_subplots
-        ax = subplot( c_shape(1), c_shape(2), i );
+        ax = get_axes( obj, c_shape(1), c_shape(2), i );
         
         row = find( opts.p_c, opts.p_combs(i, :) );
         
@@ -1329,7 +1331,9 @@ classdef plotlabeled < handle
       c_shape = get_shape( obj, n_subplots );
       
       f = get_figure( obj );
-      clf( f );
+      if ( obj.clear_figure )
+        clf( f );
+      end
       
       opts = struct();
       opts.data = data;
@@ -1457,7 +1461,7 @@ classdef plotlabeled < handle
       
       for i = 1:n_subplots
         
-        ax = subplot( c_shape(1), c_shape(2), i );
+        ax = get_axes( obj, c_shape(1), c_shape(2), i );
         
         %   which rows of `summary` are associated with the current panel?
         panel_ind = find( p_c, p_combs(i, :) );
@@ -1870,6 +1874,14 @@ classdef plotlabeled < handle
       end
     end
     
+    function ax = get_axes(obj, rows, cols, index)
+      if ( ~isempty(obj.get_axes_func) )
+        ax = obj.get_axes_func( rows, cols, index );
+      else
+        ax = subplot( rows, cols, index );
+      end
+    end
+    
     function l = get_lims(obj, axs, kind)
       
       %   GET_LIMS
@@ -2245,6 +2257,7 @@ classdef plotlabeled < handle
       for i = 1:numel(ids)
         ax = ids(i).axes;
         ind = ids(i).index;
+        series = ids(i).series;
 
         x = X(ind);
         y = Y(ind);
@@ -2279,16 +2292,19 @@ classdef plotlabeled < handle
         hs(i) = h;  
 
         coord_func = @(x) ((x(2)-x(1)) * 0.75) + x(1);
+        y_span = diff( get(ax, 'ylim') );
+        yc = y_span - (y_span * 0.05 * (i-1));
 
         xc = coord_func( xlims );
-        yc = y(end);
+%         yc = min( y(end), max(get(ax, 'ylim')) );
 
         txt = sprintf( 'R = %0.2f, p = %0.3f', r, p);
 
         if ( p < alpha ), txt = sprintf( '%s *', txt ); end
 
         if ( add_text )
-          text( ax, xc, yc, txt );
+          h_text = text( ax, xc, yc, txt );
+          set( h_text, 'color', unique(get(series, 'cdata'), 'rows') );
         end
 
         store_stats(i, :) = [ r, p ];
