@@ -3469,11 +3469,19 @@ classdef fcat < handle
         
         [row, col] = size( T );
         
-        assert( n1 == row, szmsg, 'Row', row, n1 );
-        assert( n2 == col, szmsg, 'Column', col, n2 );
-        
         assert( iscellstr(rowc), tmsg, 'Row', class(rowc) );
         assert( iscellstr(colc), tmsg, 'Column', class(colc) );
+        
+        if ( n1 ~= row )
+          if ( row == 1 && isvector(rowc) )
+            rowc = rowc';
+          else
+            error( szmsg, 'Row', row, n1 );
+          end
+        end
+        if ( n2 ~= col && (col ~= 1 || ~isvector(colc)) )
+          error( szmsg, 'Column', col, n2 );
+        end
       end
     end
     

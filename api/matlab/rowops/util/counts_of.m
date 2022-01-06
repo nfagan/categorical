@@ -1,4 +1,4 @@
-function [data, newlabs, I] = counts_of(labs, proportions_each, proportions_of, mask)
+function [data, newlabs, I, ns] = counts_of(labs, proportions_each, proportions_of, mask)
 
 %   COUNTS_OF -- Counts of the number of label combinations in categories.
 %
@@ -33,6 +33,7 @@ n_combinations = size( props_of_labels, 2 );
 [plabs, I] = keepeach_or_one( labs', proportions_each, mask );
 
 data = rownan( numel(I) * n_combinations );
+ns = nan( size(data) );
 newlabs = fcat.like( plabs );
 
 for i = 1:numel(I)
@@ -45,6 +46,7 @@ for i = 1:numel(I)
 
     assign_stp = (i-1) * n_combinations + j;
     data(assign_stp) = n_prop_of;
+    ns(assign_stp) = numel( sub_mask );
     
     setcat( plabs, proportions_of, current_labels, i );
     append( newlabs, plabs, i );
