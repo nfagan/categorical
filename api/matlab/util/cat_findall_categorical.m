@@ -18,7 +18,8 @@ function [I, C] = cat_findall_categorical(categ, cats, subset_cats)
 if ( nargin == 1 )
   [C, ~, ib] = unique( categ, 'rows' );
 else
-  [C, ~, ib] = unique( categ(:, ismember(cats, subset_cats)), 'rows' );
+  [~, cat_inds] = ismember( subset_cats, cats );
+  [C, ~, ib] = unique( categ(:, cat_inds), 'rows' );
 end
 
 I = accumarray( ib, (1:numel(ib))', [], @(rows) {sort(rows)} );
