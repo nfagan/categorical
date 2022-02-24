@@ -266,10 +266,21 @@ end
 
 end
 
+function each = fcat_each(a, each)
+
+if ( islogical(each) )
+  each = find( each );
+end
+if ( isnumeric(each) )
+  each = nthcat( a, each );
+end
+
+end
+
 function [i, c] = generalized_findall(a, each, varargin)
 
 if ( isa(a, 'fcat') )
-  [i, c] = findall( a, each, varargin{:} );
+  [i, c] = findall( a, fcat_each(a, each), varargin{:} );
 else
   if ( ~ismatrix(a) )
     error( 'Expected 2D array.' );

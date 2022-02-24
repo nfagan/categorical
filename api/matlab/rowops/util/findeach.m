@@ -18,8 +18,8 @@ function [I, C] = findeach(X, each, varargin)
 
 [I, ~, C] = rowsets( 1, X, each, varargin{:} );
 
-if ( ~isempty(C) )
+% if ( ~isempty(C) )
   C = vertcat( C{:} );
-end
+% end
 
 end
