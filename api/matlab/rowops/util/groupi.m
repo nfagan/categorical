@@ -1,11 +1,14 @@
-function o = groupi(subs)
+function o = groupi(subs, n)
 
 %   GROUPI -- Create groups of indices of alike subscripts.
 %
-%     groups = groupi( subs ); for the numeric integer-valued array `subs`
+%     groups = GROUPI( subs ); for the numeric integer-valued array `subs`
 %     creates `groups` of indices of the distinct values of `subs`.
 %     `groups` is a cell array. The i-th element of `groups` contains the
 %     set of linear indices into `subs` for which `subs == i`.
+%
+%     groups = GROUPI( subs, n ); for the scalar integer-valued `n` ensures
+%     that `length(groups)` is at least `n`.
 %
 %     EX //
 %
@@ -21,6 +24,12 @@ if ( isempty(subs) )
   o = {};
 else
   o = accumarray( subs(:), 1:numel(subs), [], @(x) {x} );
+end
+
+if ( nargin > 1 && numel(o) < n )
+  tmp = cell( n, 1 );
+  tmp(1:numel(o)) = o;
+  o = tmp;
 end
 
 end
