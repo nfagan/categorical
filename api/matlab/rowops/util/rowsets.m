@@ -2,30 +2,56 @@ function [I, id, C] = rowsets(n, X, varargin)
 
 %   ROWSETS -- Indices of unique rows.
 %
-%     I = rowsets( 1, X, ix1 ) for the 2D array `X` and vector of column 
+%     I = ROWSETS( 1, X, ix1 ) for the 2D array `X` and vector of column 
 %     subscripts `ix1` returns a cell array of index vectors `I`.
 %     Each element in `I` is a distinct subset of row indices into `X`.
-%     There is one element for each unique row of `X`, evaluated using 
-%     `X(:, ix1)` columns.
+%     There is one element for each unique row of `X(:, ix1)` columns.
 %
-%     I = rowsets( 2, X, ix1, ix2 ) for the vectors of column subscripts
+%     I = ROWSETS( 2, X, ix1, ix2 ) for the vectors of column subscripts
 %     `ix1` and `ix2` first computes the set of unique rows over `ix1` 
 %     columns, as above. Within each set, the subset of unique
 %     rows over `ix2` columns is then computed. Each element of `I` is
 %     still a distinct subset of row indices into `X`. There is one element
-%     for each unique combination of (`ix1` x `ix2`) rows.
+%     for each unique combination of (`ix1` x `ix2`) unique rows.
 %
-%     I = rowsets( N, X, ix1, ix2, ... ixN ) works by extension of the
+%     I = ROWSETS( N, X, ix1, ix2, ... ixN ) works by extension of the
 %     above to compute indices of the unique combinations of
-%     (`ix1` x `ix2` x ... `ixN`) rows.
+%     (`ix1` x `ix2` x ... `ixN`) unique rows. 
 %
-%     [..., id] = rowsets( N, X, ... ) also returns an MxN `id` matrix
+%     [I, id] = ROWSETS( N, X, ... ) also returns an MxN `id` matrix with
+%     one row for each element of `I`. The i-th column of `id` contains 
+%     integers identifying a unique row of `X` evaluated using the
+%     i-th vector of column subscripts `ixi`.
 %
-%     See also unique, groupi, grp2idx, fcat
+%     [..., C] = ROWSETS(...) also returns an MxN cell matrix `C` with one
+%     row for each element of `I`. The i-th row of `C` constitutes a unique 
+%     product of unique rows of `X`. The j-th column is a unique row of `X`
+%     evaluted using the `ixj`-th vector of column subscripts.
+%
+%     [...] = ROWSETS(..., 'mask', mask) for the logical or numeric vector
+%     `mask` operates on the subset of rows `X(mask, :)` and returns 
+%     indices that are a subset of `mask`.
+%
+%     A vector of column subscripts can be empty. This corresponds to
+%     specifying the complete set of row indices `1:size(X, 1)` for that
+%     input. Elements of `C` corresponding to an empty vector of column 
+%     subscripts are given the char label '<unspecified>'.
+%
+%     [...] = ROWSETS( 'unspecified_label', value ) uses `value`, which
+%     can be of any type, in place of '<unspecified>'.
+%
+%     [...] = ROWSETS(..., 'preserve', nth) for the scalar `nth` draws
+%     unique rows for `X(:, ixnth)` through `X(:, ixN)` from the complete 
+%     set of rows `1:size(X, 1)`. `I` then contains indices of all possible 
+%     combinations of unique row sets for levels nth:N. In this case, 
+%     `I` may contain empty vectors corresponding to row sets that do not 
+%     exist in `X`.
+%
+%     See also findeach, unique, groupi, grp2idx, fcat
 
 validateattributes( n, {'numeric'}, {'scalar', 'integer'}, mfilename, 'n' );
 validateattributes( X ...
-  , {'numeric', 'fcat', 'string', 'cell', 'categorical'}, {}, mfilename, 'f' );
+  , {'numeric', 'fcat', 'string', 'cell', 'categorical'}, {'2d'}, mfilename, 'f' );
 
 narginchk( 2+n, inf );
 
@@ -36,12 +62,13 @@ defaults = struct();
 defaults.mask = [];
 defaults.unspecified_label = '<unspecified>';
 defaults.preserve = [];
+defaults.preserve_masked = false;
 [params, provided] = shared_utils.general.parsestruct( defaults, varargin );
 
 preserve = params.preserve;
 if ( ~isempty(preserve) )
   validateattributes( preserve, {'numeric'}, {'scalar', 'integer'}, mfilename, 'preserve' );
-  assert( preserve >= 1 && preserve <= n, 'Expected preserve in range [1, n].' );
+  assert( preserve >= 1 && preserve <= n, 'Expected preserve in range [1, %d].', n );
 end
 
 no_mask = rowmask( X );
@@ -70,7 +97,7 @@ while ( ~isempty(sets) )
   ind = set.ind;
   
   if ( ~isempty(preserve) && depth1 >= preserve )
-    if ( preserve == 1 )
+    if ( preserve == 1 || ~params.preserve_masked )
       pi = no_mask;
     else
       pi = mask;
@@ -108,6 +135,12 @@ while ( ~isempty(sets) )
   end
 end
 
+if ( nargout > 1 )
+  for i = 1:size(id, 2)
+    id(:, i) = uniquerow_ic( vertcat(C{:, i}) );
+  end
+end
+
 end
 
 function s = make_set(mask, depth, ind)
@@ -122,7 +155,6 @@ if ( is_unspecified(X, coli) )
 else
   [i, c] = generalized_findall( X, coli, mask );
 end
-
 
 end
 
@@ -212,6 +244,28 @@ end
 
 end
 
+function ic = uniquerow_ic(a)
+
+if ( iscell(a) )
+  ic = cellstr_unique_row_ic( a );
+else
+  [~, ~, ic] = unique( a, 'rows', 'stable' );
+end
+
+end
+
+function [c, i] = uniquerows(a)
+
+if ( iscell(a) )
+  i = cellstr_unique_row_ic( a );
+  [~, ia] = unique( i );
+  c = a(ia, :);
+else
+  [c, ~, i] = unique( a, 'rows', 'stable' );
+end
+
+end
+
 function [i, c] = generalized_findall(a, each, varargin)
 
 if ( isa(a, 'fcat') )
@@ -221,11 +275,11 @@ else
     error( 'Expected 2D array.' );
   end
   if ( nargin < 3 )
-    [c, ~, i] = unique( a(:, each), 'rows' );
+    [c, i] = uniquerows( a(:, each) );
     i = groupi( i );
   else
     m = varargin{1};
-    [c, ~, i] = unique( a(m, each), 'rows' );
+    [c, i] = uniquerows( a(m, each) );
     i = cellfun( @(x) m(x), groupi(i), 'un', 0 );
   end
   c = c';
@@ -236,7 +290,7 @@ end
 function tf = is_unspecified(f, a)
 
 if ( isa(f, 'fcat') )
-  tf = isequal( a, {} );
+  tf = iscell( a ) && isempty( a );
 else
   if ( islogical(a) )
     tf = ~any( a );
