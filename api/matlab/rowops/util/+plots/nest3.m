@@ -25,8 +25,8 @@ function o = nest3(id, I, L)
 %     [I, id, C] = rowsets( 3, f, {'dose', 'day'}, 'roi', 'image' );
 %     L = plots.cellstr_join( C );
 %     o = plots.nest3( id, I, L );
-%     p = o{1}; % first panel, could also choose 2nd or 3rd
-%     panel_data = cellfun( @(x) mean(d(x)), p.I );
+%     p = o{1}; % first panel, could choose another
+%     panel_data = rowifun( @mean, p.I, d );
 %     ax = gca(); cla( ax );
 %     plots.bars( ax, panel_data, p.L{3}, p.L{2}, p.L{1} );
 %

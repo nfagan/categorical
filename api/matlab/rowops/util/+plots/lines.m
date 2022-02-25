@@ -10,7 +10,7 @@ function h = lines(ax, x, m, gl, pl)
 %
 %     h = LINES(...) returns an array of handles to the plotted lines.
 %
-%     See also plots.prepare2, plots.bars
+%     See also plots.nest2, plots.bars
 
 assert( numel(x) == size(m, 2) ...
   , 'X must be a vector corresponding to the columns of data.' );

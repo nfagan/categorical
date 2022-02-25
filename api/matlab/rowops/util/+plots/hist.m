@@ -8,7 +8,7 @@ function h = hist(ax, m, pl)
 %
 %     h = HIST(...) returns a handle to the histogram object.
 %
-%     See also plots.prepare1, plots.bars, plots.lines
+%     See also plots.nest1, plots.bars, plots.lines
 
 h = histogram( ax, m );
 title( ax, pl );

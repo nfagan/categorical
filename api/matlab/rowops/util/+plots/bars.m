@@ -19,7 +19,7 @@ function [h, x] = bars(ax, m, xl, gl, pl)
 %     h = plots.bars( gca, rand(2, 4) ...
 %       , {'x0', 'x1'}, {'c', 'd', 'e', 'f'}, 'my title')
 %
-%     See also rowsets, plots.prepared3, plots.barerrs
+%     See also rowsets, plots.nest3, plots.barerrs
 
 ntick = size( m, 1 );
 if ( ntick == 1 )
