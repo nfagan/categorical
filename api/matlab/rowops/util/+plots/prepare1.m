@@ -7,9 +7,9 @@ function o = prepare1(id, I, L)
 %     `o` for each unique value of `id(:, 1)`. Each element is a struct 
 %     with fields 'I' and 'pl'.
 %
-%     Field 'I' is a vector subset of the elements of `I` corresponding to 
-%     one unique value of `id(:, 1)`. Field 'pl' is the scalar label drawn 
-%     from `L` identifying the element of `o`, and the elements of 'I'. 
+%     Field 'I' is the vector subset of `I` corresponding to one unique 
+%     value of `id(:, 1)`. Field 'pl' is the scalar label drawn from `L` 
+%     identifying the element of `o`, and the elements of 'I'. 
 %
 %     //  EX
 %     f = fcat.example();

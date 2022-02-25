@@ -3,20 +3,24 @@ function [I, id, C] = rowsets(n, X, varargin)
 %   ROWSETS -- Indices of unique rows.
 %
 %     I = ROWSETS( 1, X, ix1 ) for the 2D array `X` and vector of column 
-%     subscripts `ix1` returns a cell array of index vectors `I`.
-%     Each element in `I` is a distinct subset of row indices into `X`.
-%     There is one element for each unique row of `X(:, ix1)` columns.
+%     subscripts `ix1` partitions the full set of row indices into `X`, 
+%     that is, `1:size(X, 1)`, into subsets `I`. There is one subset for 
+%     each unique row of `X(:, ix1)` columns. The i-th index in `I` is the
+%     set of rows of `X` matching the i-th unique row of `X(:, ix1)`
+%     columns.
 %
 %     I = ROWSETS( 2, X, ix1, ix2 ) for the vectors of column subscripts
-%     `ix1` and `ix2` first computes the set of unique rows over `ix1` 
-%     columns, as above. Within each set, the subset of unique
+%     `ix1` and `ix2` first computes indices of unique rows over `ix1` 
+%     columns, as above. Within each index set, the subset of unique
 %     rows over `ix2` columns is then computed. Each element of `I` is
 %     still a distinct subset of row indices into `X`. There is one element
-%     for each unique combination of (`ix1` x `ix2`) unique rows.
+%     for each unique combination of (`ix1` * `ix2`) columns. The i-th 
+%     index in `I` is the set of rows of `X` matching the i-th unique 
+%     product of (`X(:, ix1)` * `X(:, ix2)`) columns.
 %
 %     I = ROWSETS( N, X, ix1, ix2, ... ixN ) works by extension of the
-%     above to compute indices of the unique combinations of
-%     (`ix1` x `ix2` x ... `ixN`) unique rows. 
+%     above to compute indices of the unique products of columns
+%     (`ix1` * `ix2` * ... `ixN`). 
 %
 %     [I, id] = ROWSETS( N, X, ... ) also returns an MxN `id` matrix with
 %     one row for each element of `I`. The i-th column of `id` contains 
@@ -301,7 +305,7 @@ end
 function tf = is_unspecified(f, a)
 
 if ( isa(f, 'fcat') )
-  tf = iscell( a ) && isempty( a );
+  tf = ~ischar( a ) && isempty( a );
 else
   if ( islogical(a) )
     tf = ~any( a );
