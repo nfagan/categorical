@@ -1,11 +1,11 @@
-function o = prepare3(id, I, L)
+function o = nest3(id, I, L)
 
-%   PREPARE3 -- Prepare index sets with 3 levels of nesting.
+%   NEST3 -- Prepare index sets with 3 levels of nesting.
 %
-%     o = PREPARE3(id, I, L) for the Mx3 matrix `id`, Mx1 cell array `I`, 
-%     and Mx3 matrix `L` returns `o`, a cell array. There is one element of 
+%     o = NEST3(id, I, L) for the Mx3 matrix `id`, Mx1 cell array `I`, and 
+%     Mx3 matrix `L` returns `o`, a cell array. There is one element of 
 %     `o` for each unique value of `id(:, 1)`. Each element is a struct 
-%     with fields 'I', 'xl', 'gl', and 'pl'.
+%     with fields 'I' and 'L'.
 %
 %     Field 'I' is a unique subset of the input indices `I`. This subset is 
 %     shaped into a matrix. Columns of the matrix are formed according 
@@ -13,24 +13,24 @@ function o = prepare3(id, I, L)
 %     `id(:, 1)`. Rows are then formed according to the unique values of 
 %     `id(:, 3)` corresponding to a given unique `id(:, 2)`.
 %
-%     Field 'pl' is a scalar label drawn from `L` identifying the element 
-%     of `o`. Fields 'xl' and 'gl' are labels also drawn from `L` 
-%     identifying the rows and columns, respectively, of the index matrix 
-%     'I'.
+%     Field 'L' is a 1x3 cell array of labels. L{1} is a scalar label drawn 
+%     from `L` identifying the element of `o`. L{2} and L{3} are labels 
+%     also drawn from `L` identifying the columns and rows, respectively, 
+%     of the index matrix 'I'.
 %
 %     //  EX
 %     f = fcat.example();
 %     d = fcat.example( 'smalldata' );
 %     % panels are ('dose' and 'day'); groups are 'roi'; x is 'image';
 %     [I, id, C] = rowsets( 3, f, {'dose', 'day'}, 'roi', 'image' );
-%     L = cellfun( @strjoin, C, 'un', 0 );
-%     o = plots.prepare3( id, I, L );
+%     L = plots.cellstr_join( C );
+%     o = plots.nest3( id, I, L );
 %     p = o{1}; % first panel, could also choose 2nd or 3rd
 %     panel_data = cellfun( @(x) mean(d(x)), p.I );
 %     ax = gca(); cla( ax );
-%     plots.bars( ax, panel_data, p.xl, p.gl, p.pl );
+%     plots.bars( ax, panel_data, p.L{3}, p.L{2}, p.L{1} );
 %
-%     See also rowsets, plots.prepare1, plots.prepare2, plots.bars
+%     See also rowsets, plots.nest1, plots.nest2, plots.bars
 
 assert_rowsmatch( id, I );
 assert_rowsmatch( I, L );
@@ -69,15 +69,9 @@ for i = 1:numel(p_I)
     xli(end+1:end+numel(rest), 1) = x_I(~exists);
   end
   
-  gl = L(gli, 2);
-  xl = L(xli, 3);
-  pl = L(pli(i), 1);
-  
   prep = struct();
   prep.I = m_I;
-  prep.xl = xl;
-  prep.gl = gl;
-  prep.pl = pl;
+  prep.L = { L(pli(i), 1), L(gli, 2), L(xli, 3) };
   o{i} = prep;
 end
 

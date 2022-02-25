@@ -1,36 +1,35 @@
 function [I, id, C] = rowsets(n, X, varargin)
 
-%   ROWSETS -- Indices of unique rows.
+%   ROWSETS -- Partition row indices into subsets by unique row products.
 %
 %     I = ROWSETS( 1, X, ix1 ) for the 2D array `X` and vector of column 
 %     subscripts `ix1` partitions the full set of row indices into `X`, 
 %     that is, `1:size(X, 1)`, into subsets `I`. There is one subset for 
-%     each unique row of `X(:, ix1)` columns. The i-th index in `I` is the
-%     set of rows of `X` matching the i-th unique row of `X(:, ix1)`
-%     columns.
+%     each unique row of `X(:, ix1)` columns. Each element of `I` is the
+%     set of rows of `X` containing one unique row of `X(:, ix1)` columns.
 %
 %     I = ROWSETS( 2, X, ix1, ix2 ) for the vectors of column subscripts
 %     `ix1` and `ix2` first computes indices of unique rows over `ix1` 
 %     columns, as above. Within each index set, the subset of unique
 %     rows over `ix2` columns is then computed. Each element of `I` is
 %     still a distinct subset of row indices into `X`. There is one element
-%     for each unique combination of (`ix1` * `ix2`) columns. The i-th 
-%     index in `I` is the set of rows of `X` matching the i-th unique 
-%     product of (`X(:, ix1)` * `X(:, ix2)`) columns.
+%     for each unique combination of (`ix1` * `ix2`) columns. Each element
+%     of `I` is the set of rows of `X` matching one unique product of 
+%     (`X(:, ix1)` * `X(:, ix2)`) columns.
 %
 %     I = ROWSETS( N, X, ix1, ix2, ... ixN ) works by extension of the
 %     above to compute indices of the unique products of columns
 %     (`ix1` * `ix2` * ... `ixN`). 
 %
 %     [I, id] = ROWSETS( N, X, ... ) also returns an MxN `id` matrix with
-%     one row for each element of `I`. The i-th column of `id` contains 
-%     integers identifying a unique row of `X` evaluated using the
-%     i-th vector of column subscripts `ixi`.
+%     one row for each element of `I`. Each column of `id` contains 
+%     integers identifying a unique row of `X` evaluated over the
+%     corresponding vector of column subscripts `ixi`.
 %
 %     [..., C] = ROWSETS(...) also returns an MxN cell matrix `C` with one
-%     row for each element of `I`. The i-th row of `C` constitutes a unique 
-%     product of unique rows of `X`. The j-th column is a unique row of `X`
-%     evaluted using the `ixj`-th vector of column subscripts.
+%     row for each element of `I`. Each row of `C` constitutes a unique 
+%     product of unique rows of `X`. Each column is a unique row of `X`
+%     evaluted over the corresponding vector of column subscripts.
 %
 %     [...] = ROWSETS(..., 'mask', mask) for the logical or numeric vector
 %     `mask` operates on the subset of rows `X(mask, :)` and returns 
@@ -44,7 +43,7 @@ function [I, id, C] = rowsets(n, X, varargin)
 %     [...] = ROWSETS( 'unspecified_label', value ) uses `value`, which
 %     can be of any type, in place of '<unspecified>'.
 %
-%     [...] = ROWSETS(..., 'preserve', nth) for the scalar `nth` draws
+%     [...] = ROWSETS(..., 'preserve', nth) for the scalar `nth` computes
 %     unique rows for `X(:, ixnth)` through `X(:, ixN)` from the complete 
 %     set of rows `1:size(X, 1)`. `I` then contains indices of all possible 
 %     combinations of unique row sets for levels nth:N. In this case, 
@@ -101,10 +100,10 @@ while ( ~isempty(sets) )
   ind = set.ind;
   
   if ( ~isempty(preserve) && depth1 >= preserve )
-    if ( preserve == 1 || ~params.preserve_masked )
-      pi = no_mask;
-    else
+    if ( params.preserve_masked )
       pi = mask;
+    else
+      pi = no_mask;
     end
     
     if ( is_unspecified(X, coli{depth1}) )
@@ -251,7 +250,7 @@ end
 function ic = uniquerow_ic(a)
 
 if ( iscell(a) )
-  ic = cellstr_unique_row_ic( a );
+  [~, ic] = cellstr_unique_rowi( a );
 else
   [~, ~, ic] = unique( a, 'rows', 'stable' );
 end
@@ -261,8 +260,7 @@ end
 function [c, i] = uniquerows(a)
 
 if ( iscell(a) )
-  i = cellstr_unique_row_ic( a );
-  [~, ia] = unique( i );
+  [ia, i] = cellstr_unique_rowi( a );
   c = a(ia, :);
 else
   [c, ~, i] = unique( a, 'rows', 'stable' );

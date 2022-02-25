@@ -16,8 +16,8 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
   if (nrhs != 1) {
     mexErrMsgIdAndTxt(err_id(), "Expected 1 input.");
   }
-  if (nlhs != 1) {
-    mexErrMsgIdAndTxt(err_id(), "Expected 1 output.");
+  if (nlhs != 2) {
+    mexErrMsgIdAndTxt(err_id(), "Expected 2 outputs.");
   }
   if (mxGetClassID(prhs[0]) != mxCELL_CLASS || 
       mxGetNumberOfDimensions(prhs[0]) != 2) {
@@ -69,9 +69,11 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
   std::unordered_map<std::string, uint64_t> unique_rows;
   uint64_t row_id{};  
   
-  auto* result = mxCreateUninitNumericMatrix(dims[0], 1, mxDOUBLE_CLASS, mxREAL);
-  double* result_data = mxGetPr(result);
+  auto* ic_array = mxCreateUninitNumericMatrix(
+    dims[0], 1, mxDOUBLE_CLASS, mxREAL);
+  double* ic = mxGetPr(ic_array);
   
+  std::vector<double> ia;  
   for (int64_t i = 0; i < dims[0]; i++) {
     for (int64_t j = 0; j < dims[1]; j++) {
       auto id = ids[i * dims[1] + j];
@@ -83,12 +85,19 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
     if (it == unique_rows.end()) {
       curr_row = row_id++;
       unique_rows[key] = curr_row;
+      ia.push_back(double(i + 1));
     } else {
       curr_row = it->second;
     }
     
-    *result_data++ = double(curr_row) + 1.0;
+    *ic++ = double(curr_row + 1);
   }
   
-  plhs[0] = result;
+  auto* ia_array = mxCreateUninitNumericMatrix(
+    int64_t(ia.size()), 1, mxDOUBLE_CLASS, mxREAL);
+  double* ia_dst = mxGetPr(ia_array);
+  memcpy(ia_dst, ia.data(), ia.size() * sizeof(double));
+  
+  plhs[0] = ia_array;
+  plhs[1] = ic_array;
 }

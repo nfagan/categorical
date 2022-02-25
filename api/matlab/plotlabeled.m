@@ -300,6 +300,10 @@ classdef plotlabeled < handle
         end
         
         h = plot( plt_x, plt_summary_mat );
+        colors = obj.color_func( size(plt_summary_mat, 2) );
+        for j = 1:numel(h)
+          set( h(j), 'color', colors(j, :) );
+        end
         
         set( h, 'linewidth', obj.main_line_width );
         
@@ -2221,7 +2225,7 @@ classdef plotlabeled < handle
       end
     end
     
-    function [hs, store_stats] = scatter_addcorr(ids, X, Y, alpha, add_text)
+    function [hs, store_stats] = scatter_addcorr(ids, X, Y, alpha, add_text, varargin)
       
       %   SCATTER_ADDCORR -- Add correlation + regression lines to scatter plots.
       %
@@ -2248,8 +2252,12 @@ classdef plotlabeled < handle
       %       - `hs` (array of graphics objects)
       %       - `store_stats` (double)
       
-      if ( nargin < 4 ), alpha = 0.05; end
-      if ( nargin < 5 ), add_text = true; end
+      if ( nargin < 4 || isempty(alpha) ), alpha = 0.05; end
+      if ( nargin < 5 || isempty(add_text) ), add_text = true; end
+      
+      defaults = struct();
+      defaults.corr_args = {};
+      params = shared_utils.general.parsestruct( defaults, varargin );
 
       hs = gobjects( size(ids) );
       store_stats = nan( numel(ids), 2 );
@@ -2266,7 +2274,7 @@ classdef plotlabeled < handle
           continue;
         end
 
-        [r, p] = corr( x, y, 'rows', 'complete' );
+        [r, p] = corr( x, y, 'rows', 'complete', params.corr_args{:} );
 
         xlims = get( ax, 'xlim' );
         xticks = get( ax, 'xtick' );
@@ -2292,8 +2300,8 @@ classdef plotlabeled < handle
         hs(i) = h;  
 
         coord_func = @(x) ((x(2)-x(1)) * 0.75) + x(1);
-        y_span = diff( get(ax, 'ylim') );
-        yc = y_span - (y_span * 0.05 * (i-1));
+        y_span = diff( get(ax, 'ylim') );                
+        yc = max( get(ax, 'ylim') ) - (y_span * 0.05 * (i-1));
 
         xc = coord_func( xlims );
 %         yc = min( y(end), max(get(ax, 'ylim')) );

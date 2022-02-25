@@ -17,9 +17,6 @@ function [I, C] = findeach(X, each, varargin)
 %     See also rowsets, unique, fcat/findall
 
 [I, ~, C] = rowsets( 1, X, each, varargin{:} );
-
-% if ( ~isempty(C) )
-  C = vertcat( C{:} );
-% end
+C = vertcat( C{:} );
 
 end
