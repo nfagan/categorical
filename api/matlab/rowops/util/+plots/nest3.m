@@ -1,29 +1,34 @@
-function o = nest3(id, I, L)
+function [PI, PL, II, LI] = nest3(id, I, L)
 
 %   NEST3 -- Prepare index sets with 3 levels of nesting.
 %
-%     o = NEST3(id, I, L) for the Mx3 matrix `id`, Mx1 cell array `I`, and 
-%     Mx3 matrix `L` returns `o`, a cell array. There is one element of 
-%     `o` for each unique value of `id(:, 1)`. Each element is a struct 
-%     with fields 'I', 'L', 'II', and 'LI'.
+%     PI = NEST3(id, I, L) for the Mx3 matrix `id`, Mx1 cell array `I`, and 
+%     Mx3 matrix `L` returns `PI`, a Px1 cell vector. There is one element 
+%     of `PI` for each unique value of `id(:, 1)`. Each element is a matrix
+%     constructed from a distinct subset of the input indices `I`. Rows of 
+%     the matrix are formed according to the unique values of `id(:, 2)` 
+%     corresponding to a given unique `id(:, 1)`. Columns are then formed 
+%     according to the unique values of `id(:, 3)` corresponding to a given 
+%     unique `id(:, 2)`.
 %
-%     Field 'I' is a unique subset of the input indices `I`. This subset is 
-%     shaped into a matrix. Rows of the matrix are formed according to the 
-%     unique values of `id(:, 2)` corresponding to a given unique 
-%     `id(:, 1)`. Columns are then formed according to the unique values of 
-%     `id(:, 3)` corresponding to a given unique `id(:, 2)`.
+%     [..., PL] = NEST3(...) also returns `PL`, a Px3 cell array whose rows
+%     correspond to elements of `PI`. The first column contains scalar
+%     labels drawn from `L` corresponding to a unique value of `id(:, 1)`. 
+%     The second and third columns are labels also drawn from `L` 
+%     identifying the rows and columns, respectively, of the index matrix 
+%     in the corresponding element of `PI`.
 %
-%     Field 'L' is a 1x3 cell array of labels. L{1} is a scalar label drawn 
-%     from `L` identifying the element of `o`. L{2} and L{3} are labels 
-%     also drawn from `L` identifying the rows and columns, respectively, 
-%     of the index matrix 'I'.
+%     [..., II] = NEST3(...) also returns `II`, a cell array the same size
+%     as `PI`. Each element of `II` is a matrix the same size as the
+%     corresponding element of `PI`. Each element of the matrix is the row 
+%     index into the input indices `I` from which the corresponding element
+%     in `PI` was taken.
 %
-%     Field 'II' is a matrix the same size as 'I'. Each element is the row
-%     index into the input indices `I`.
-%
-%     Field 'LI' is a cell array the same size as 'L'. Each element is a
-%     vector the same size as the corresponding element of 'L'. Each 
-%     element of each vector is a row index into the input labels `L`.
+%     [..., LI] = NEST3(...) also returns `LI`, a cell array the same size
+%     as `PL`. Each element of this array is a vector the same size as the 
+%     corresponding element of `PL`. Each element of each vector is the row 
+%     index into the input labels `L` from which the corresponding element 
+%     in `PL` was taken.
 %
 %     //  EX
 %     f = fcat.example();
@@ -31,11 +36,11 @@ function o = nest3(id, I, L)
 %     % panels are ('dose' and 'day'); x is 'image', grouped by 'roi'
 %     [I, id, C] = rowsets( 3, f, {'dose', 'day'}, 'image', 'roi' );
 %     L = plots.cellstr_join( C );
-%     o = plots.nest3( id, I, L );
-%     p = o{1}; % first panel, could choose another
-%     panel_data = rowifun( @mean, p.I, d );
+%     [FI, FL] = plots.nest3( id, I, L );
+%     p = FI{1}; l = FL(1, :); % first panel, could choose another
+%     panel_data = rowifun( @mean, p, d );
 %     ax = gca(); cla( ax );
-%     plots.bars( ax, panel_data, p.L{2}, p.L{3}, p.L{1} );
+%     plots.bars( ax, panel_data, l{2}, l{3}, l{1} );
 %
 %     See also rowsets, plots.nest1, plots.nest2, plots.bars
 
@@ -46,7 +51,11 @@ fst = @(x) x(1);
 p_I = findeach( id, 1 );
 pli = cellfun( fst, p_I );
 
-o = cell( size(p_I) );
+PI = cell( numel(p_I), 1 );
+PL = cell( numel(p_I), 3 );
+II = cell( size(PI) );
+LI = cell( size(PL) );
+
 for i = 1:numel(p_I)
   [m_I, mid] = rowsets( 2, id, 2, 3, 'mask', p_I{i} );
   ni = cellfun( 'prodofsize', m_I );
@@ -77,54 +86,11 @@ for i = 1:numel(p_I)
     fli{2}(mid(j, 1)) = mi;
     fli{3}(mid(j, 2)) = mi;
   end
-
-  p = struct();
-  p.I = fi;
-  p.L = fl;
-  p.II = fii;
-  p.LI = fli;
-  o{i} = p;
+  
+  PI{i} = fi;
+  PL(i, :) = fl;
+  II{i} = fii;
+  LI(i, :) = fli;
 end
 
 end
-
-% c_I = findeach( id, 2, 'mask', p_I{i} );
-% cli = cellfun( fst, c_I );
-% 
-% rli = [];
-% rc = [];
-% ii = [];
-% mi = {};
-% 
-% for j = 1:numel(c_I)
-%   [r_I, r_C] = findeach( id, 3, 'mask', c_I{j} );
-% 
-%   ni = cellfun( 'prodofsize', r_I );
-%   if ( ~all(ni == 1) )
-%     msg = [ 'IDs corresponding to level 3 row sets should be nested' ...
-%       , ' within level 2 row sets.' ];
-%     error( msg );
-%   end
-% 
-%   r_I = vertcat( r_I{:} );
-%   [exists, lb] = ismember( r_C, rc );
-%   mi(lb(exists), j) = I(r_I(exists));
-%   rc(lb(exists), 1) = r_C(exists);
-%   rli(lb(exists), 1) = r_I(exists);
-%   ii(lb(exists), j) = r_I(exists);
-% 
-%   if ( ~all(exists) )
-%     rest = I(r_I(~exists));
-%     mi(end+1:end+numel(rest), j) = rest;
-%     rc(end+1:end+numel(rest), 1) = r_C(~exists);
-%     rli(end+1:end+numel(rest), 1) = r_I(~exists);
-%     ii(end+1:end+numel(rest), j) = r_I(~exists);
-%   end
-% end
-% 
-% p = struct();
-% p.I = mi;
-% p.L = { L(pli(i), 1), L(cli, 2), L(rli, 3) };
-% p.II = ii;
-% p.LI = { pli(i), cli, rli };
-% o{i} = p;

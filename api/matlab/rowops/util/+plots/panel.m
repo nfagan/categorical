@@ -1,4 +1,4 @@
-function [ax, shape] = panel(shape, i)
+function [ax, shape] = panel(shape, i, cl)
 
 %   PANEL -- Subplot panel.
 %
@@ -10,6 +10,9 @@ function [ax, shape] = panel(shape, i)
 %     a subjectively "reasonable" PxQ subplot shape with PxQ == N, and
 %     returns the i-th axis.
 %
+%     ax = PANEL( ..., cla ) clears the axis if the logical flag `cla` is
+%     true.
+%
 %     [..., shape] = PANEL(...) also returns the 2 element `shape` vector.
 %
 %     See also plots.bars, plots.lines, gca
@@ -19,6 +22,10 @@ if ( numel(shape) == 1 )
 end
 
 ax = subplot( shape(1), shape(2), i );
+
+if ( nargin > 2 && cl )
+  cla( ax );
+end
 
 end
 
