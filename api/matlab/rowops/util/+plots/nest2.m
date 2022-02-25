@@ -43,13 +43,17 @@ for i = 1:numel(p_I)
   gli = cellfun( fst, g_I );
   
   m_I = cell( numel(g_I), 1 );
+  ii = zeros( size(m_I) );
   for j = 1:numel(g_I)
     m_I(j) = I(g_I{j});
+    ii(j) = g_I{j};
   end
   
   prep = struct();
   prep.I = m_I;
   prep.L = { L(pli(i), 1), L(gli, 2) };
+  prep.II = ii;
+  prep.LI = { pli(i), gli };
   o{i} = prep;
 end
 

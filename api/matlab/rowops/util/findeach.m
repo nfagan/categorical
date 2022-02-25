@@ -16,7 +16,12 @@ function [I, C] = findeach(X, each, varargin)
 %
 %     See also rowsets, unique, fcat/findall
 
-[I, ~, C] = rowsets( 1, X, each, varargin{:} );
+if ( nargin == 3 )
+  [I, ~, C] = rowsets( 1, X, each, 'mask', varargin{1} );
+else
+  [I, ~, C] = rowsets( 1, X, each, varargin{:} );
+end
+
 C = vertcat( C{:} );
 
 end

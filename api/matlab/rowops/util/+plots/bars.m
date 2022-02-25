@@ -36,7 +36,7 @@ title( ax, pl );
 
 if ( nargout > 1 )
   x = arrayfun( @(x) x.XOffset, h ) + 1;
-  for i = 2:size(m, 1)
+  for i = 2:ntick
     x(end+1, :) = x(1, :) + (i - 1);
   end
 end
