@@ -50,21 +50,35 @@ assert_rowsmatch( data, labels );
 defaults = struct();
 defaults.summary_func = @mean;
 defaults.error_func = @std;
+defaults.color_func = @jet;
 defaults.mask = rowmask( data );
 defaults.preserve = [];
 defaults.preserve_masked = [];
 defaults.cla = true;
+defaults.add_points = false;
+defaults.points_are = [];
 params = shared_utils.general.parsestruct( defaults, varargin );
 
-[I, id, C] = rowsets( 3, labels, pcats, xcats, gcats ...
+[I, id, C] = rowsets( 4, labels, pcats, xcats, gcats, params.points_are ...
   , 'mask', params.mask ...
   , 'preserve', params.preserve ...
   , 'preserve_masked', params.preserve_masked ...
 );
 
-[ip, lp] = plots.nest3( id, I, plots.cellstr_join(C) );
-means = nested_rowifun( params.summary_func, ip, data );
+L = plots.cellstr_join( C );
+[ip, lp, ii] = plots.nest3( id, I, L );
+mus = nested_rowifun( params.summary_func, ip, data );
 errs = nested_rowifun( params.error_func, ip, data );
-axs = plots.simple_barsets( means, errs, lp, 'cla', params.cla );
+[axs, ~, xs] = plots.simple_barsets( mus, errs, lp, 'cla', params.cla );
+
+if ( params.add_points )  
+  colors = params.color_func( numel(unique(id(:, 4))) );
+  plots.holdon( axs );
+  for i = 1:numel(ip)
+    [sx, sy] = plots.extract_points( ip{i}, xs{i}, data );
+    si = cate( 1, ii{i} );
+    plots.points( axs(i), sx, sy, L(si, 4), colors(id(si, 4), :) );
+  end
+end
 
 end

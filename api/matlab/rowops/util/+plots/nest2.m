@@ -16,10 +16,9 @@ function [PI, PL, II, LI] = nest2(id, I, L)
 %     index elements in the corresponding element of `PI`.
 %
 %     [..., II] = NEST2(...) also returns `II`, a cell array the same size
-%     as `PI`. Each element of `II` is a vector the same size as the
-%     corresponding element of `PI`. Each element of this vector is the row 
-%     index into the input indices `I` from which the corresponding element
-%     in `PI` was taken.
+%     as `PI`. Each element of `II` corresponds to an element of `PI`. 
+%     Each element is a vector of row indices into the input indices `I` 
+%     from which the corresponding elements in `PI` were taken.
 %
 %     [..., LI] = NEST2(...) also returns `LI`, a cell array the same size
 %     as `PL`. Each element of this array is a vector the same size as the 
@@ -58,14 +57,15 @@ for i = 1:numel(p_I)
   g_I = findeach( id, 2, p_I{i} );
   gli = cellfun( fst, g_I );
   
-  m_I = cell( numel(g_I), 1 );
-  ii = zeros( size(m_I) );
+  pi = cell( numel(g_I), 1 );
+  ii = cell( size(pi) );
   for j = 1:numel(g_I)
-    m_I(j) = I(g_I{j});
-    ii(j) = g_I{j};
+    gi = g_I{j};
+    pi{j} = cat( 1, I{gi} );
+    ii{j} = cate( 1, arrayfun(@(g) repmat(g, size(I{g})), gi, 'un', 0) );
   end  
   
-  PI{i} = m_I;
+  PI{i} = pi;
   PL(i, :) = { L(pli(i), 1), L(gli, 2) };
   II{i} = ii;
   LI(i, :) = { pli(i), gli };  
