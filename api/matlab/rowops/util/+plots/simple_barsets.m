@@ -10,10 +10,10 @@ function [axs, hs, xps] = simple_barsets(ms, errs, ls, varargin)
 %     Each element of `ms` is a PxQ matrix of P groups of Q bars. Each 
 %     element of `errs` is a PxQ matrix of errors. Error lines drawn at 
 %     each m +/- e for corresponding elements of `ms` and `errs`. Each
-%     row of `ls` has three elements. The first element is a scalar
-%     cell array titling the plot. The second element is a Px1 cell array
-%     labeling the rows of the data matrix, and the third element is a Qx1
-%     cell array labeling the columns.
+%     row of `ls` has three elements. The first element is a scalar label
+%     titling the plot. The second element is a Px1 vector labeling the 
+%     rows of the data matrix, and the third element is a Qx1 vector 
+%     labeling the columns.
 %
 %     SIMPLE_BARSETS(..., 'name', value) specifies additional name-value
 %     paired inputs. In particular:

@@ -7,7 +7,7 @@ function [ax, shape] = panel(shape, i, cl)
 %     shape(2) axes. It is the same as `subplot( shape(1), shape(2), i )`
 %
 %     ax = PANEL( N, i ) for the scalar `N` uses a heuristic to select
-%     a subjectively "reasonable" PxQ subplot shape with PxQ == N, and
+%     a subjectively "reasonable" PxQ subplot shape with P * Q >= N, and
 %     returns the i-th axis.
 %
 %     ax = PANEL( ..., cla ) clears the axis if the logical flag `cla` is

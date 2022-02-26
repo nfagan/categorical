@@ -4,13 +4,13 @@ function axs = simplest_barsets(data, labels, pcats, xcats, gcats, varargin)
 %
 %     SIMPLEST_BARSETS( data, labels, pcats, xcats, gcats ) for the Mx1 
 %     numeric vector `data`, MxN array `labels`, and vectors of column 
-%     subscripts `pcats`, `xcats`, and `pcats` generates grouped bar plots 
+%     subscripts `pcats`, `xcats`, and `gcats` generates grouped bar plots 
 %     from `data` in separate panels. 
 %   
-%     Panels are drawn according to the unique rows of `labels(:, pcats)` 
-%     columns. Within each panel, separate sets of bars are drawn from 
-%     `labels(:, xcats)` unique rows, with a bar for each `labels(:, gcats)`
-%     unique rows.
+%     A separate panel is made for each unique row of `labels(:, pcats)` 
+%     columns. Within each panel, separate sets of bars are drawn for each
+%     unique row in `labels(:, xcats)` columns, with a separate bar for
+%     each unique row in `labels(:, gcats)` columns.
 %
 %     Each bar is an average within a given subset, and errors lines show
 %     +/- standard deviation.
