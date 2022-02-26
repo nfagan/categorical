@@ -52,12 +52,14 @@ defaults.summary_func = @mean;
 defaults.error_func = @std;
 defaults.mask = rowmask( data );
 defaults.preserve = [];
+defaults.preserve_masked = [];
 defaults.cla = true;
 params = shared_utils.general.parsestruct( defaults, varargin );
 
 [I, id, C] = rowsets( 3, labels, pcats, xcats, gcats ...
   , 'mask', params.mask ...
   , 'preserve', params.preserve ...
+  , 'preserve_masked', params.preserve_masked ...
 );
 
 [ip, lp] = plots.nest3( id, I, plots.cellstr_join(C) );

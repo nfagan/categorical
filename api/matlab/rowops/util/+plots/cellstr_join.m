@@ -16,6 +16,24 @@ if ( nargin < 2 )
   jc = ' | ';
 end
 
-C = cellfun( @(x) char(strjoin(string(x), jc)), X, 'un', 0 );
+C = cellfun( @(x) char(strjoin(to_string(x), jc)), X, 'un', 0 );
+
+end
+
+function s = to_string(element)
+
+if ( istable(element) )
+  try
+    s = strings( size(element, 1), size(element, 2) );
+    for i = 1:size(element, 2)
+      s(:, i) = string( element{:, i} );
+    end
+    s = s(:);
+  catch err
+    throw( err );
+  end
+else
+  s = string( element );
+end
 
 end

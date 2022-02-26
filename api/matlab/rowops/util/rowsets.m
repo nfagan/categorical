@@ -54,11 +54,11 @@ function [I, id, C] = rowsets(n, X, varargin)
 
 validateattributes( n, {'numeric'}, {'scalar', 'integer'}, mfilename, 'n' );
 validateattributes( X ...
-  , {'numeric', 'fcat', 'string', 'cell', 'categorical'}, {'2d'}, mfilename, 'f' );
+  , {'numeric', 'fcat', 'string', 'cell', 'categorical', 'table'}, {'2d'}, mfilename, 'f' );
 
 narginchk( 2+n, inf );
 
-coli = varargin(1:n);
+coli = reconcile_column_indices( X, varargin(1:n) );
 varargin = varargin(n+1:end);
 
 defaults = struct();
@@ -72,6 +72,9 @@ preserve = params.preserve;
 if ( ~isempty(preserve) )
   validateattributes( preserve, {'numeric'}, {'scalar', 'integer'}, mfilename, 'preserve' );
   assert( preserve >= 1 && preserve <= n, 'Expected preserve in range [1, %d].', n );
+end
+if ( isempty(params.preserve_masked) )
+  params.preserve_masked = false;
 end
 
 no_mask = rowmask( X );
@@ -120,7 +123,7 @@ while ( ~isempty(sets) )
   
   for i = 1:numel(ic)
     ind(depth1) = i;
-    cs{depth1, i} = cc(:, i)';
+    cs{depth1, i} = cc(i, :);
     is(depth1, i) = ic(i);
     
     if ( depth1 == n )
@@ -171,11 +174,11 @@ else
   tf = true( size(f, 1), 1 );
 end
 
-I = cell( size(C, 2), 1 );
+I = cell( size(C, 1), 1 );
 
-for i = 1:size(C, 2)
-  for j = 1:size(C, 1)
-    sel = C(j, i);
+for i = 1:size(C, 1)
+  for j = 1:size(C, 2)
+    sel = C(i, j);
     if ( has_mask )
       tf = tf & f(mask, each(j)) == sel;
     else
@@ -201,11 +204,11 @@ else
   tf = true( size(f, 1), 1 );
 end
 
-I = cell( size(C, 2), 1 );
+I = cell( size(C, 1), 1 );
 
-for i = 1:size(C, 2)
-  for j = 1:size(C, 1)
-    sel = C(j, i);
+for i = 1:size(C, 1)
+  for j = 1:size(C, 2)
+    sel = C(i, j);
     if ( has_mask )
       tf = tf & strcmp( f(mask, each(j)), sel );
     else
@@ -221,16 +224,49 @@ end
 
 end
 
+function I = find_combinations_table(f, each, C, mask)
+
+has_mask = nargin > 3;
+
+if ( has_mask )
+  tf = true( numel(mask), 1 );
+else
+  tf = true( size(f, 1), 1 );
+end
+
+I = cell( size(C, 1), 1 );
+
+for i = 1:size(C, 1)
+  for j = 1:size(C, 2)    
+    sel = C{i, j};
+    if ( ~isscalar(sel) )
+      error( 'Non-scalar table entries are not supported.' );
+    end    
+    if ( has_mask )
+      tf = tf & f{mask, each(j)} == sel;
+    else
+      tf = tf & f{:, each(j)} == sel;
+    end
+  end
+  I{i} = find( tf );
+  if ( has_mask )
+    I{i} = mask(I{i});
+  end
+  tf(:) = true;
+end
+
+end
+
 function I = generalized_find_combinations(f, each, C, varargin)
 
 if ( isa(f, 'fcat') )
-  I = cell( size(C, 2), 1 );
-  for i = 1:size(C, 2)
-    I{i} = find( f, C(:, i), varargin{:} );
+  I = cell( size(C, 1), 1 );
+  for i = 1:size(C, 1)
+    I{i} = find( f, C(i, :), varargin{:} );
   end
 else
   each = find_if_logical( each );
-  if ( numel(each) ~= size(C, 1) )
+  if ( numel(each) ~= size(C, 2) )
     error( ['Number of column identifiers (`each`) must match the number of' ...
       , ' rows of unique column combinations.'] );
   end
@@ -239,9 +275,11 @@ else
     I = find_combinations_eq( f, each, C, varargin{:} );
   elseif ( iscellstr(f) || isstring(f) )
     I = find_combinations_strcmp( f, each, C, varargin{:} );
+  elseif ( istable(f) )
+    I = find_combinations_table( f, each, C, varargin{:} );
   else
-    error( ...
-      'Expected fcat, categorical, cellstr, or string array; got "%s".', class(f) );
+    error( ['Expected fcat, table, categorical, cellstr, or string array' ...
+      , ' got "%s".'], class(f) );
   end
 end
 
@@ -283,6 +321,7 @@ function [i, c] = generalized_findall(a, each, varargin)
 
 if ( isa(a, 'fcat') )
   [i, c] = findall( a, fcat_each(a, each), varargin{:} );
+  c = c';
 else
   if ( ~ismatrix(a) )
     error( 'Expected 2D array.' );
@@ -295,7 +334,6 @@ else
     [c, i] = uniquerows( a(m, each) );
     i = cellfun( @(x) m(x), groupi(i), 'un', 0 );
   end
-  c = c';
 end
 
 end
@@ -318,4 +356,43 @@ function i = find_if_logical(i)
 if ( islogical(i) )
   i = find( i );
 end
+end
+
+function coli = reconcile_column_indices(X, coli)
+
+if ( istable(X) )
+  for i = 1:numel(coli)
+    ci = coli{i};
+    if ( ischar(ci) || isstring(ci) )
+      ci = cellstr( ci );
+    end
+    if ( iscell(ci) )
+      coli{i} = cellfun( @(x) to_table_variable_index(X, x), ci );
+    else
+      coli{i} = to_table_variable_index( X, ci );
+    end
+  end
+end
+
+end
+
+function ci = to_table_variable_index(X, ci)
+
+if ( islogical(ci) )
+  ci = find( ci );
+  
+elseif ( isnumeric(ci) )
+  %
+elseif ( ischar(ci) || isstring(ci) )
+  [tf, ib] = ismember( ci, X.Properties.VariableNames );
+  if ( ~tf )
+    error( 'Reference to non-existent table variable "%s".', ci );
+  else
+    ci = ib;
+  end
+else
+  error( ['Table column index should be char, string, cellstr' ...
+    , ', numeric, or logical; was "%s".'], class(ci) );
+end
+
 end
