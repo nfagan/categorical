@@ -6,6 +6,8 @@ function axs = holdon(axs)
 %
 %     See also plots.panel
 
-hold( axs, 'on' );
+for i = 1:numel(axs)
+  hold( axs(i), 'on' );
+end
 
 end

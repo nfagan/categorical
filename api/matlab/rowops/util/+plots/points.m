@@ -28,7 +28,7 @@ assert( isequal(size(sx), size(sy), size(sg)), 'Input sizes do not correspond.' 
 assert_rowsmatch( sg, sc );
 
 leg = findobj( ax.Parent, 'type', 'legend' );
-curr_update = arrayfun( @(x) get(x, 'autoupdate'), leg );
+curr_update = arrayfun( @(x) get(x, 'autoupdate'), leg, 'un', 0 );
 for i = 1:numel(leg)
   set( leg(i), 'autoupdate', true );
 end
@@ -42,7 +42,7 @@ for i = 1:numel(gi)
 end
 
 for i = 1:numel(leg)
-  set( leg, 'autoupdate', curr_update(i) );
+  set( leg, 'autoupdate', curr_update{i} );
 end
 
 end
