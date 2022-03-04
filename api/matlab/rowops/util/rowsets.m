@@ -141,6 +141,12 @@ while ( ~isempty(sets) )
   end
 end
 
+% if ( 1 )
+%   [~, ord] = sort( min_index(I) );
+%   I = reshape( I(ord), size(I) );
+%   C = reshape( C(ord, :), size(C) );
+% end
+
 if ( nargout > 1 )
   for i = 1:size(id, 2)
     id(:, i) = uniquerow_ic( vertcat(C{:, i}) );
@@ -393,6 +399,17 @@ elseif ( ischar(ci) || isstring(ci) )
 else
   error( ['Table column index should be char, string, cellstr' ...
     , ', numeric, or logical; was "%s".'], class(ci) );
+end
+
+end
+
+function mini = min_index(I)
+
+mini = nan( numel(I), 1 );
+for i = 1:numel(I)
+  if ( ~isempty(I{i}) )
+    mini(i) = min(I{i});
+  end
 end
 
 end
