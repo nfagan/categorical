@@ -362,37 +362,8 @@ function coli = reconcile_column_indices(X, coli)
 
 if ( istable(X) )
   for i = 1:numel(coli)
-    ci = coli{i};
-    if ( ischar(ci) || isstring(ci) )
-      ci = cellstr( ci );
-    end
-    if ( iscell(ci) )
-      coli{i} = cellfun( @(x) to_table_variable_index(X, x), ci );
-    else
-      coli{i} = to_table_variable_index( X, ci );
-    end
+    coli{i} = table_variable_indices( X, coli{i} );
   end
-end
-
-end
-
-function ci = to_table_variable_index(X, ci)
-
-if ( islogical(ci) )
-  ci = find( ci );
-  
-elseif ( isnumeric(ci) )
-  %
-elseif ( ischar(ci) || isstring(ci) )
-  [tf, ib] = ismember( ci, X.Properties.VariableNames );
-  if ( ~tf )
-    error( 'Reference to non-existent table variable "%s".', ci );
-  else
-    ci = ib;
-  end
-else
-  error( ['Table column index should be char, string, cellstr' ...
-    , ', numeric, or logical; was "%s".'], class(ci) );
 end
 
 end
