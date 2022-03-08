@@ -6,7 +6,9 @@ function d = rowdistribute(d, I, m)
 %     indices given by `I`. `I` is a cell array of index vectors with one 
 %     element for each row of `m`. For one element of `I`, one row of `m` 
 %     is distributed into `x`, e.g., x(I{i}, :) = m(i, :), for the i-th 
-%     element.
+%     element. Singleton expansion is enabled so that m(i, :) is repeated 
+%     for every element of I{i}. `m` must have the same size as `x`, apart
+%     from the number of rows.
 %
 %     See also rowref, rowifun
 
