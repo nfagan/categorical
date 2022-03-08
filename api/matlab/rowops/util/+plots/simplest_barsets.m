@@ -1,4 +1,4 @@
-function axs = simplest_barsets(data, I, id, L, varargin)
+function [axs, hs, xs] = simplest_barsets(data, I, id, L, varargin)
 
 %   SIMPLEST_BARSETS -- Simple sets of bars with errors.
 %
@@ -79,7 +79,7 @@ end
 [ip, lp, ii] = plots.nest3( id, I, L );
 mus = nested_rowifun( params.summary_func, ip, data );
 errs = nested_rowifun( params.error_func, ip, data );
-[axs, ~, xs] = plots.simple_barsets( mus, errs, lp, 'cla', params.cla );
+[axs, hs, xs] = plots.simple_barsets( mus, errs, lp, 'cla', params.cla );
 
 if ( params.add_points )
   pc = params.point_col;

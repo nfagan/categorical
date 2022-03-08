@@ -1,8 +1,8 @@
-function axs = simplest_linesets(x, data, labels, pcats, gcats, varargin)
+function axs = simplest_linesets(x, data, PI, PL, varargin)
 
 %   SIMPLEST_LINESETS -- Simple sets of lines with errors.
 %
-%     SIMPLEST_LINESETS( x, data, labels, pcats, gcats ) for the 1xN vector 
+%     SIMPLEST_LINESETS( x, data, I, id, L ) for the 1xN vector 
 %     `x`, MxN numeric matrix `data`, MxQ array `labels`, and vectors of 
 %     column subscripts `pcats` and `gcats` generates lines of `data` 
 %     plotted against `x` in separate panels.
@@ -29,24 +29,24 @@ function axs = simplest_linesets(x, data, labels, pcats, gcats, varargin)
 %     See also rowsets, plots.simplest_barsets, fcat, plots.lines,
 %       plots.lineerrs, plots.nest2
 
-assert_rowsmatch( data, labels );
+assert_rowsmatch( PI, PL );
 
 defaults = struct();
 defaults.summary_func = @(x) mean(x, 1);
 defaults.error_func = @(x) std(x, 1);
-defaults.mask = rowmask( data );
-defaults.preserve = [];
+defaults.smooth_func = @identity;
 defaults.cla = true;
 params = shared_utils.general.parsestruct( defaults, varargin );
 
-[I, id, C] = rowsets( 2, labels, pcats, gcats ...
-  , 'mask', params.mask ...
-  , 'preserve', params.preserve ...
-);
+smooth = params.smooth_func;
 
-[ip, lp] = plots.nest2( id, I, plots.cellstr_join(C) );
-ms = cellfun( @cell2mat, nested_rowifun(params.summary_func, ip, data, 'un', 0), 'un', 0 );
-errs = cellfun( @cell2mat, nested_rowifun(params.error_func, ip, data, 'un', 0), 'un', 0 );
-axs = plots.simple_linesets( x, ms, errs, lp, 'cla', params.cla );
+ms = eachcell( smooth, nest_apply(params.summary_func, data, PI) );
+errs = eachcell( smooth, nest_apply(params.error_func, data, PI) );
 
+axs = plots.simple_linesets( x, ms, errs, PL, 'cla', params.cla );
+
+end
+
+function d = nest_apply(f, data, I)
+d = eachcell( @(i) cate1(rowifun(f, i, data, 'un', 0)), I );
 end
