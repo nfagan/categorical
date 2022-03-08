@@ -70,5 +70,18 @@ clf;
 axs = plots.panels( numel(PI), true );
 plots.simple_boxsets( axs, d, PI, PL );
 
-%%
+%%  line plots
 
+f = fcat.example();
+d = rand( rows(f), 100 );
+x = linspace( -1, 1, size(d, 2) );
+
+% panels are 'image', lines are 'dose'
+[I, id, C] = rowsets( 2, f, 'image', 'dose', 'mask', find(f, {'outdoors', 'scrambled'}) );
+[PI, PL] = plots.nest2( id, I, plots.cellstr_join(C) );
+
+clf;
+axs = plots.simplest_linesets( x, d, PI, PL ...
+  , 'error_func', @plotlabeled.sem ...
+  , 'smooth_func', @(x) smoothdata(x, 2, 'SmoothingFactor', 0.75) ...
+);
