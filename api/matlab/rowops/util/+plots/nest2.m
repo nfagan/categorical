@@ -40,6 +40,9 @@ function [PI, PL, II, LI] = nest2(id, I, L)
 %
 %     See also rowsets, plots.bars, plots.nest3, plots.lines
 
+validateattributes( id, {'numeric'}, {}, mfilename, 'id' );
+validateattributes( I, {'cell'}, {}, mfilename, 'I' );
+
 assert_rowsmatch( id, I );
 assert_rowsmatch( I, L );
 

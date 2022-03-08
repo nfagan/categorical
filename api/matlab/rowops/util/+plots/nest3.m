@@ -43,6 +43,9 @@ function [PI, PL, II, LI] = nest3(id, I, L)
 %
 %     See also rowsets, plots.nest1, plots.nest2, plots.bars
 
+validateattributes( id, {'numeric'}, {}, mfilename, 'id' );
+validateattributes( I, {'cell'}, {}, mfilename, 'I' );
+
 assert_rowsmatch( id, I );
 assert_rowsmatch( I, L );
 assert( isequal(size(id), size(L)), 'id and label sizes do not correspond.' );

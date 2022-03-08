@@ -66,30 +66,49 @@ defaults.color_func = @jet;
 defaults.cla = true;
 defaults.add_points = false;
 defaults.point_col = 4;
+defaults.point_data = [];
 params = shared_utils.general.parsestruct( defaults, varargin );
 
 if ( params.add_points )
-  assert( size(id, 2) >= params.point_col ...
-    , ['id matrix does not contain enough columns to plot points.' ...
-    , ' Has %d columns; requires %d. Use rowsets(%d, ...) to generate' ....
-    , ' an id matrix with the appropriate number of columns.' ] ...
-    , size(id, 2), params.point_col, params.point_col );
+  check_id( id, params.point_col );
 end
 
 [ip, lp, ii] = plots.nest3( id, I, L );
 mus = nested_rowifun( params.summary_func, ip, data );
 errs = nested_rowifun( params.error_func, ip, data );
-[axs, hs, xs] = plots.simple_barsets( mus, errs, lp, 'cla', params.cla );
+axs = plots.panels( numel(mus), params.cla );
+[hs, xs] = plots.simple_barsets( axs, mus, errs, lp );
 
 if ( params.add_points )
   pc = params.point_col;
-  colors = params.color_func( numel(unique(id(:, pc))) );
-  plots.holdon( axs );
-  for i = 1:numel(ip)
-    [sx, sy] = plots.extract_points( ip{i}, xs{i}, data );
-    si = cate( 1, ii{i} );
-    plots.points( axs(i), sx, sy, L(si, pc), colors(id(si, pc), :) );
-  end
+  pd = check_point_data( params.point_data, data );
+  plots.barpoints_sets( axs, pd, id(:, pc), L(:, pc), xs, ip, ii ...
+    , 'color_func', params.color_func ...
+  );
 end
+
+end
+
+function pd = check_point_data(pd, data)
+
+if ( isempty(pd) )
+  pd = data;
+else
+  assert( isequal(size(pd), size(data)) ...
+    , ['The size of data used to plot points must match the size of' ...
+    , ' data used to plot bars.'] );
+end
+
+end
+
+function check_id(id, point_col)
+
+assert( size(id, 2) >= point_col ...
+  , ['id matrix does not contain enough columns to plot points' ...
+  , ' because ''point_col'' is %d but the matrix has %d columns.' ...
+  , ' Use rowsets(%d, ...) to generate' ....
+  , ' an id matrix with the appropriate number of columns' ....
+  , ' or set ''point_col'' <= %d' ] ...
+  , point_col, size(id, 2), point_col, size(id, 2) );
 
 end

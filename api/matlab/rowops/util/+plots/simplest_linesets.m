@@ -42,8 +42,8 @@ smooth = params.smooth_func;
 
 ms = eachcell( smooth, nest_apply(params.summary_func, data, PI) );
 errs = eachcell( smooth, nest_apply(params.error_func, data, PI) );
-
-axs = plots.simple_linesets( x, ms, errs, PL, 'cla', params.cla );
+axs = plots.panels( numel(ms), params.cla );
+plots.simple_linesets( axs, x, ms, errs, PL );
 
 end
 
