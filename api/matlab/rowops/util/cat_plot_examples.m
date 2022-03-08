@@ -78,6 +78,11 @@ x = linspace( -1, 1, size(d, 2) );
 
 % panels are 'image', lines are 'dose'
 [I, id, C] = rowsets( 2, f, 'image', 'dose', 'mask', find(f, {'outdoors', 'scrambled'}) );
+
+% optionally order groups
+ord = plots.orderby( C, {'saline', 'low', 'high'} );
+[I, id, C] = rowref_many( ord, I, id, C );
+
 [PI, PL] = plots.nest2( id, I, plots.cellstr_join(C) );
 
 clf;

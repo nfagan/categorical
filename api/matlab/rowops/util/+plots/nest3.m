@@ -61,7 +61,7 @@ II = cell( size(PI) );
 LI = cell( size(PL) );
 
 for i = 1:numel(p_I)
-  [m_I, mid] = rowsets( 2, id, 2, 3, 'mask', p_I{i} );
+  [m_I, mid] = rowsets( 2, id, 2, 3, 'mask', p_I{i}, 'sort_by_index', true );
 
   r = max( mid(:, 1) );
   c = max( mid(:, 2) );

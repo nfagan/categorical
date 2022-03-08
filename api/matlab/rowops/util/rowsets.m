@@ -66,6 +66,7 @@ defaults.mask = [];
 defaults.unspecified_label = '<unspecified>';
 defaults.preserve = [];
 defaults.preserve_masked = false;
+defaults.sort_by_index = false;
 [params, provided] = shared_utils.general.parsestruct( defaults, varargin );
 
 preserve = params.preserve;
@@ -141,11 +142,11 @@ while ( ~isempty(sets) )
   end
 end
 
-% if ( 1 )
-%   [~, ord] = sort( min_index(I) );
-%   I = reshape( I(ord), size(I) );
-%   C = reshape( C(ord, :), size(C) );
-% end
+if ( params.sort_by_index )
+  [~, ord] = sort( min_index(I) );
+  I = reshape( I(ord), size(I) );
+  C = reshape( C(ord, :), size(C) );
+end
 
 if ( nargout > 1 )
   for i = 1:size(id, 2)
