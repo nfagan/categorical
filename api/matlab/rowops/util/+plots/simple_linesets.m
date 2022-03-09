@@ -35,9 +35,10 @@ assert_rowsmatch( ms, ls );
 hs = cell( size(ms) );
 for i = 1:numel(ms)
   ax = axs(i);
-  hs{i} = plots.lines( ax, x, ms{i}, ls{i, 2}, ls{i, 1} );
+  m_hs = plots.lines( ax, x, ms{i}, ls{i, 2}, ls{i, 1} );
   plots.holdon( ax );
-  plots.lineerrs( ax, x, ms{i}, errs{i}, cat(1, hs{i}.Color) );
+  err_hs = plots.lineerrs( ax, x, ms{i}, errs{i}, cat(1, m_hs.Color) );
+  hs{i} = [m_hs, err_hs];
 end
 
 end

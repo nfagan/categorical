@@ -1,4 +1,4 @@
-function axs = simplest_linesets(x, data, PI, PL, varargin)
+function [axs, hs] = simplest_linesets(x, data, PI, PL, varargin)
 
 %   SIMPLEST_LINESETS -- Simple sets of lines with errors.
 %
@@ -39,7 +39,7 @@ smooth = params.smooth_func;
 ms = eachcell( smooth, nest_apply(params.summary_func, data, PI) );
 errs = eachcell( smooth, nest_apply(params.error_func, data, PI) );
 axs = plots.panels( numel(ms), params.cla );
-plots.simple_linesets( axs, x, ms, errs, PL );
+hs = plots.simple_linesets( axs, x, ms, errs, PL );
 
 end
 
