@@ -34,12 +34,12 @@ elseif ( isnumeric(ci) )
 elseif ( ischar(ci) || isstring(ci) )
   [tf, ib] = ismember( ci, getcats(X) );
   if ( ~tf )
-    error( 'Reference to non-existent table variable "%s".', ci );
+    error( 'Reference to non-existent fcat category "%s".', ci );
   else
     ci = ib;
   end
 else
-  error( ['Table column index should be char, string, cellstr' ...
+  error( ['fcat category index should be char, string, cellstr' ...
     , ', numeric, or logical; was "%s".'], class(ci) );
 end
 

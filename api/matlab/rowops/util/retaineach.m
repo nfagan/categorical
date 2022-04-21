@@ -39,7 +39,8 @@ function [Y, I] = retaineach(X, coli, varargin)
 %     See also findeach, rowsets, fcat, missing
 
 if ( isa(X, 'fcat') )
-  [Y, I] = keepeach_or_one( copy(X), coli, varargin{:} );
+  [Y, I] = keepeach_or_one( ...
+    copy(X), nthcat(X, fcat_category_indices(X, coli)), varargin{:} );
   return
 end
 
