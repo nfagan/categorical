@@ -10,6 +10,8 @@ function f = cat_getexample(kind)
 %
 %     See also fcat, cat_testall
 
+persistent cached_small_f;
+
 if ( nargin < 1 )
   kind = 'small';
 end
@@ -25,8 +27,11 @@ switch ( kind )
   case 'large2'
     f = doload( fullfile(root, 'bigfcat2.mat') );
   case 'small'
-    x = cache_load( fullfile(root, 'categorical.mat') );
-    f = fcat.from( x.c, x.f );
+    if ( isempty(cached_small_f) )
+      x = cache_load( fullfile(root, 'categorical.mat') );
+      cached_small_f = fcat.from( x.c, x.f );
+    end
+    f = copy( cached_small_f );    
   case 'smalldata'
     f = doload( fullfile(root, 'smalldata.mat') );
   case 'largedata'

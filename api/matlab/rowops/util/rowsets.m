@@ -52,7 +52,7 @@ function [I, id, C] = rowsets(n, X, varargin)
 %
 %     See also findeach, unique, groupi, grp2idx, fcat
 
-validateattributes( n, {'numeric'}, {'scalar', 'integer'}, mfilename, 'n' );
+validateattributes( n, {'numeric'}, {'scalar', 'integer', 'positive'}, mfilename, 'n' );
 validateattributes( X ...
   , {'numeric', 'fcat', 'string', 'cell', 'categorical', 'table'}, {'2d'}, mfilename, 'f' );
 

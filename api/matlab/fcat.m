@@ -3371,6 +3371,19 @@ classdef fcat < handle
       conf = cat_buildconfig();      
     end
     
+    function tbl = totable(f)
+      
+      %   TOTABLE -- Convert to table.
+      %
+      %     tbl = fcat.totable( f ) returns a table whose variables are
+      %     the categories of `f`, converted to categorical vectors.
+      %
+      %     See also fcat/categorical, fcat/cellstr, fcat/table
+      
+      validateattributes( f, {'fcat'}, {}, mfilename, 'f' );
+      tbl = array2table( categorical(f), 'VariableNames', getcats(f) ); 
+    end
+    
     function T = table(T, rowc, colc)
       
       %   TABLE -- Convert matrix to table, with row and column labels.
