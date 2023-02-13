@@ -14,7 +14,7 @@ function [I, C] = findeach(X, each, varargin)
 %     [...] = FINDEACH(..., 'mask', mask) finds the unique rows of
 %     `X(mask, each)` and returns indices that are a subset of `mask`.
 %
-%     See also rowsets, unique, fcat/findall
+%     See also rowsets, unique, fcat/findall, findeachv, findrows
 
 if ( nargin == 3 )
   [I, ~, C] = rowsets( 1, X, each, 'mask', varargin{1} );

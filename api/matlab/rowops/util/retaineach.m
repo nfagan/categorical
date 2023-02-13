@@ -23,7 +23,7 @@ function [Y, I] = retaineach(X, coli, varargin)
 %     on the rows of `X(mask, :)` and returns indices that are a subset of
 %     `mask`.
 %
-%     //  EX
+%     //  EX 1
 %     eg = load( 'carbig' );
 %     t = table( cellstr(eg.Model), cellstr(eg.Origin), cellstr(eg.org) ...
 %              , 'VariableNames', {'model', 'origin', 'org'} );
@@ -35,6 +35,13 @@ function [Y, I] = retaineach(X, coli, varargin)
 %     % 'origin's. The exception is 'triumph tr7 coupe'; this value is 
 %     % preserved because it is the only 'model' from 'England'.
 %     y = retaineach( t, 'origin' )
+%
+%     //  EX 2
+%     T = fcat.totable( fcat.example );
+%     % The variables 'day', 'dose', and 'monkey' are implicitly nested 
+%     % within 'session'. Thus, their values are preserved for each unique 
+%     % 'session'.
+%     y = retaineach( T, 'session' )
 %
 %     See also findeach, rowsets, fcat, missing
 
