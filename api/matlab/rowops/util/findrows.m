@@ -64,7 +64,7 @@ if ( has_mask )
   end
 end
 
-if ( isa(X, 'categorical') || isstring(X) )
+if ( isa(X, 'categorical') || isstring(X) || (isa(X, 'table') && ischar(labels)) )
   labels = cellstr( labels );
 end
 
