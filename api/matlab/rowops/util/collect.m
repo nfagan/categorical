@@ -7,7 +7,7 @@ function a = collect(n, f)
 %
 %     `f` is a function_handle and `n` is an integer-valued scalar >= 0.
 %
-%     See also splat, conditional, attempt
+%     See also splat, select, conditional, attempt
 
 validateattributes( n, {'numeric'}, {'integer', 'nonnegative', 'scalar'} ...
   , mfilename, 'n' );
