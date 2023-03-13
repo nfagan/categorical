@@ -250,9 +250,19 @@ for i = 1:size(C, 1)
       error( 'Non-scalar table entries are not supported.' );
     end    
     if ( has_mask )
-      tf = tf & f{mask, each(j)} == sel;
+      v = f{mask, each(j)};
+      if ( iscell(v) )
+        tf = tf & strcmp( v, sel );
+      else
+        tf = tf & v == sel;
+      end
     else
-      tf = tf & f{:, each(j)} == sel;
+      v = f{:, each(j)};
+      if ( iscell(v) )
+        tf = tf & strcmp( v, sel );
+      else
+        tf = tf & v == sel;
+      end
     end
   end
   I{i} = find( tf );
