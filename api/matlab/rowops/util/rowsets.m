@@ -50,6 +50,10 @@ function [I, id, C] = rowsets(n, X, varargin)
 %     `I` may contain empty vectors corresponding to row sets that do not 
 %     exist in `X`.
 %
+%     [I, id, L] = ROWSETS( ..., 'to_string', true ); converts the cell
+%     array of potentially heterogeneous arrays `C` to a cell array of
+%     strings `L` and sorts by rows of `L`.
+%
 %     See also findeach, unique, groupi, grp2idx, fcat
 
 validateattributes( n, {'numeric'}, {'scalar', 'integer', 'positive'}, mfilename, 'n' );
@@ -67,6 +71,7 @@ defaults.unspecified_label = '<unspecified>';
 defaults.preserve = [];
 defaults.preserve_masked = false;
 defaults.sort_by_index = false;
+defaults.to_string = false;
 [params, provided] = shared_utils.general.parsestruct( defaults, varargin );
 
 preserve = params.preserve;
@@ -152,6 +157,13 @@ if ( nargout > 1 )
   for i = 1:size(id, 2)
     id(:, i) = uniquerow_ic( vertcat(C{:, i}) );
   end
+end
+
+if ( params.to_string )
+  C = plots.cellstr_join( C );
+  [C, ord] = sortrows( C );
+  I = I(ord);
+  id = id(ord, :);
 end
 
 end

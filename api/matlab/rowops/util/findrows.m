@@ -52,7 +52,7 @@ if ( isa(X, 'fcat') )
   ind = find( X, labels, varargin{:} );
   return
 else
-  validateattributes( X, {'table', 'string', 'numeric', 'categorical'} ...
+  validateattributes( X, {'table', 'string', 'numeric', 'categorical', 'cell'} ...
     , {'2d'}, mfilename, 'X' );
 end
 
@@ -64,7 +64,7 @@ if ( has_mask )
   end
 end
 
-if ( isa(X, 'categorical') || isstring(X) || (isa(X, 'table') && ischar(labels)) )
+if ( iscell(X) || isa(X, 'categorical') || isstring(X) || (isa(X, 'table') && ischar(labels)) )
   labels = cellstr( labels );
 end
 
