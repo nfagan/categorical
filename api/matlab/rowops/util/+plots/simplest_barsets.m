@@ -60,6 +60,7 @@ assert_rowsmatch( I, id );
 assert_rowsmatch( I, L );
 
 defaults = struct();
+defaults.as_line_plot = false;
 defaults.summary_func = @mean;
 defaults.error_func = @std;
 defaults.color_func = @jet;
@@ -77,7 +78,12 @@ end
 mus = nested_rowifun( params.summary_func, ip, data );
 errs = nested_rowifun( params.error_func, ip, data );
 axs = plots.panels( numel(mus), params.cla );
-[hs, xs] = plots.simple_barsets( axs, mus, errs, lp );
+
+if ( params.as_line_plot )
+  [hs, xs] = error_bar( axs, mus, errs, lp );
+else
+  [hs, xs] = plots.simple_barsets( axs, mus, errs, lp );
+end
 
 if ( params.add_points )
   pc = params.point_col;
@@ -110,5 +116,26 @@ assert( size(id, 2) >= point_col ...
   , ' an id matrix with the appropriate number of columns' ....
   , ' or set ''point_col'' <= %d' ] ...
   , point_col, size(id, 2), point_col, size(id, 2) );
+
+end
+
+function [hs, xs] = error_bar(axs, mus, errs, lp)
+
+hs = cell( size(axs) );
+xs = {};
+
+for i = 1:numel(axs)
+  [r, c] = size( mus{i} );
+  h = errorbar( axs(i), mus{i}, errs{i} );
+  set( axs(i), 'xtick', 1:r );
+  set( axs(i), 'xticklabels', lp{i, 2} );
+  xlim( axs(i), [0, r+1] );
+  for j = 1:c
+    set( h(j), 'displayname', lp{i, 3}{j} );
+  end
+  title( axs(i), lp{i, 1} );
+  legend( h );
+  hs{i} = h;
+end
 
 end
