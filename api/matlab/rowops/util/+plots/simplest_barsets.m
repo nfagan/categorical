@@ -68,6 +68,7 @@ defaults.cla = true;
 defaults.add_points = false;
 defaults.point_col = 4;
 defaults.point_data = [];
+defaults.panel_shape = [];
 params = shared_utils.general.parsestruct( defaults, varargin );
 
 if ( params.add_points )
@@ -77,7 +78,12 @@ end
 [ip, lp, ii] = plots.nest3( id, I, L );
 mus = nested_rowifun( params.summary_func, ip, data );
 errs = nested_rowifun( params.error_func, ip, data );
-axs = plots.panels( numel(mus), params.cla );
+
+if ( isempty(params.panel_shape) )
+  axs = plots.panels( numel(mus), params.cla );
+else
+  axs = plots.panels( params.panel_shape, params.cla );
+end
 
 if ( params.as_line_plot )
   [hs, xs] = error_bar( axs, mus, errs, lp );
@@ -121,10 +127,10 @@ end
 
 function [hs, xs] = error_bar(axs, mus, errs, lp)
 
-hs = cell( size(axs) );
+hs = cell( size(mus) );
 xs = {};
 
-for i = 1:numel(axs)
+for i = 1:min(numel(axs), numel(mus))
   [r, c] = size( mus{i} );
   h = errorbar( axs(i), mus{i}, errs{i} );
   set( axs(i), 'xtick', 1:r );
