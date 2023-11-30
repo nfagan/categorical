@@ -1,4 +1,4 @@
-function [axs, hs, xs] = simplest_barsets(data, I, id, L, varargin)
+function [axs, hs, xs, ip] = simplest_barsets(data, I, id, L, varargin)
 
 %   SIMPLEST_BARSETS -- Simple sets of bars with errors.
 %
@@ -66,6 +66,7 @@ defaults.error_func = @std;
 defaults.color_func = @jet;
 defaults.cla = true;
 defaults.add_points = false;
+defaults.add_errors = true;
 defaults.point_col = 4;
 defaults.point_data = [];
 defaults.panel_shape = [];
@@ -73,6 +74,9 @@ params = shared_utils.general.parsestruct( defaults, varargin );
 
 if ( params.add_points )
   check_id( id, params.point_col );
+end
+if ( ~params.add_errors )
+  params.error_func = @(x) nan;
 end
 
 [ip, lp, ii] = plots.nest3( id, I, L );
