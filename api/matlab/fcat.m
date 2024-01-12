@@ -278,26 +278,31 @@ classdef fcat < handle
       
       %   RESIZE -- Expand or contract object.
       %
-      %     resize( obj, 100 ) expands or contracts `obj` to contain 100
-      %     rows. If `obj` originally had fewer than 100 rows, additional
-      %     rows will contain the collapsed expression for each category.
-      %     If `obj` originally had more than 100 rows, it will now contain
-      %     the first 100 rows. If `obj` has no categories, resizing has no
-      %     effect.
+      %     resize( obj, n ); resizes `obj` so that it contains `n` rows.
+      %     If `obj` previously had more than `n` rows, the first `n` are
+      %     kept. If `obj` previously had fewer than `n` rows, additional 
+      %     rows are filled with the collapsed expressions for each 
+      %     category. 
       %
-      %     See also fcat/size
+      %     As a special case, if `obj` has 0 categories, resizing has no 
+      %     effect and is not an error.
+      %
+      %     See also fcat/repmat, fcat/keep
       
       cat_api( 'resize', obj.id, uint64(to) );      
     end
     
     function obj = repeat(obj, n_times)
       
-      %   REPEAT -- Repeat entire contents N times.
+      %   REPEAT -- Repeat array contents
       %
-      %     repeat( obj, 1 ) is equivalent to [ obj; obj ];
-      %     repeat( obj, 0 ) has no effect.
+      %     repeat( obj, n ); repeats the rows of `obj` `n` times. 
+      %     In particular,
       %
-      %     See also fcat/resize, fcat/repmat
+      %     repeat( obj, 1 ); duplicates the rows of `obj`.
+      %     repeat( obj, 0 ); has no effect.
+      %
+      %     See also fcat/resize, fcat/repmat, fcat/keep
       
       cat_api( 'repeat', obj.id, uint64(n_times) );      
     end
@@ -306,11 +311,14 @@ classdef fcat < handle
       
       %   REPMAT -- Repeat array contents.
       %
-      %     repmat( obj, 2 ) is equivalent to [ obj; obj ];
-      %     repmat( obj, 1 ) has no effect.
-      %     repmat( obj, 0 ) is equivalent to keep( obj, [] );
+      %     repmat( obj, n ); repeats the rows of `obj` `n - 1` times. 
+      %     In particular,
       %
-      %     See also fcat/repeat, fcat/resize
+      %     repmat( obj, 2 ); duplicates the rows of `obj`.
+      %     repmat( obj, 1 ); has no effect.
+      %     repmat( obj, 0 ); makes `obj` empty.
+      %
+      %     See also fcat/resize, fcat/repeat, fcat/keep
       
       narginchk( 2, Inf );
       
@@ -499,36 +507,29 @@ classdef fcat < handle
       
       %   SUBSREF -- Subscript reference.
       %
-      %     [I, C] = obj.findall( 'category' ); calls the method 'findall'
-      %     with inputs 'category'.
+      %     f = obj(indices); for numeric `indices` returns a slice of the
+      %     rows of `obj`. `f` is a copy of `obj` containing only `indices` 
+      %     rows from it. For example, f = obj(1:10) is the first 10 rows
+      %     of `obj`.
       %
-      %     c = obj('category') returns the unique labels in category 
-      %     'category', if it exists, or else throws an error.
+      %     m = obj(indices, categories); for the numeric vector `indices`
+      %     and cell array of strings, char vector, or numeric vector
+      %     `categories` returns the cell matrix of strings formed from
+      %     `indices` rows and `categories` columns of `obj`. When
+      %     `categories` is a numeric vector, it is interpreted as an index
+      %     into the categories of `obj` as returned by `getcats(obj)`.
       %
-      %     c = obj(1:10, 'category') returns the first 10 labels in
-      %     'category', in order, throwing an error if size is less than
-      %     10.
+      %     `indices` and `categories` can also be colons, e.g. 
+      %     m = obj(:, categories) or m = obj(1:10, :) or m = obj(:, :), to
+      %     extract the entire contents along a given dimension.
       %
-      %     c = obj([1; 1; 1], 'category') works as above, but returns a
-      %     3x1 array of the duplicated first label in 'category'.
+      %     c = obj{indices, categories} or m = obj{indices, :} or ...
+      %     uses curly braces instead of parentheses to extract contents as
+      %     a categorical matrix rather than cell matrix of strings.
       %
-      %     c = obj(:, 'category') returns the full 'category'.
-      %
-      %     c = obj(1, 1) returns the first element in the first category
-      %     of `obj`. The order of categories is consistent with the output
-      %     of `getcats()`.
-      %
-      %     Reference with curly braces "{}" is also supported in the same
-      %     manner as with parentheses "()". In this case, however, the 
-      %     output is a categorical matrix, rather than a cell matrix of 
-      %     strings.
-      %
-      %     c = obj(:, 1) returns the first full category of `obj`.
-      %
-      %     c = obj(1:10) returns a copied fcat object whose elements are
-      %     the first 10 rows of `obj`.
-      %
-      %     c = obj(:) creates a copy of `obj`.
+      %     labels = obj(categories); for the cell array of strings or char 
+      %     vector `categories` returns the unique labels in `categories`. 
+      %     The order of elements of `labels` is unspecified.
       %
       %     See also fcat/subsasgn, fcat/fcat, fcat/getcats
       
@@ -1653,31 +1654,46 @@ classdef fcat < handle
       
       %   SETCAT -- Assign labels to category.
       %
-      %     A) setcat( obj, 'hi', {'hello', 'hello', 'hello'} ) assigns
-      %     {'hello', 'hello', 'hello'} to category 'hi'.
+      %     setcat( obj, category, labels ); fills `category` with `labels`,
+      %     a cell array of strings with one element for each row of `obj`.
+      %     Or, if `labels` is a character vector or scalar cell array of 
+      %     strings, it is repeated for every row of `obj`.
       %
-      %     If the object was empty beforehand, it will become of size 3x1,
-      %     and additional categories will be filled with the collapsed
-      %     expression for each category. Otherwise, the object must be of 
-      %     size 3x1.
+      %     setcat( obj, category, labels, indices ); assigns `labels` to 
+      %     rows of `category` at `indices`. If `labels` is a scalar cell 
+      %     array of strings or character vector, it is implicitly repeated
+      %     to match the number of `indices`.
       %
-      %     B) setcat( obj, 'hi', {'hello', 'hello'}, [1, 2] ) assigns
-      %     {'hello', 'hello'} to rows [1, 2] of the object. If the object
-      %     was empty beforehand, assignment proceeds as above. Otherwise,
-      %     only rows [1, 2] will be modified, and it is an error if the
-      %     largest row exceeds the object's size, or if the number of rows
-      %     does not equal the number of assigned labels.
+      %     The behavior is different when the object is initially empty. 
+      %     In that case:
       %
-      %     C) setcat( obj, 'hi', 'hello', 1:10 ) works as in B), except
-      %     that the single label 'hello' is implicitly expanded to a 10x1
-      %     cell array of {'hello'}.
+      %     setcat( obj, category, labels ); fills `category` with `labels`
+      %     so that the previously empty `obj` now contains one row for 
+      %     each element of `labels`. If `obj` has other categories, they 
+      %     are filled with the collapsed expressions for each category. If 
+      %     `labels` is a character vector it is treated as a scalar cell 
+      %     array of strings.
       %
-      %     D) setcat( obj, 'hi', 'hello' ) works as in A) if the object
-      %     was empty beforehand, implicitly transforming 'hello' into a 
-      %     1x1 cell array. Otherwise, the full contents of the category 
-      %     'hi' are set to 'hello'.
+      %     setcat( obj, category, labels, indices ); first resizes `obj` 
+      %     to  contain `max(indices)` rows before assigning `labels` as in
+      %     the non-empty case. Unassigned rows of `obj`, i.e., rows not 
+      %     specified by `indices`, are filled with the collapsed
+      %     expressions for each category.
       %
-      %     See also fcat/requirecat, fcat/fillcat
+      %     setcat is used to implement subscript assignment, which can 
+      %     yield simpler expressions. In particular,
+      %
+      %     obj(:, category) = labels 
+      %     is the same as 
+      %     setcat( obj, category, labels )
+      %
+      %     and
+      %     obj(indices, category) = labels
+      %     is the same as
+      %     setcat( obj, category, labels, indices )
+      %
+      %     See also fcat/addcat, fcat/cellstr, fcat/getcats, 
+      %       fcat/subsref, fcat/subsasgn
       
       if ( nargin == 3 )
         if ( ischar(category) )
@@ -2024,15 +2040,16 @@ classdef fcat < handle
       
       %   ASSIGN -- Assign contents of other fcat at indices.
       %
-      %     assign( obj, B, 1:10 ) assigns the full contents of `B` to rows
-      %     1:10 of `obj`. `B` must have 10 rows.
+      %     assign( obj, B, di ); assigns `B`'s contents to rows `di` of 
+      %     `obj`. Conceptually, it is obj(di) = B, except that it is 
+      %     computed without using subscripts.
       %
-      %     assign( obj, B, 1:10, 11:20 ) assigns rows 11:20 of `B` to rows
-      %     1:10 of `obj`.
+      %     assign( obj, B, di, si ); assigns the slice `si` of `B` to rows 
+      %     `di` of `obj`. Conceptually, it is obj(di) = B(si). When `si` 
+      %     is a scalar, the single row is implicitly repeated to match 
+      %     the number of destination indices `di`.
       %
-      %     assign( obj, B, 1:10, 8 ) assigns row 8 of `B` to rows 1:10 of
-      %     `obj`. In this case, the single row of `B` is implicitly
-      %     repeated 10 times.
+      %     See also fcat/setcat, fcat/fcat
       
       if ( ~isa(obj, 'fcat') )
         error( 'Cannot assign objects of class "%s".', class(obj) );
@@ -2664,6 +2681,62 @@ classdef fcat < handle
       end
     end
     
+    function obj = from_table(tbl)
+      
+      %   FROM_TABLE -- Private utility to convert from table.
+      
+      cats = tbl.Properties.VariableNames;
+      
+      if ( isempty(tbl) )
+        obj = addcat( fcat(), cats );
+        return
+      end
+      
+      can_be_categorical_matrix = true;
+      need_convert_some_vars = false;
+      
+      for i = 1:numel(cats)
+        t_var = tbl.(cats{i});
+        if ( iscategorical(t_var) || ...
+             isstring(t_var) || ...
+             isnumeric(t_var) || ...
+             islogical(t_var) || ...
+             iscellstr(t_var) )
+           need_convert_some_vars = ...
+             need_convert_some_vars || ~iscategorical( t_var );
+        else
+          can_be_categorical_matrix = false;
+          % @TODO: It may actually be possible to handle this case for some 
+          % types of variables
+%           break
+          error( ['To convert to table, table variables must be convertible' ...
+            , ' to categorical. The variable "%s", of class "%s"' ...
+            , ' cannot be converted.'], cats{i}, class(t_var) );
+        end
+      end
+      
+      if ( can_be_categorical_matrix )
+        if ( need_convert_some_vars )
+          % just directly construct the categorical matrix from the table's
+          % contents, dispatching back to the `from` method
+          for i = 1:numel(cats)
+            t_var = tbl.(cats{i});
+            if ( isnumeric(t_var) || islogical(t_var) )
+              tbl.(cats{i}) = categorical( string(t_var) );
+            elseif ( ~iscategorical(t_var) )
+              tbl.(cats{i}) = categorical( t_var );
+            end
+          end
+        end
+        
+        % just directly construct the categorical matrix from the table's
+        % contents, dispatching back to the `from` method
+        obj = fcat.from( [tbl{:, :}], cats );
+      else
+        assert( false );
+      end
+    end
+    
     function obj = from_sp(sp)
       
       %   FROM_SP -- Private utility to convert from SparseLabels object.
@@ -2766,6 +2839,11 @@ classdef fcat < handle
       %     f = fcat.from( c, cats ) uses the cell array of category names
       %     `cats` to identify columns of `c`.
       %
+      %     f = fcat.from( tbl ) creates an fcat object from the table
+      %     `tbl`, whose variables must be convertible to categorical
+      %     vectors: they can be string, categorical, cell array of string 
+      %     or numeric vectors.
+      %
       %     C = fcat.from( sp ) creates an fcat object from the
       %     SparseLabels or Labels object `sp`.
       %
@@ -2801,6 +2879,10 @@ classdef fcat < handle
           
         elseif ( isa(arr, 'fcat') )
           obj = copy( arr );
+          return
+          
+        elseif ( isa(arr, 'table') )
+          obj = fcat.from_table( arr );
           return
           
         else
