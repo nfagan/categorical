@@ -29,7 +29,7 @@ assert_rowsmatch( PI, PL );
 
 defaults = struct();
 defaults.summary_func = @(x) mean(x, 1);
-defaults.error_func = @(x) std(x, 1);
+defaults.error_func = @(x) std(x, [], 1);
 defaults.smooth_func = @identity;
 defaults.cla = true;
 params = shared_utils.general.parsestruct( defaults, varargin );
