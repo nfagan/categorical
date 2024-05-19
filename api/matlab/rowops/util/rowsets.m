@@ -54,6 +54,15 @@ function [I, id, C] = rowsets(n, X, varargin)
 %     array of potentially heterogeneous arrays `C` to a cell array of
 %     strings `L` and sorts by rows of `L`.
 %
+%     EX //
+%
+%     T = struct2table( load('patients') );
+%     [I, id, C] = rowsets( 3, T ...
+%       , 'Gender', 'Smoker', 'SelfAssessedHealthStatus', 'to_string', 1 );
+%     plots.simplest_barsets( T.Diastolic, I, id, C );
+%     xlabel( 'Smoker' );
+%     ylabel( 'Diastolic' );
+%
 %     See also findeach, unique, groupi, grp2idx, fcat
 
 validateattributes( n, {'numeric'}, {'scalar', 'integer', 'positive'}, mfilename, 'n' );
