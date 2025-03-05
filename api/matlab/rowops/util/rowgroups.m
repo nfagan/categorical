@@ -28,6 +28,7 @@ if ( nargin < 2 )
   [y, ~, ic] = unique( t, 'rows' );
   I = groupi( ic );
 else
+  m = m(:);
   [y, ~, ic] = unique( t(m, :), 'rows' );
   if ( islogical(m) ), m = find( m ); end
   I = cellfun( @(x) m(x), groupi(ic), 'un', 0 );
