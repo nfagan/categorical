@@ -15,10 +15,20 @@ function [g, v] = ungroupi(I)
 %
 %     See also groupi, unique, intersect, categorical, accumarray
 
-mxi = max( cellfun(@max, I) );
-g = zeros( mxi, 1 );
-for i = 1:numel(I)
-  g(I{i}) = i;
+empties = cellfun( 'isempty', I(:) );
+
+if ( all(empties) )
+  g = [];
+else
+  if ( any(empties) )
+    mxi = max( cellfun(@max_or_nan, I) );
+  else
+    mxi = max( cellfun(@max, I) );
+  end
+  g = zeros( mxi, 1 );
+  for i = 1:numel(I)
+    g(I{i}) = i;
+  end
 end
 
 if ( nargout > 1 )
@@ -26,4 +36,12 @@ if ( nargout > 1 )
   g = g(v);
 end
 
+end
+
+function y = max_or_nan(x)
+if ( isempty(x) )
+  y = nan;
+else
+  y = max( x );
+end
 end
