@@ -25,13 +25,37 @@ function [I, y] = rowgroups(t, m)
 narginchk( 1, 2 );
 
 if ( nargin < 2 )
-  [y, ~, ic] = unique( t, 'rows' );
+  [y, ic] = do_unique( t );
   I = groupi( ic );
 else
   m = m(:);
-  [y, ~, ic] = unique( t(m, :), 'rows' );
+  [y, ic] = do_unique( t(m, :) );
   if ( islogical(m) ), m = find( m ); end
   I = cellfun( @(x) m(x), groupi(ic), 'un', 0 );
+end
+
+end
+
+function [y, ic] = do_unique(t)
+
+if ( iscell(t) )
+  % try to use our custom unique function for cell arrays of strings.
+  % only works when iscellstr(t) is true, i.e., t cannot contain
+  % heterogeneous datatypes or non-char vector data.
+  % remove this if/when matlab implements the 'rows' option for cell arrays.
+  try
+    [yi, ic] = cellstr_unique_rowi( t );
+  catch err
+    if ( ~iscellstr(t) )
+      error( 'Can only compute groups of rows for a cell array of strings.' );
+    else
+      rethrow( err );
+    end
+  end
+  y = t(yi, :);
+else
+  % defer to matlab's unique.
+  [y, ~, ic] = unique( t, 'rows', 'stable' );
 end
 
 end
