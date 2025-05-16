@@ -23,7 +23,7 @@ function [I, L] = rowsetsn(X, f, options)
 %     `f`, and each `L{i}` matches `I`.
 %
 %     [I, ...] = rowsetsn( ..., Mask=m ) computes the unique rows of 
-%     `X(mask, :)`, while returning indices that are a subset of `I`. `m`
+%     `X(mask, :)`, while returning indices that are a subset of `m`. `m`
 %     can be numeric or logical, but the returned indices are always
 %     numeric.
 %

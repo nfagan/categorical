@@ -61,7 +61,7 @@ arguments
   options.SummaryFunc function_handle = @mean;
   options.ErrorFunc function_handle = @plotlabeled.sem;
   options.ColorFunc function_handle = @hsv;
-  options.MarkerSize = [];
+  options.MarkerSize = 8;
   options.PerPanelGroups = false;
   options.PerPanelX = false;
   options.WarnMissingX = true;
@@ -72,6 +72,7 @@ arguments
     mustBeMember(options.Type, ["shaded-line", "error-bar", "bar", "scatter"]) ...
   } = "shaded-line";
   options.YAxis = [];
+  options.AddPoints = false;
 end
 
 % ----------------------------------------------------------------------
@@ -119,7 +120,7 @@ for i = 1:size(pI, 1)
   ax = axs(i); hold( ax, 'on' );
   if ( ~isempty(options.YAxis) ), yyaxis( ax, options.YAxis ); end
   h = draw( ax, nx, mu, er, gls, cs, options );
-  legend( h );
+  hl = legend( h ); set( hl, 'edgecolor', 'none' );
 
   tl = make_title_label( pls(i), mI, options );
   title( ax, tl );
@@ -134,6 +135,16 @@ end
 if ( ~options.PerPanelGroups ), plots.onelegend( gcf ); end
 if ( options.MatchXLims ), shared_utils.plot.match_xlims( axs ); end
 if ( options.MatchYLims ), shared_utils.plot.match_ylims( axs ); end
+
+if ( options.AddPoints )
+  % re-run with scatter option
+  opts = options;
+  opts.Type = 'scatter';
+  opts.AddPoints = false;
+  opts.Summarize = false;
+  opts = shared_utils.general.struct2varargin( opts );
+  plots.summarized2( data, I, pL, gL, xL, opts{:} );
+end
 
 end
 
@@ -163,12 +174,22 @@ switch ( options.Type )
     h = plot( ax, pxl, mu, 'linewidth', 2 );
     shaded_line( ax, pxl', mu', er', cs );
     cp = 'color';
+
   case 'error-bar'
     h = errorbar( ax, pxl, mu, er, 'linewidth', 2 );
     cp = 'color';
+
   case 'bar'
-    h = bar( ax, pxl, mu );
+    h = bar( ax, pxl, mu ); set( h, 'edgecolor', 'none' );
+    eps = arrayfun( @(x) get(x, 'xendpoints'), h, 'un', 0 );
+    for i = 1:numel(eps)
+      x = eps{i};
+      y = reshape( mu(:, i), size(x) );
+      yy = reshape( er(:, i), size(x) );
+      plot( ax, [x; x], [y - yy * 0.5; y + yy * 0.5], 'linewidth', 1.5, 'color', 'k' );
+    end
     cp = 'facecolor';
+
   case 'scatter'
     h = gobjects( size(mu, 2),  1 );
     cp = 'markerfacecolor';
@@ -183,6 +204,7 @@ switch ( options.Type )
       end
       h(j) = scatter( ax, x, y, options.MarkerSize, cs(j, :) );
     end
+
   otherwise
     error( 'Unrecognized type "%s"', options.Type );
 end
