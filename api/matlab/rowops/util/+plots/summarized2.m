@@ -57,7 +57,7 @@ function axs = summarized2(data, I, pL, gL, xL, options)
 arguments
   data, I cell, pL {mustBeMatrix}, gL {mustBeMatrix}, xL {mustBeMatrix};
   options.Summarize logical = true;
-  options.XJitter = 0;
+  options.XJitter = 0.05;
   options.SummaryFunc function_handle = @mean;
   options.ErrorFunc function_handle = @plotlabeled.sem;
   options.ColorFunc function_handle = @hsv;
@@ -69,7 +69,8 @@ arguments
   options.MatchXLims = true;
   options.MatchYLims = true;
   options.Type string {...
-    mustBeMember(options.Type, ["shaded-line", "error-bar", "bar", "scatter"]) ...
+    mustBeMember(options.Type, [ ...
+      "shaded-line", "error-bar", "bar", "scatter", "violin"]) ...
   } = "shaded-line";
   options.YAxis = [];
   options.AddPoints = false;
@@ -84,8 +85,13 @@ if ( iscell(xL) )
 end
 
 if ( ~options.Summarize )
-  assert( options.Type == "scatter" ...
-    , "Can only plot non-summarized data as a scatter plot." );
+  assert( ismember(options.Type, ["scatter", "violin"]) ...
+    , "Can only plot non-summarized data as a scatter or violin plot." );
+end
+
+if ( options.Type == "violin" )
+  assert( isscalar(rowgroups(gL)) || isempty(gL) ...
+    , 'When plotting violins, data cannot be grouped.' );
 end
 
 assert( numel(I) == rows(pL), 'Index sets do not correspond to panel labels.' );
@@ -167,43 +173,26 @@ tl = plots.strip_underscore( tl );
 
 end
 
-function h = draw(ax, pxl, mu, er, gls, cs, options)
+function h = draw(ax, nx, mu, er, gls, cs, options)
 
 switch ( options.Type )
   case 'shaded-line'
-    h = plot( ax, pxl, mu, 'linewidth', 2 );
-    shaded_line( ax, pxl', mu', er', cs );
+    h = plot( ax, nx, mu, 'linewidth', 2 );
+    shaded_line( ax, nx', mu', er', cs );
     cp = 'color';
 
   case 'error-bar'
-    h = errorbar( ax, pxl, mu, er, 'linewidth', 2 );
+    h = errorbar( ax, nx, mu, er, 'linewidth', 2 );
     cp = 'color';
 
   case 'bar'
-    h = bar( ax, pxl, mu ); set( h, 'edgecolor', 'none' );
-    eps = arrayfun( @(x) get(x, 'xendpoints'), h, 'un', 0 );
-    for i = 1:numel(eps)
-      x = eps{i};
-      y = reshape( mu(:, i), size(x) );
-      yy = reshape( er(:, i), size(x) );
-      plot( ax, [x; x], [y - yy * 0.5; y + yy * 0.5], 'linewidth', 1.5, 'color', 'k' );
-    end
-    cp = 'facecolor';
+    [h, cp] = draw_bar( ax, nx, mu, er );
 
   case 'scatter'
-    h = gobjects( size(mu, 2),  1 );
-    cp = 'markerfacecolor';
-    for j = 1:size(mu, 2)
-      x = pxl;
-      y = mu(:, j);
-      if ( ~options.Summarize )
-        x = repelem( x, cellfun(@numel, y), 1 );
-        dx = mean( diff(pxl(:)) );
-        x = x + ((rand(size(x))) * 2 - 1) * dx * options.XJitter;
-        y = vertcat( y{:} );
-      end
-      h(j) = scatter( ax, x, y, options.MarkerSize, cs(j, :) );
-    end
+    [h, cp] = draw_scatter( ax, nx, mu, cs, options );
+
+  case 'violin'
+    [h, cp] = draw_violin( ax, nx, mu );
 
   otherwise
     error( 'Unrecognized type "%s"', options.Type );
@@ -211,6 +200,57 @@ end
 
 for j = 1:numel(h)
   set( h(j), 'displayname', gls(j), cp, cs(j, :) ); 
+end
+
+end
+
+function [h, cp] = draw_violin(ax, nx, mu)
+
+if ( iscell(mu) )
+  % data are not summarized.
+  nr = cellfun( @rows, mu );
+  nx = repelem( nx, nr, 1 );
+  mu = vertcat( mu{:} );
+end
+
+h = violinplot( ax, nx, mu );
+set( h, 'edgecolor', 'none' );
+cp = 'FaceColor';
+
+end
+
+function [h, cp] = draw_bar(ax, nx, mu, er)
+
+h = bar( ax, nx, mu ); set( h, 'edgecolor', 'none' );
+eps = arrayfun( @(x) get(x, 'xendpoints'), h, 'un', 0 );
+for i = 1:numel(eps)
+  x = eps{i};
+  y = reshape( mu(:, i), size(x) );
+  yy = reshape( er(:, i), size(x) );
+  plot( ax, [x; x], [y - yy * 0.5; y + yy * 0.5], 'linewidth', 1.5, 'color', 'k' );
+end
+cp = 'facecolor';
+
+end
+
+function [h, cp] = draw_scatter(ax, nx, mu, cs, options)
+
+h = gobjects( size(mu, 2),  1 );
+cp = 'markerfacecolor';
+for j = 1:size(mu, 2)
+  x = nx;
+  y = mu(:, j);
+  if ( ~options.Summarize )
+    x = repelem( x, cellfun(@numel, y), 1 );
+    if ( isscalar(nx) )
+      dx = 1;
+    else
+      dx = mean( diff(nx(:)) );
+    end
+    x = x + ((rand(size(x))) * 2 - 1) * dx * options.XJitter;
+    y = vertcat( y{:} );
+  end
+  h(j) = scatter( ax, x, y, options.MarkerSize, cs(j, :) );
 end
 
 end
