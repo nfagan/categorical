@@ -11,9 +11,19 @@ function [axs, info] = summarized3(data, I, pL, gL, xL, options)
 %     and plotted over corresponding (unique) elements of `xl`.
 %
 %     plots.summarized3( data, I, pl, gl, xl ); works similarly, except
-%     that groups are drawn `I`, a cell array of index vectors. In this
-%     case, `pl`, `gl`, `xl` are grouping arrays with the same number of 
-%     rows as the number of elements of `I`.
+%     that groups are drawn from `I`, a cell array of index vectors. In 
+%     this case, `pl`, `gl`, `xl` are grouping arrays with the same number 
+%     of rows as the number of elements of `I`.
+%
+%     axs = plots.summarized3(...) returns an array of handles to axes
+%     from the created panels. 
+%
+%     [..., info] = plots.summarized3(...) also returns a struct array with
+%     plotting metadata for each panel. Within a panel, field "pl" is the
+%     grouping element for that panel; fields "xl" and "gl" are the grouping 
+%     elements for x-axis and series. `I` is a cell matrix with a row
+%     for each x-element and a column for each series-element; it identifies
+%     the rows of data that were selected for plotting.
 %
 %     plots.summarized3( ..., name=value ) specifies additional
 %     name/value paired arguments. These include:
