@@ -31,6 +31,11 @@ function [I, L] = rowsetsn(X, f, options)
 %     corresponding elements of `L` will contain a missing value with the 
 %     same class as `X`.
 %
+%     [..., L] = rowsetsn( ..., UniformOutput=tf ), when `tf` is true, 
+%     returns `L` as an array of the same class as X by horizontally 
+%     concatenating elements associated with each set of column indices. 
+%     Default false.
+%
 %     //  EX 1.
 %     t = struct2table( load('carbig') );
 %     [I, L] = rowsetsn( t, {"Origin", "Cylinders", "when"} );
@@ -58,7 +63,7 @@ function [I, L] = rowsetsn(X, f, options)
 %     ylabel( axs(1), 'average looking duration (ms)' );
 %
 %     See also rowgroups, unique, grp2idx, groupi, splitapply,
-%       plots.summarized2, rowsets3
+%       plots.summarized3, rowsets3
 
 arguments
   X {mustBeMatrix};
@@ -126,8 +131,12 @@ for i = 1:size(C, 2)
 end
 
 if ( options.SortRows )
-  [~, ord] = sortrows( horzcat(L{:}) );
-  [I, L{:}] = rowref_many( ord, I, L{:} );
+  try
+    [~, ord] = sortrows( horzcat(L{:}) );
+    [I, L{:}] = rowref_many( ord, I, L{:} );
+  catch err
+    warning( err.identifier, "Failed to sort rows of `L`: %s", err.message );
+  end
 end
 
 if ( options.UniformOutput )
@@ -148,8 +157,14 @@ function m = missings(X, f)
 miss = cellfun( @isempty, f );
 m = cell( size(f) );
 
-if ( isnumeric(X) || islogical(X) || iscategorical(X) )
+if ( ~any(miss, 'all') )
+  return
+end
+
+if ( isnumeric(X) || iscategorical(X) )
   m(miss) = { feval(class(X), nan) };
+elseif ( islogical(X) )
+  m(miss) = { false };
 elseif ( isstring(X) )
   m(miss) = { "" };
 elseif ( istable(X) )

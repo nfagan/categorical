@@ -17,10 +17,10 @@ function [I, L0, L1, L2] = rowsets3(X, l0, l1, l2, varargin)
 %     t = struct2table( load('carbig') );
 %     [I, pl, gl, xl] = rowsets3( t, "Origin", "Cylinders", "when", Mask=~isnan(t.MPG) )
 %     % plot
-%     figure(1); clf; axs = plots.summarized2( t.MPG, I, pl, gl, xl, Type='bar' );
+%     figure(1); clf; axs = plots.summarized3( t.MPG, I, pl, gl, xl, Type='bar' );
 %     ylabel( axs, 'Average MPG' );
 %
-%     See also rowsetsn, rowgroups, table, plots.summarized2
+%     See also rowsetsn, rowgroups, table, plots.summarized3
 
 [I, L] = rowsetsn( X, {l0, l1, l2}, varargin{:} );
 [L0, L1, L2] = deal( L{:} );
